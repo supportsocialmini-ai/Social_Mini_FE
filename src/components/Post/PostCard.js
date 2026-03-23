@@ -23,6 +23,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const isPostOwner = currentUser?.userId === post.userId;
 
@@ -158,7 +159,17 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
         {/* Content */}
         <div className="px-6 py-4">
           <p className="text-gray-800 text-[15px] leading-relaxed font-medium break-words">
-            {post.postContent}
+            {post.postContent.length > 200 && !isExpanded 
+              ? `${post.postContent.substring(0, 200)}...` 
+              : post.postContent}
+            {post.postContent.length > 200 && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="ml-1 text-indigo-600 font-bold hover:underline transition-all"
+              >
+                {isExpanded ? t('common.seeLess') || 'Thu gọn' : t('common.seeMore') || 'Xem thêm'}
+              </button>
+            )}
           </p>
         </div>
 

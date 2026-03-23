@@ -5,10 +5,12 @@ import searchService from '../../services/searchService';
 import friendService from '../../services/friendService';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 
 const Search = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { getFullAvatarUrl } = useAuth();
+  const { t } = useTranslation();
   const query = searchParams.get('q') || '';
 
   const [users, setUsers] = useState([]);
@@ -16,6 +18,11 @@ const Search = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'people' | 'posts'
   const [inputValue, setInputValue] = useState(query);
+  const [expandedPosts, setExpandedPosts] = useState({});
+
+  const toggleExpand = (postId) => {
+    setExpandedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
+  };
 
   const doSearch = useCallback(async (q) => {
     if (!q || q.trim().length < 2) {
@@ -235,7 +242,19 @@ const Search = () => {
                     </div>
                   </div>
 
-                  <p className="text-sm text-gray-800 leading-relaxed line-clamp-3">{post.postContent}</p>
+                  <p className="text-sm text-gray-800 leading-relaxed">
+                    {post.postContent.length > 200 && !expandedPosts[post.postId]
+                      ? `${post.postContent.substring(0, 200)}...`
+                      : post.postContent}
+                    {post.postContent.length > 200 && (
+                      <button
+                        onClick={() => toggleExpand(post.postId)}
+                        className="ml-1 text-indigo-600 font-bold hover:underline"
+                      >
+                        {expandedPosts[post.postId] ? t('common.seeLess') : t('common.seeMore')}
+                      </button>
+                    )}
+                  </p>
 
                   {post.imageUrl && (
                     <div className="mt-3 rounded-xl overflow-hidden border border-gray-100">

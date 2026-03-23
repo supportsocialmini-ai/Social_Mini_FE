@@ -57,7 +57,9 @@
       "next": "Next",
       "save": "Save",
       "delete": "Delete",
-      "viewAll": "View all"
+      "viewAll": "View all",
+      "seeMore": "See more",
+      "seeLess": "See less"
     },
     "home": {
       "friends": "Friends",

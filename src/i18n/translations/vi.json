@@ -57,7 +57,9 @@
       "next": "Tiếp tục",
       "save": "Lưu",
       "delete": "Xóa",
-      "viewAll": "Xem tất cả"
+      "viewAll": "Xem tất cả",
+      "seeMore": "Xem thêm",
+      "seeLess": "Thu gọn"
     },
     "home": {
       "friends": "Bạn bè",
