@@ -27,7 +27,7 @@ const Register = () => {
     // Regex constants
     const fullNameRegex = /^[a-zA-ZÀ-ỹ\s]{2,100}$/;
     const usernameRegex = /^[a-z0-9_]{4,30}$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,50}$/;
 
     if (!formData.fullName) {
