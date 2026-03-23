@@ -22,6 +22,9 @@ const authService = {
     return axiosClient.post('api/auth/verify-password', {
       password
     });
+  },
+  verifyEmail: (token) => {
+    return axiosClient.post(`api/auth/verify-email?token=${token}`);
   }
 };
 
