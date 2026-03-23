@@ -369,7 +369,7 @@ const Profile = () => {
                 {postsWithImage.map(post => (
                   <div key={post.postId} className="aspect-square overflow-hidden bg-gray-100 relative group cursor-pointer">
                     <img
-                      src={`${process.env.REACT_APP_API_URL || 'https://social-mini-app.onrender.com/api'}${post.imageUrl}`}
+                      src={`${process.env.REACT_APP_API_URL || 'https://social-mini-app.onrender.com'}${post.imageUrl.startsWith('/') ? post.imageUrl : '/' + post.imageUrl}`}
                       alt=""
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />

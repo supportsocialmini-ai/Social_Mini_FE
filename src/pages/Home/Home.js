@@ -70,7 +70,7 @@ const Home = () => {
       if (imageFile) {
         await postService.createPostWithImage(postContent, 'Public', imageFile);
       } else {
-        await postService.createPost({ postContent: postContent, privacy: 'Public' });
+        await postService.createPost({ Content: postContent, privacy: 'Public' });
       }
       setPostContent(''); setImagePreview(null); setImageFile(null);
       fetchPosts();
@@ -208,13 +208,12 @@ const Home = () => {
               <Link to="/profile" className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden bg-gradient-to-br from-indigo-400 to-blue-500">
                 <img src={getFullAvatarUrl(user?.avatarUrl, user?.fullName || user?.username)} alt="" className="w-full h-full object-cover" />
               </Link>
-              <input
-                type="text"
+              <textarea
                 value={postContent}
                 onChange={e => setPostContent(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handlePostSubmit()}
+                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handlePostSubmit())}
                 placeholder={t('home.whatsOnYourMind', { name: user?.fullName?.split(' ').pop() || t('navbar.user') })}
-                className="flex-1 bg-[#f0f2f5] rounded-full px-4 py-2.5 text-sm outline-none text-gray-700 placeholder:text-gray-500 focus:bg-gray-100 transition-all"
+                className="flex-1 bg-[#f0f2f5] rounded-2xl px-4 py-2.5 text-sm outline-none text-gray-700 placeholder:text-gray-500 focus:bg-gray-100 transition-all resize-none min-h-[44px]"
               />
             </div>
             <div className="flex items-center px-2 py-2">

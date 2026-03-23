@@ -19,18 +19,19 @@ export const AuthProvider = ({ children }) => {
 
     if (url.startsWith('http')) return url;
 
-    // Lấy link gốc của API (loại bỏ /api)
-    const apiBase = (process.env.REACT_APP_API_URL || 'https://social-mini-app.onrender.com/api').replace('/api', '');
+    // Lấy link gốc của API
+    const apiBase = process.env.REACT_APP_API_URL || 'https://social-mini-app.onrender.com';
+    const cleanBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
 
     // Loại bỏ dấu gạch chéo ở đầu nếu có
     const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
     
     // Nếu url đã có sẵn avatars/ hoặc images/ ở đầu thì chỉ cần ghép vào
     if (cleanUrl.startsWith('avatars/') || cleanUrl.startsWith('images/')) {
-      return `${apiBase}/${cleanUrl}`;
+      return `${cleanBase}/${cleanUrl}`;
     }
 
-    return `${apiBase}/avatars/${cleanUrl}`;
+    return `${cleanBase}/avatars/${cleanUrl}`;
   };
 
   // Tự động lấy thông tin chi tiết nếu đã có token nhưng chưa có fullName

@@ -240,7 +240,7 @@ const Search = () => {
                   {post.imageUrl && (
                     <div className="mt-3 rounded-xl overflow-hidden border border-gray-100">
                       <img
-                        src={`${process.env.REACT_APP_API_URL || 'https://social-mini-app.onrender.com/api'}${post.imageUrl}`}
+                        src={`${process.env.REACT_APP_API_URL || 'https://social-mini-app.onrender.com'}${post.imageUrl.startsWith('/') ? post.imageUrl : '/' + post.imageUrl}`}
                         alt="post"
                         className="w-full max-h-64 object-cover"
                       />

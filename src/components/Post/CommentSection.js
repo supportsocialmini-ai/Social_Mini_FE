@@ -9,7 +9,7 @@ const CommentItem = ({ comment, user, getFullAvatarUrl, onDelete, onReply, depth
   const { t } = useTranslation();
 
   return (
-    <div className={`flex flex-col ${depth > 0 ? 'ml-8 mt-3' : 'mt-5'}`}>
+    <div className={`flex flex-col ${depth === 1 ? 'ml-8 mt-3' : (depth > 1 ? 'mt-3' : 'mt-5')}`}>
       <div className="flex gap-3 group">
         <div className="w-8 h-8 rounded-xl bg-slate-100 flex-shrink-0 overflow-hidden border border-slate-100">
           <img
@@ -103,7 +103,7 @@ const CommentSection = ({ postId, isOpen, onClose, getFullAvatarUrl }) => {
     try {
       await commentService.createComment({
         postId,
-        commentContent: newComment,
+        Content: newComment,
         parentCommentId: replyTo?.commentId || null
       });
       setNewComment('');
@@ -218,7 +218,7 @@ const CommentSection = ({ postId, isOpen, onClose, getFullAvatarUrl }) => {
                 onChange={(e) => setNewComment(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
                 placeholder={replyTo ? t('posts.replyPlaceholder', { name: replyTo.fullName.split(' ')[0] }) : t('posts.commentPlaceholder')}
-                className="w-full bg-white rounded-2xl px-4 py-2.5 outline-none border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-sm shadow-sm"
+                className="w-full bg-white rounded-2xl px-4 py-2.5 outline-none border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-sm shadow-sm text-slate-900"
               />
               <button
                 onClick={handleAddComment}

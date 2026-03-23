@@ -56,8 +56,9 @@ export const ChatProvider = ({ children }) => {
     const token = localStorage.getItem('accessToken');
 
     if (user && token) {
+      const hubUrl = `${process.env.REACT_APP_API_URL || 'https://social-mini-app.onrender.com'}/chatHub`;
       const newConnection = new signalR.HubConnectionBuilder()
-        .withUrl("https://social-mini-app.onrender.com/chatHub", {
+        .withUrl(hubUrl, {
           accessTokenFactory: () => token
         })
         .configureLogging(signalR.LogLevel.None)

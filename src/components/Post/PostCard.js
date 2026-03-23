@@ -30,8 +30,9 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
   const getFullImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
     if (imageUrl.startsWith('http')) return imageUrl; // Already full URL
-    const apiBase = process.env.REACT_APP_API_URL || 'https://social-mini-app.onrender.com/api';
-    return `${apiBase.replace('/api', '')}${imageUrl}`; // Remove /api from base URL and append image path
+    const apiBase = process.env.REACT_APP_API_URL || 'https://social-mini-app.onrender.com';
+    const cleanBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
+    return `${cleanBase}${imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl}`;
   };
 
   // Format time ago
