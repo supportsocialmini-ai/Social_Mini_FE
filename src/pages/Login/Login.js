@@ -2,13 +2,19 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import authService from '../../services/authService';
+import { useTranslation } from 'react-i18next';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
+  const [verifyToken, setVerifyToken] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
   const { login } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -21,22 +27,35 @@ const Login = () => {
       navigate('/'); // Chuyển hướng về trang chủ sau khi đăng nhập thành công
     } catch (err) {
       const msg = err.errorMessage || 'Đăng nhập thất bại. Vui lòng thử lại.';
-      if (msg.includes('chưa được kích hoạt')) {
-        toast.info(
-          <div className="text-sm">
-            <p className="font-bold mb-1">{msg}</p>
-            <Link to="/verify-email" className="text-indigo-700 underline font-black block mt-1 hover:text-indigo-800">
-              Nhấn vào đây để nhập mã xác nhận ngay!
-            </Link>
-          </div>,
-          { autoClose: 10000 }
-        );
+      if (msg === 'USER_NOT_VERIFIED' || msg.includes('chưa được kích hoạt')) {
+        setIsVerifyModalOpen(true);
+        toast.info('Tài khoản của bạn chưa được xác nhận. Vui lòng nhập mã 6 chữ số để kích hoạt.');
       } else {
         toast.error(msg);
       }
       setError(msg);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleVerifyEmail = async (e) => {
+    e.preventDefault();
+    if (!verifyToken || verifyToken.length !== 6) {
+      return toast.warn('Vui lòng nhập mã xác nhận 6 chữ số.');
+    }
+
+    setIsVerifying(true);
+    try {
+      await authService.verifyEmail(verifyToken);
+      toast.success('Xác nhận thành công! Bây giờ bạn có thể đăng nhập.');
+      setIsVerifyModalOpen(false);
+      setVerifyToken('');
+      setError('');
+    } catch (err) {
+      toast.error(err.errorMessage || 'Mã xác nhận không đúng hoặc đã hết hạn.');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -137,6 +156,61 @@ const Login = () => {
           <a href="#" className="hover:text-slate-600 transition-colors">Hỗ trợ</a>
         </div>
       </div>
+
+      {/* Verification Modal */}
+      {isVerifyModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl shadow-indigo-200/50 border border-white animate-in zoom-in-95 duration-300">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-black text-slate-800 mb-2">Xác nhận tài khoản</h3>
+              <p className="text-slate-500 font-medium px-4">Chúng tôi đã gửi mã 6 chữ số đến email của bạn.</p>
+            </div>
+
+            <form onSubmit={handleVerifyEmail} className="space-y-6">
+              <div className="relative group">
+                <input
+                  type="text"
+                  placeholder="Nhập mã 6 chữ số"
+                  value={verifyToken}
+                  onChange={(e) => setVerifyToken(e.target.value)}
+                  maxLength={6}
+                  required
+                  className="w-full px-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl text-center text-3xl font-black tracking-[0.5em] focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all placeholder:text-slate-300 placeholder:text-sm placeholder:tracking-normal placeholder:font-medium"
+                />
+              </div>
+
+              <div className="flex gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsVerifyModalOpen(false)}
+                  className="flex-1 px-4 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl transition-all active:scale-[0.98]"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isVerifying}
+                  className="flex-[2] px-4 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-100 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center"
+                >
+                  {isVerifying ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    'Xác nhận ngay'
+                  )}
+                </button>
+              </div>
+              <p className="text-center text-xs text-slate-400 mt-4">
+                Không nhận được mã? <button type="button" className="text-indigo-600 font-bold hover:underline">Gửi lại (Soon)</button>
+              </p>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
