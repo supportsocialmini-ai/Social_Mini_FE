@@ -1,0 +1,211 @@
+.mental-letter-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.4); /* Slate 900 with transparency */
+    backdrop-filter: blur(12px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mental-letter-container {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    border-radius: 40px;
+    box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+    animation: zoomIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mental-letter-close {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    width: 44px;
+    height: 44px;
+    border-radius: 18px;
+    background: white;
+    border: none;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+}
+
+.mental-letter-close:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+    transform: rotate(90deg);
+}
+
+.mental-letter-close svg {
+    width: 24px;
+    height: 24px;
+}
+
+.mental-letter-content {
+    padding: 48px;
+    overflow-y: auto;
+    max-height: calc(90vh - 96px);
+}
+
+.mental-letter-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.dev-emoji {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.mental-letter-header h2 {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.version-badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 6px 16px;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 99px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.mental-letter-body {
+    color: #475569;
+    line-height: 1.7;
+    font-size: 16px;
+}
+
+.mental-letter-body p {
+    margin-bottom: 24px;
+}
+
+.bug-list {
+    margin: 32px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.bug-item {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    transition: transform 0.3s ease;
+}
+
+.bug-item:hover {
+    transform: translateX(8px);
+    background: white;
+}
+
+.bug-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.senior-dream {
+    text-align: center;
+    font-style: italic;
+    font-size: 15px;
+    color: #94a3b8;
+    margin: 32px 0;
+}
+
+.mental-letter-footer {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 32px;
+    font-size: 15px;
+}
+
+.warning-text {
+    padding: 16px;
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    border-radius: 12px;
+    color: #92400e;
+}
+
+.threat {
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-color: #f59e0b;
+}
+
+.no-manual {
+    font-weight: 600;
+    text-align: center;
+    color: #dc2626;
+    margin-top: 24px !important;
+}
+
+.mental-letter-action {
+    margin-top: 40px;
+    text-align: center;
+}
+
+.got-it-btn {
+    width: 100%;
+    padding: 18px;
+    background: #1e293b;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.2);
+}
+
+.got-it-btn:hover {
+    background: #0f172a;
+    transform: translateY(-2px);
+    box-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.3);
+}
+
+.got-it-btn:active {
+    transform: translateY(0);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+    from { 
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+    to { 
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}

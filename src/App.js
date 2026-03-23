@@ -14,6 +14,8 @@ import Search from './pages/Search/Search';
 import Settings from './pages/Settings/Settings';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import MentalLetterModal from './components/Common/MentalLetterModal';
+import { useState, useEffect } from 'react';
 
 const PrivateRoute = ({ children }) => {
   const { user } = useAuth();
@@ -21,6 +23,20 @@ const PrivateRoute = ({ children }) => {
 };
 
 function App() {
+  const [showMentalLetter, setShowMentalLetter] = useState(false);
+
+  useEffect(() => {
+    const hasSeenLetter = localStorage.getItem('hasSeenMentalLetterV1');
+    if (!hasSeenLetter) {
+      setShowMentalLetter(true);
+    }
+  }, []);
+
+  const handleCloseLetter = () => {
+    localStorage.setItem('hasSeenMentalLetterV1', 'true');
+    setShowMentalLetter(false);
+  };
+
   return (
     <AuthProvider>
       <ChatProvider>
@@ -42,6 +58,10 @@ function App() {
             position="top-right"
             autoClose={3000}
             theme="colored"
+          />
+          <MentalLetterModal 
+            isOpen={showMentalLetter} 
+            onClose={handleCloseLetter} 
           />
         </Router>
       </ChatProvider>
