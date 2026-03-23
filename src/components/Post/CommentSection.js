@@ -210,16 +210,22 @@ const CommentSection = ({ postId, isOpen, onClose, getFullAvatarUrl }) => {
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="flex-1 flex gap-2">
-              <input
-                id="comment-input"
-                type="text"
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
-                placeholder={replyTo ? t('posts.replyPlaceholder', { name: replyTo.fullName.split(' ')[0] }) : t('posts.commentPlaceholder')}
-                className="w-full bg-white rounded-2xl px-4 py-2.5 outline-none border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-sm shadow-sm text-slate-900"
-              />
+            <div className="flex-1 flex gap-2 items-center">
+              <div className="flex-1 relative">
+                <input
+                  id="comment-input"
+                  type="text"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
+                  maxLength={1000}
+                  placeholder={replyTo ? t('posts.replyPlaceholder', { name: replyTo.fullName.split(' ')[0] }) : t('posts.commentPlaceholder')}
+                  className="w-full bg-white rounded-2xl px-4 py-2.5 outline-none border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-sm shadow-sm text-slate-900 pr-16"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-300 pointer-events-none">
+                   {newComment.length}/1000
+                </div>
+              </div>
               <button
                 onClick={handleAddComment}
                 disabled={isLoading || !newComment.trim()}

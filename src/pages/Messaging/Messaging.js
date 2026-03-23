@@ -371,12 +371,23 @@ const Messaging = () => {
 
                 <div className="p-4 lg:p-6 bg-white border-t border-slate-50 flex-shrink-0">
                   <input type="file" ref={imageInputRef} onChange={handleImageSelect} accept="image/*" className="hidden" />
-                  <form onSubmit={handleSendMessage} className="flex gap-2 lg:gap-3 items-center">
+                  <form onSubmit={handleSendMessage} className="flex gap-2 lg:gap-3 items-center relative">
                     <button type="button" onClick={() => imageInputRef.current?.click()} disabled={isUploading} className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
                       {isUploading ? <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div> : 
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>}
                     </button>
-                     <input type="text" value={inputText} onChange={handleInputChange} onKeyDown={handleKeyDown} placeholder={t('messaging.messagePlaceholder', { name: selectedUser.displayName.split(' ')[0] })} className="flex-1 bg-slate-50 border border-slate-100 rounded-xl lg:rounded-2xl px-4 lg:px-5 py-2.5 lg:py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all font-medium text-sm" />
+                     <input 
+                       type="text" 
+                       value={inputText} 
+                       onChange={handleInputChange} 
+                       onKeyDown={handleKeyDown} 
+                       maxLength={2000}
+                       placeholder={t('messaging.messagePlaceholder', { name: selectedUser.displayName.split(' ')[0] })} 
+                       className="flex-1 bg-slate-50 border border-slate-100 rounded-xl lg:rounded-2xl px-4 lg:px-5 py-2.5 lg:py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all font-medium text-sm" 
+                     />
+                     <div className="absolute right-24 bottom-full mb-2 text-[10px] font-bold text-slate-300">
+                       {inputText.length}/2000
+                     </div>
                      <button type="submit" disabled={!inputText.trim()} className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-5 lg:px-7 py-2.5 lg:py-3 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all active:scale-95">{t('messaging.send')}</button>
                   </form>
                 </div>

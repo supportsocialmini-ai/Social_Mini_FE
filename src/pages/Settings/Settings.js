@@ -64,6 +64,27 @@ const Settings = () => {
   ];
 
   const handleSaveProfile = async () => {
+    const fullNameRegex = /^[a-zA-ZÀ-ỹ\s]{2,100}$/;
+    const usernameRegex = /^[a-z0-9_]{4,30}$/;
+
+    if (!formData.fullName) return toast.warn('Họ và tên không được để trống');
+    if (!fullNameRegex.test(formData.fullName)) {
+        return toast.warn(formData.fullName.length < 2 || formData.fullName.length > 100 
+            ? 'Họ và tên phải từ 2 đến 100 ký tự' 
+            : 'Họ và tên chỉ được chứa chữ cái và khoảng trắng');
+    }
+
+    if (!formData.username) return toast.warn('Username không được để trống');
+    if (!usernameRegex.test(formData.username)) {
+        return toast.warn(formData.username.length < 4 || formData.username.length > 30
+            ? 'Username phải từ 4 đến 30 ký tự'
+            : 'Username chỉ gồm chữ thường, số và dấu _');
+    }
+
+    if (formData.bio && formData.bio.length > 255) {
+        return toast.warn("Tiểu sử tối đa 255 ký tự.");
+    }
+
     setLoading(true);
     try {
       await userService.updateUser(formData);
@@ -91,6 +112,15 @@ const Settings = () => {
   };
 
   const handleChangePassword = async () => {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,50}$/;
+
+    if (!passwordData.newPassword) return toast.warn('Mật khẩu không được để trống');
+    if (!passwordRegex.test(passwordData.newPassword)) {
+        return toast.warn(passwordData.newPassword.length < 6 || passwordData.newPassword.length > 50
+            ? 'Mật khẩu phải từ 6 đến 50 ký tự'
+            : 'Mật khẩu phải có ít nhất 1 chữ hoa, 1 chữ thường và 1 số');
+    }
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error(t('auth.passwordMismatch') || "Passwords do not match");
       return;
@@ -227,6 +257,7 @@ const Settings = () => {
                       type="text" 
                       value={formData.fullName}
                       onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                      required
                       className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none transition-all"
                     />
                   </div>
@@ -236,6 +267,9 @@ const Settings = () => {
                       type="text" 
                       value={formData.username}
                       onChange={(e) => setFormData({...formData, username: e.target.value})}
+                      required
+                      minLength={4}
+                      maxLength={30}
                       className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none transition-all"
                     />
                   </div>
@@ -248,6 +282,7 @@ const Settings = () => {
                     value={formData.bio}
                     onChange={(e) => setFormData({...formData, bio: e.target.value})}
                     placeholder="Tell something about yourself..."
+                    maxLength={255}
                     className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none transition-all resize-none"
                   />
                 </div>
@@ -374,6 +409,8 @@ const Settings = () => {
                                 value={passwordData.newPassword}
                                 onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
                                 placeholder="••••••••"
+                                required
+                                minLength={6}
                                 className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none transition-all"
                               />
                             </div>

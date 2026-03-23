@@ -208,13 +208,19 @@ const Home = () => {
               <Link to="/profile" className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden bg-gradient-to-br from-indigo-400 to-blue-500">
                 <img src={getFullAvatarUrl(user?.avatarUrl, user?.fullName || user?.username)} alt="" className="w-full h-full object-cover" />
               </Link>
-              <textarea
-                value={postContent}
-                onChange={e => setPostContent(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handlePostSubmit())}
-                placeholder={t('home.whatsOnYourMind', { name: user?.fullName?.split(' ').pop() || t('navbar.user') })}
-                className="flex-1 bg-[#f0f2f5] rounded-2xl px-4 py-2.5 text-sm outline-none text-gray-700 placeholder:text-gray-500 focus:bg-gray-100 transition-all resize-none min-h-[44px]"
-              />
+              <div className="flex-1 relative">
+                <textarea
+                  value={postContent}
+                  onChange={e => setPostContent(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handlePostSubmit())}
+                  maxLength={5000}
+                  placeholder={t('home.whatsOnYourMind', { name: user?.fullName?.split(' ').pop() || t('navbar.user') })}
+                  className="w-full bg-[#f0f2f5] rounded-2xl px-4 py-2.5 text-sm outline-none text-gray-700 placeholder:text-gray-500 focus:bg-gray-100 transition-all resize-none min-h-[44px]"
+                />
+                <div className="absolute right-3 bottom-2 text-[9px] font-bold text-gray-400 opacity-50">
+                  {postContent.length}/5000
+                </div>
+              </div>
             </div>
             <div className="flex items-center px-2 py-2">
               <label className="flex items-center gap-2 px-4 py-2 rounded-xl text-gray-600 hover:bg-gray-50 cursor-pointer transition-all text-sm font-semibold">

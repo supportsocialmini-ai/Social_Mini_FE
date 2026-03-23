@@ -21,7 +21,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [posts, setPosts] = useState([]);
   const [activeTab, setActiveTab] = useState('posts');
-  const [formData, setFormData] = useState({ username: '', fullName: '', email: '', avatarUrl: '' });
+  const [formData, setFormData] = useState({ username: '', fullName: '', email: '', avatarUrl: '', bio: '' });
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef(null);
@@ -110,7 +110,36 @@ const Profile = () => {
   };
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleSubmit = async (e) => {
-    e.preventDefault(); setLoading(true);
+    e.preventDefault(); 
+    
+    // Regex constants
+    const fullNameRegex = /^[a-zA-ZÀ-ỹ\s]{2,100}$/;
+    const usernameRegex = /^[a-z0-9_]{4,30}$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!formData.fullName) return toast.warn('Họ và tên không được để trống');
+    if (!fullNameRegex.test(formData.fullName)) {
+        return toast.warn(formData.fullName.length < 2 || formData.fullName.length > 100 
+            ? 'Họ và tên phải từ 2 đến 100 ký tự'
+            : 'Họ và tên chỉ được chứa chữ cái và khoảng trắng');
+    }
+
+    if (!formData.username) return toast.warn('Username không được để trống');
+    if (!usernameRegex.test(formData.username)) {
+        return toast.warn(formData.username.length < 4 || formData.username.length > 30
+            ? 'Username phải từ 4 đến 30 ký tự'
+            : 'Username chỉ gồm chữ thường, số và dấu _');
+    }
+
+    if (formData.bio && formData.bio.length > 255) {
+        return toast.warn("Tiểu sử tối đa 255 ký tự.");
+    }
+
+    if (formData.email && (!emailRegex.test(formData.email) || formData.email.length > 255)) {
+        return toast.warn(!emailRegex.test(formData.email) ? 'Email không đúng định dạng' : 'Email tối đa 255 ký tự');
+    }
+
+    setLoading(true);
     try {
       const response = await userService.updateUser(formData);
       updateUserData(response || formData);
@@ -271,14 +300,16 @@ const Profile = () => {
           <div className="mb-6 bg-gray-50 rounded-2xl p-6 border border-gray-100">
             <h3 className="font-bold text-gray-900 mb-4">{t('profile.editProfile')}</h3>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input name="fullName" value={formData.fullName} onChange={handleChange} placeholder={t('profile.fullNamePlaceholder')}
+               <input name="fullName" value={formData.fullName} onChange={handleChange} placeholder={t('profile.fullNamePlaceholder')} required minLength={2} maxLength={100}
                 className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-gray-900/20" />
-              <input name="username" value={formData.username} onChange={handleChange} placeholder={t('profile.usernamePlaceholder')}
+              <input name="username" value={formData.username} onChange={handleChange} placeholder={t('profile.usernamePlaceholder')} required minLength={4} maxLength={30}
                 className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-gray-900/20" />
-              <input name="email" value={formData.email} onChange={handleChange} placeholder={t('profile.emailPlaceholder')}
+              <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder={t('profile.emailPlaceholder')} required
                 className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-gray-900/20" />
               <input name="avatarUrl" value={formData.avatarUrl} onChange={handleChange} placeholder={t('profile.avatarUrlPlaceholder')}
                 className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-gray-900/20" />
+              <textarea name="bio" value={formData.bio} onChange={handleChange} placeholder={t('profile.bioPlaceholder') || "Tiểu sử"} maxLength={255}
+                className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-gray-900/20 md:col-span-2 resize-none" rows="3" />
               <div className="flex gap-3 md:col-span-2 pt-2">
                 <button type="submit" disabled={loading} className="flex-1 bg-gray-900 text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-700 transition-all">
                   {loading ? t('profile.saving') : t('profile.saveChanges')}

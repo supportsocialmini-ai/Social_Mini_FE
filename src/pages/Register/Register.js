@@ -24,6 +24,66 @@ const Register = () => {
     setError('');
     setIsLoading(true);
 
+    // Regex constants
+    const fullNameRegex = /^[a-zA-ZÀ-ỹ\s]{2,100}$/;
+    const usernameRegex = /^[a-z0-9_]{4,30}$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,50}$/;
+
+    if (!formData.fullName) {
+      setIsLoading(false);
+      setError('Họ và tên không được để trống');
+      return toast.warn('Họ và tên không được để trống');
+    }
+    if (!fullNameRegex.test(formData.fullName)) {
+      setIsLoading(false);
+      const msg = formData.fullName.length < 2 || formData.fullName.length > 100 
+        ? 'Họ và tên phải từ 2 đến 100 ký tự'
+        : 'Họ và tên chỉ được chứa chữ cái và khoảng trắng';
+      setError(msg);
+      return toast.warn(msg);
+    }
+
+    if (!formData.username) {
+      setIsLoading(false);
+      setError('Username không được để trống');
+      return toast.warn('Username không được để trống');
+    }
+    if (!usernameRegex.test(formData.username)) {
+      setIsLoading(false);
+      const msg = formData.username.length < 4 || formData.username.length > 30
+        ? 'Username phải từ 4 đến 30 ký tự'
+        : 'Username chỉ gồm chữ thường, số và dấu _';
+      setError(msg);
+      return toast.warn(msg);
+    }
+
+    if (!formData.email) {
+      setIsLoading(false);
+      setError('Email không được để trống');
+      return toast.warn('Email không được để trống');
+    }
+    if (!emailRegex.test(formData.email) || formData.email.length > 255) {
+      setIsLoading(false);
+      const msg = !emailRegex.test(formData.email) ? 'Email không đúng định dạng' : 'Email tối đa 255 ký tự';
+      setError(msg);
+      return toast.warn(msg);
+    }
+
+    if (!formData.password) {
+      setIsLoading(false);
+      setError('Mật khẩu không được để trống');
+      return toast.warn('Mật khẩu không được để trống');
+    }
+    if (!passwordRegex.test(formData.password)) {
+      setIsLoading(false);
+      const msg = formData.password.length < 6 || formData.password.length > 50
+        ? 'Mật khẩu phải từ 6 đến 50 ký tự'
+        : 'Mật khẩu phải có nhất 1 chữ hoa, 1 chữ thường và 1 số';
+      setError(msg);
+      return toast.warn(msg);
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setIsLoading(false);
       setError('Mật khẩu xác nhận không khớp.');
@@ -91,9 +151,11 @@ const Register = () => {
             <input
               name="username"
               type="text"
-              placeholder="Tên đăng nhập"
+              placeholder="Username"
               onChange={handleChange}
               required
+              minLength={4}
+              maxLength={30}
               className="w-full px-6 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all placeholder:text-slate-400 font-medium"
             />
             <input
@@ -110,6 +172,8 @@ const Register = () => {
               placeholder="Mật khẩu"
               onChange={handleChange}
               required
+              minLength={6}
+              maxLength={50}
               className="w-full px-6 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all placeholder:text-slate-400 font-medium"
             />
             <input
