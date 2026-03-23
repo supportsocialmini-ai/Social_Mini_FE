@@ -338,7 +338,11 @@ const Home = () => {
                   <button key={item.k} className="text-[10px] text-gray-400 hover:underline">{t(item.k)}</button>
                 ))}
               </div>
-              <p className="text-[10px] text-gray-300 uppercase tracking-widest">© 2026 MINISOCIAL</p>
+              <p className="text-[10px] text-gray-300 uppercase tracking-widest flex items-center gap-1">
+                <span>© 2026 MINISOCIAL</span>
+                <span className="opacity-60">•</span>
+                <span>Version 1.0.0</span>
+              </p>
             </div>
           </div>
         </aside>

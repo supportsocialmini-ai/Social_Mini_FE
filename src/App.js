@@ -59,14 +59,6 @@ function App() {
             autoClose={3000}
             theme="colored"
           />
-          <div className="flex flex-col items-center py-6 pb-12 opacity-30 select-none pointer-events-none">
-            <p className="text-[10px] font-black tracking-[0.2em] uppercase text-gray-500">
-              Social Mini App
-            </p>
-            <p className="text-[9px] font-bold text-gray-400 mt-1">
-              Version 1.0.0
-            </p>
-          </div>
           <MentalLetterModal 
             isOpen={showMentalLetter} 
             onClose={handleCloseLetter} 
