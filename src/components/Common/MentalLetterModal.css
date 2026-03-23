@@ -1,211 +1,206 @@
-.mental-letter-overlay {
+.win95-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(15, 23, 42, 0.4); /* Slate 900 with transparency */
-    backdrop-filter: blur(12px);
+    background: rgba(0, 128, 128, 0.5); /* Win95 Teal desktop color */
     z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
-    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 20px;
+    font-family: 'MS Sans Serif', 'Tahoma', Arial, sans-serif;
 }
 
-.mental-letter-container {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+.win95-window {
+    background: #c0c0c0; /* Classic Win95 silver */
+    border-top: 2px solid #ffffff;
+    border-left: 2px solid #ffffff;
+    border-right: 2px solid #808080;
+    border-bottom: 2px solid #808080;
+    box-shadow: 2px 2px 0 0 #000000;
     width: 100%;
-    max-width: 600px;
-    max-height: 90vh;
-    border-radius: 40px;
-    box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.2);
-    position: relative;
-    overflow: hidden;
-    animation: zoomIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: 550px;
+    display: flex;
+    flex-direction: column;
 }
 
-.mental-letter-close {
-    position: absolute;
-    top: 24px;
-    right: 24px;
-    width: 44px;
-    height: 44px;
-    border-radius: 18px;
-    background: white;
-    border: none;
-    color: #64748b;
+.win95-title-bar {
+    background: linear-gradient(90deg, #000080, #1084d0); /* Classic blue title bar */
+    padding: 3px 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+    font-weight: bold;
+    font-size: 13px;
+    height: 18px;
+}
+
+.win95-title-text {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.win95-icon-small {
+    font-size: 14px;
+}
+
+.win95-title-controls {
+    display: flex;
+    gap: 2px;
+}
+
+.win95-btn-title {
+    background: #c0c0c0;
+    border-top: 1px solid #ffffff;
+    border-left: 1px solid #ffffff;
+    border-right: 1px solid #808080;
+    border-bottom: 1px solid #808080;
+    width: 16px;
+    height: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    z-index: 10;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+    font-size: 10px;
+    font-weight: bold;
+    color: black;
+    cursor: default;
+    padding-bottom: 2px;
 }
 
-.mental-letter-close:hover {
-    background: #f1f5f9;
-    color: #1e293b;
-    transform: rotate(90deg);
+.win95-btn-title.close {
+    margin-left: 2px;
 }
 
-.mental-letter-close svg {
-    width: 24px;
-    height: 24px;
+.win95-menu-bar {
+    display: flex;
+    gap: 12px;
+    padding: 2px 6px;
+    font-size: 12px;
+    border-bottom: 1px solid #808080;
+    color: black;
 }
 
-.mental-letter-content {
-    padding: 48px;
-    overflow-y: auto;
-    max-height: calc(90vh - 96px);
+.win95-menu-bar span u {
+    text-decoration: underline;
 }
 
-.mental-letter-header {
-    text-align: center;
-    margin-bottom: 40px;
+.win95-content {
+    padding: 10px;
 }
 
-.dev-emoji {
-    font-size: 48px;
-    margin-bottom: 16px;
-}
-
-.mental-letter-header h2 {
-    font-size: 28px;
-    font-weight: 800;
-    color: #1e293b;
-    margin: 0;
-    letter-spacing: -0.5px;
-}
-
-.version-badge {
-    display: inline-block;
-    margin-top: 12px;
-    padding: 6px 16px;
-    background: #f1f5f9;
-    color: #64748b;
-    border-radius: 99px;
+.win95-body.text-area {
+    background: white;
+    border-top: 1px solid #808080;
+    border-left: 1px solid #808080;
+    border-right: 1px solid #ffffff;
+    border-bottom: 1px solid #ffffff;
+    padding: 20px;
+    color: black;
     font-size: 14px;
-    font-weight: 600;
+    line-height: 1.5;
+    max-height: 400px;
+    overflow-y: scroll;
 }
 
-.mental-letter-body {
-    color: #475569;
-    line-height: 1.7;
-    font-size: 16px;
+.typewriter {
+    font-family: inherit;
+    margin-bottom: 20px;
 }
 
-.mental-letter-body p {
-    margin-bottom: 24px;
-}
-
-.bug-list {
-    margin: 32px 0;
+.retro-bug-list {
+    margin: 20px 0;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 15px;
 }
 
-.bug-item {
+.retro-bug-item {
     display: flex;
-    gap: 16px;
-    padding: 16px;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    transition: transform 0.3s ease;
+    gap: 12px;
+    align-items: flex-start;
 }
 
-.bug-item:hover {
-    transform: translateX(8px);
-    background: white;
-}
-
-.bug-icon {
+.retro-icon {
     font-size: 24px;
-    flex-shrink: 0;
+    image-rendering: pixelated;
 }
 
-.senior-dream {
+.senior-dream.retro {
     text-align: center;
+    margin: 20px 0;
     font-style: italic;
-    font-size: 15px;
-    color: #94a3b8;
-    margin: 32px 0;
+    color: #444;
 }
 
-.mental-letter-footer {
-    border-top: 1px solid #e2e8f0;
-    padding-top: 32px;
-    font-size: 15px;
+.win95-hr {
+    border-top: 1px solid #808080;
+    border-bottom: 1px solid #ffffff;
+    height: 0;
+    margin: 20px 0;
 }
 
-.warning-text {
-    padding: 16px;
-    background: #fffbeb;
-    border-left: 4px solid #f59e0b;
-    border-radius: 12px;
-    color: #92400e;
+.warning-box-retro {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    border: 1px dashed black;
+    background: #ffffcc;
+    margin: 15px 0;
 }
 
-.threat {
-    font-weight: 700;
-    text-decoration: underline;
-    text-decoration-color: #f59e0b;
-}
-
-.no-manual {
-    font-weight: 600;
+.no-manual-retro {
+    color: red;
+    font-weight: bold;
     text-align: center;
-    color: #dc2626;
-    margin-top: 24px !important;
+    margin-top: 15px;
 }
 
-.mental-letter-action {
-    margin-top: 40px;
-    text-align: center;
+.win95-status-bar {
+    background: #c0c0c0;
+    border-top: 1px solid #808080;
+    display: flex;
+    font-size: 11px;
+    height: 20px;
 }
 
-.got-it-btn {
-    width: 100%;
-    padding: 18px;
-    background: #1e293b;
-    color: white;
-    border: none;
-    border-radius: 20px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.2);
+.status-field {
+    border-right: 1px solid #808080;
+    border-left: 1px solid #ffffff;
+    padding: 2px 10px;
+    flex: 1;
 }
 
-.got-it-btn:hover {
-    background: #0f172a;
-    transform: translateY(-2px);
-    box-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.3);
+.status-field:last-child {
+    flex: 0 0 50px;
 }
 
-.got-it-btn:active {
-    transform: translateY(0);
+.win95-actions {
+    padding: 15px;
+    display: flex;
+    justify-content: center;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+.win95-btn-ok {
+    background: #c0c0c0;
+    border-top: 1px solid #ffffff;
+    border-left: 1px solid #ffffff;
+    border-right: 1px solid #000000;
+    border-bottom: 1px solid #000000;
+    padding: 5px 30px;
+    font-size: 13px;
+    font-weight: bold;
+    box-shadow: inset 1px 1px 0 0 #c0c0c0;
 }
 
-@keyframes zoomIn {
-    from { 
-        opacity: 0;
-        transform: scale(0.9) translateY(20px);
-    }
-    to { 
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
+.win95-btn-ok:active {
+    border-top: 1px solid #000000;
+    border-left: 1px solid #000000;
+    border-right: 1px solid #ffffff;
+    border-bottom: 1px solid #ffffff;
+    box-shadow: none;
+    padding: 6px 29px 4px 31px;
 }

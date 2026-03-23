@@ -5,91 +5,108 @@ const MentalLetterModal = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="mental-letter-overlay">
-            <div className="mental-letter-container">
-                <button className="mental-letter-close" onClick={onClose} aria-label="Close">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M18 6L6 18M6 6l12 12" />
-                    </svg>
-                </button>
-
-                <div className="mental-letter-content">
-                    <div className="mental-letter-header">
-                        <div className="dev-emoji">😴</div>
-                        <h2>Tâm Thư Từ Dev Thiếu Ngủ</h2>
-                        <div className="version-badge">v1.0.0 - "Lỏ" Edition</div>
+        <div className="win95-overlay">
+            <div className="win95-window">
+                <div className="win95-title-bar">
+                    <div className="win95-title-text">
+                        <span className="win95-icon-small">📄</span> 
+                        Tâm Thư Từ Thằng Dev Thiếu Ngủ - Notebook
                     </div>
+                    <div className="win95-title-controls">
+                        <button className="win95-btn-title">_</button>
+                        <button className="win95-btn-title">□</button>
+                        <button className="win95-btn-title close" onClick={onClose}>X</button>
+                    </div>
+                </div>
+                
+                <div className="win95-menu-bar">
+                    <span><u>F</u>ile</span>
+                    <span><u>E</u>dit</span>
+                    <span><u>S</u>earch</span>
+                    <span><u>H</u>elp</span>
+                </div>
 
-                    <div className="mental-letter-body">
-                        <p>
-                            Đcm xin giới thiệu kiệt tác công nghệ đến từ một thằng dev thiếu ngủ:
+                <div className="win95-content">
+                    <div className="win95-body text-area">
+                        <p className="typewriter">
+                            Đcm xin giới thiệu kiệt tác công nghệ đến từ một thằng dev thiếu ngủ: 
                             <strong> Web Version 1.0.0</strong> – nơi mọi thứ có thể sai đều sai.
                         </p>
-
-                        <div className="bug-list">
-                            <div className="bug-item">
-                                <span className="bug-icon">🚀</span>
+                        
+                        <div className="retro-bug-list">
+                            <div className="retro-bug-item">
+                                <span className="retro-icon">🛸</span>
                                 <div>
-                                    <strong>Chat:</strong> Gửi xong như ném tin nhắn vào vũ trụ,
+                                    <strong>Chat:</strong> Gửi xong như ném tin nhắn vào vũ trụ, 
                                     không biết nó tới chưa hay đang lạc trôi cùng <em>"Lạc Trôi"</em>.
                                 </div>
                             </div>
-                            <div className="bug-item">
-                                <span className="bug-icon">💬</span>
+                            <div className="retro-bug-item">
+                                <span className="retro-icon">👻</span>
                                 <div>
-                                    <strong>Bình luận:</strong> Cmt xong biến mất như chưa từng tồn tại,
+                                    <strong>Bình luận:</strong> Cmt xong biến mất như chưa từng tồn tại, 
                                     chắc server nó đọc xong thấy xàm quá nên tự xoá hộ.
                                 </div>
                             </div>
-                            <div className="bug-item">
-                                <span className="bug-icon">🔔</span>
+                            <div className="retro-bug-item">
+                                <span className="retro-icon">📟</span>
                                 <div>
-                                    <strong>Thông báo:</strong> Lag như mạng thời Yahoo Messenger năm 2005,
+                                    <strong>Thông báo:</strong> Lag như mạng thời Yahoo Messenger năm 2005, 
                                     lúc cần thì mất tích, lúc không cần thì hiện lên như ma hiện hồn.
                                 </div>
                             </div>
-                            <div className="bug-item">
-                                <span className="bug-icon">⏳</span>
+                            <div className="retro-bug-item">
+                                <span className="retro-icon">⌛</span>
                                 <div>
-                                    <strong>Load trang:</strong> Lúc nhanh lúc chậm, tùy theo tâm trạng server
+                                    <strong>Load trang:</strong> Lúc nhanh lúc chậm, tùy theo tâm trạng server 
                                     hôm đó có muốn đi làm hay không.
                                 </div>
                             </div>
-                            <div className="bug-item">
-                                <span className="bug-icon">🎨</span>
+                            <div className="retro-bug-item">
+                                <span className="retro-icon">🖍️</span>
                                 <div>
-                                    <strong>UI:</strong> Nhìn phát biết dev code trong trạng thái <em>“để mai fix”</em>,
+                                    <strong>UI:</strong> Nhìn phát biết dev code trong trạng thái <em>“để mai fix”</em>, 
                                     mà cái “mai” đó chắc rơi vào năm sau.
                                 </div>
                             </div>
                         </div>
 
-                        <p className="senior-dream">
-                            Bug thì nhiều đến mức nếu fix hết chắc tao thành senior luôn. 📈
+                        <p className="senior-dream retro">
+                            Bug thì nhiều đến mức nếu fix hết chắc tao thành senior luôn... 🤡
                         </p>
 
-                        <div className="mental-letter-footer">
+                        <div className="win95-hr"></div>
+
+                        <div className="mental-letter-footer-retro">
                             <p>
-                                Nhưng mà thôi, web lỏ thì cũng là con mình đẻ ra.
-                                Tao hứa sẽ fix dần, nghe feedback, tối ưu lại cho nó đỡ mang tiếng
-                                <strong> "phế vật online"</strong>.
+                                Nhưng mà thôi, web lỏ thì cũng là con mình đẻ ra. 
+                                Tao hứa sẽ fix dần, nghe feedback, tối ưu lại cho nó đỡ mang tiếng 
+                                <strong> "phế vật online"</strong>. 
                             </p>
-                            <p className="warning-text">
-                                Hiện tại thì anh em cứ dùng tạm, gặp lỗi thì report nhẹ nhàng,
-                                đừng chửi ác quá tao tự ái rồi tao…
-                                <span className="threat">fix chậm lại đó</span>.
-                            </p>
-                            <p className="no-manual">
-                                Đến đây đọc xong không có hướng dẫn sử dụng đâu nhé! Tự mò đi vì nó lỏ vãi ò!
+                            <div className="warning-box-retro">
+                                <span className="warning-icon-retro">⚠️</span>
+                                <div>
+                                    Hiện tại thì anh em cứ dùng tạm, gặp lỗi thì report nhẹ nhàng, 
+                                    đừng chửi ác quá tao tự ái rồi tao… 
+                                    <strong> fix chậm lại đó</strong>.
+                                </div>
+                            </div>
+                            <p className="no-manual-retro">
+                                [FATAL ERROR]: Không có hướng dẫn sử dụng! Tự mò đi vì nó lỏ vãi ò!
                             </p>
                         </div>
                     </div>
+                </div>
 
-                    <div className="mental-letter-action">
-                        <button className="got-it-btn" onClick={onClose}>
-                            Đã hiểu (và không chửi)
-                        </button>
-                    </div>
+                <div className="win95-status-bar">
+                    <div className="status-field">For Help, press F1</div>
+                    <div className="status-field">NUM</div>
+                </div>
+
+                <div className="win95-actions">
+                    <button className="win95-btn-ok" onClick={onClose}>
+                        OK (Đừng chửi)
+                    </button>
                 </div>
             </div>
         </div>
