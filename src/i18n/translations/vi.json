@@ -61,6 +61,114 @@
       "seeMore": "Xem thêm",
       "seeLess": "Thu gọn"
     },
+    "api": {
+      "Auth": {
+        "Register": {
+          "Success": "Đăng ký thành công! Vui lòng kiểm tra email để lấy mã xác nhận 6 chữ số.",
+          "UserExists": "Tên đăng nhập đã tồn tại!",
+          "EmailExists": "Email đã được sử dụng!"
+        },
+        "Login": {
+          "Fail": "Tài khoản hoặc mật khẩu không chính xác.",
+          "UserNotVerified": "Tài khoản của bạn chưa được xác nhận. Vui lòng nhập mã 6 chữ số để kích hoạt."
+        },
+        "Verify": {
+          "Success": "Xác nhận thành công! Bây giờ bạn có thể đăng nhập.",
+          "Fail": "Mã xác nhận không đúng hoặc đã hết hạn."
+        },
+        "Password": {
+          "ChangeSuccess": "Đổi mật khẩu thành công!",
+          "ChangeFail": "Mật khẩu cũ không chính xác hoặc có lỗi xảy ra.",
+          "VerifySuccess": "Xác nhận mật khẩu thành công.",
+          "VerifyFail": "Mật khẩu không chính xác."
+        }
+      },
+      "Post": {
+        "Upsert": {
+          "CreateSuccess": "Đăng bài thành công!",
+          "CreateFail": "Lỗi khi đăng bài mày ơi.",
+          "UpdateSuccess": "Cập nhật xong!",
+          "UpdateFail": "Lỗi khi lưu bài.",
+          "ImageUploadFail": "Lỗi khi upload ảnh: {{error}}"
+        },
+        "Get": {
+          "NotFound": "Bài viết không tồn tại."
+        },
+        "Delete": {
+          "Success": "Đã xóa bài!",
+          "Fail": "Lỗi khi xóa bài."
+        }
+      },
+      "User": {
+        "Profile": {
+          "UpdateSuccess": "Cập nhật hồ sơ thành công!",
+          "UpdateFail": "Cập nhật hồ sơ thất bại.",
+          "NotFound": "Không tìm thấy người dùng.",
+          "Unauthorized": "Bạn chưa đăng nhập hoặc phiên làm việc hết hạn."
+        },
+        "Avatar": {
+          "UploadSuccess": "Đã cập nhật ảnh đại diện!",
+          "UploadFail": "Tải ảnh lên thất bại.",
+          "FileRequired": "Vui lòng chọn file ảnh!",
+          "InvalidType": "Chỉ hỗ trợ file ảnh (jpg, png, gif, webp)!"
+        }
+      },
+      "Comment": {
+        "Upsert": {
+          "CreateFail": "Không thể đăng bình luận lúc này mày ơi!"
+        },
+        "Delete": {
+          "Success": "Đã xóa bình luận thành công!",
+          "Fail": "Mày không có quyền xóa hoặc bình luận không tồn tại!"
+        }
+      },
+      "Friend": {
+        "Request": {
+          "Success": "Gửi lời mời kết bạn thành công!",
+          "Fail": "Không thể gửi lời mời kết bạn."
+        },
+        "Action": {
+          "AcceptSuccess": "Đã chấp nhận lời mời!",
+          "AcceptFail": "Lỗi khi chấp nhận lời mời.",
+          "DeclineSuccess": "Đã từ chối lời mời.",
+          "DeclineFail": "Lỗi khi từ chối lời mời.",
+          "UnfriendSuccess": "Đã hủy kết bạn.",
+          "UnfriendFail": "Lỗi khi hủy kết bạn.",
+          "CancelSuccess": "Đã hủy lời mời.",
+          "CancelFail": "Lỗi khi hủy lời mời."
+        }
+      },
+      "Chat": {
+        "Action": {
+          "ReadSuccess": "Đã đọc thành công"
+        },
+        "Upload": {
+          "Fail": "Lỗi khi tải ảnh chat: {{error}}"
+        }
+      },
+      "Search": {
+        "Query": {
+          "TooShort": "Từ khóa tìm kiếm phải ít nhất 2 ký tự!"
+        }
+      },
+      "FullNameRequired": "Họ và tên không được để trống",
+      "FullNameInvalid": "Họ và tên chỉ được chứa chữ cái và khoảng trắng",
+      "FullNameLength": "Họ và tên phải từ 2 đến 100 ký tự",
+      "EmailRequired": "Email không được để trống",
+      "EmailInvalid": "Email không đúng định dạng",
+      "EmailExists": "Email đã tồn tại",
+      "UsernameRequired": "Username không được để trống",
+      "UsernameInvalid": "Username chỉ gồm chữ thường, số và dấu _",
+      "UsernameLength": "Username phải từ 4 đến 30 ký tự",
+      "UsernameExists": "Username đã tồn tại",
+      "PasswordRequired": "Mật khẩu không được để trống",
+      "PasswordInvalid": "Mật khẩu phải có nhất 1 chữ hoa, 1 chữ thường và 1 số",
+      "PasswordLength": "Mật khẩu phải từ 6 đến 50 ký tự",
+      "ContentRequired": "Nội dung không được để trống",
+      "PostTooLong": "Bài viết quá dài (tối đa 5000 ký tự)",
+      "CommentTooLong": "Bình luận quá dài (tối đa 1000 ký tự)",
+      "BioTooLong": "Tiểu sử quá dài (tối đa 255 ký tự)"
+    },
     "home": {
       "friends": "Bạn bè",
       "home": "Trang chủ",

@@ -74,7 +74,7 @@ const Login = () => {
             <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">Chào mừng trở lại</h2>
             <p className="text-slate-500 mt-2 font-medium">Vui lòng đăng nhập vào tài khoản của bạn</p>
           </div>
-          
+
           {error && (
             <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm mb-6 border border-red-100 flex items-center gap-3 animate-shake">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -83,7 +83,7 @@ const Login = () => {
               {error}
             </div>
           )}
-          
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
@@ -100,7 +100,7 @@ const Login = () => {
                 className="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-400"
               />
             </div>
-            
+
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -125,8 +125,8 @@ const Login = () => {
               <a href="#" className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">Quên mật khẩu?</a>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isLoading}
               className="w-full mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 group"
             >
@@ -139,14 +139,14 @@ const Login = () => {
 
           <div className="mt-10 pt-8 border-t border-slate-100 text-center">
             <p className="text-slate-600 font-medium">
-              Chưa có tài khoản? 
+              Chưa có tài khoản?
               <Link to="/register" className="ml-2 text-blue-600 font-bold hover:text-blue-700 hover:underline transition-all">
                 Tạo tài khoản mới
               </Link>
             </p>
           </div>
         </div>
-        
+
         {/* Footer links */}
         <div className="mt-8 flex justify-center gap-6 text-slate-400 text-xs font-medium uppercase tracking-widest">
           <a href="#" className="hover:text-slate-600 transition-colors">Chính sách</a>

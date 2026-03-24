@@ -109,6 +109,114 @@
       "changePasswordError": "Failed to change password. Please check your old password.",
       "oldPasswordVerified": "Password verified! Now enter your new password."
     },
+    "api": {
+      "Auth": {
+        "Register": {
+          "Success": "Registration successful! Please check your email for the 6-digit code.",
+          "UserExists": "Username already exists!",
+          "EmailExists": "Email already in use!"
+        },
+        "Login": {
+          "Fail": "Incorrect username or password.",
+          "UserNotVerified": "Your account is not verified. Please enter the 6-digit code to activate."
+        },
+        "Verify": {
+          "Success": "Verification successful! You can now log in.",
+          "Fail": "Invalid or expired verification code."
+        },
+        "Password": {
+          "ChangeSuccess": "Password changed successfully!",
+          "ChangeFail": "Incorrect old password or an error occurred.",
+          "VerifySuccess": "Password verified successfully.",
+          "VerifyFail": "Incorrect password."
+        }
+      },
+      "Post": {
+        "Upsert": {
+          "CreateSuccess": "Post published!",
+          "CreateFail": "Error while posting.",
+          "UpdateSuccess": "Post updated!",
+          "UpdateFail": "Error while saving post.",
+          "ImageUploadFail": "Image upload error: {{error}}"
+        },
+        "Get": {
+          "NotFound": "Post not found."
+        },
+        "Delete": {
+          "Success": "Post deleted!",
+          "Fail": "Error while deleting post."
+        }
+      },
+      "User": {
+        "Profile": {
+          "UpdateSuccess": "Profile updated successfully!",
+          "UpdateFail": "Failed to update profile.",
+          "NotFound": "User not found.",
+          "Unauthorized": "You are not logged in or session expired."
+        },
+        "Avatar": {
+          "UploadSuccess": "Avatar updated!",
+          "UploadFail": "Failed to upload avatar.",
+          "FileRequired": "Please select an image file!",
+          "InvalidType": "Only image files (jpg, png, gif, webp) are supported!"
+        }
+      },
+      "Comment": {
+        "Upsert": {
+          "CreateFail": "Could not post comment at this time!"
+        },
+        "Delete": {
+          "Success": "Comment deleted successfully!",
+          "Fail": "You do not have permission to delete or comment does not exist!"
+        }
+      },
+      "Friend": {
+        "Request": {
+          "Success": "Friend request sent!",
+          "Fail": "Could not send friend request."
+        },
+        "Action": {
+          "AcceptSuccess": "Request accepted!",
+          "AcceptFail": "Error while accepting request.",
+          "DeclineSuccess": "Request declined.",
+          "DeclineFail": "Error while declining request.",
+          "UnfriendSuccess": "Unfriended.",
+          "UnfriendFail": "Error while unfriending.",
+          "CancelSuccess": "Request cancelled.",
+          "CancelFail": "Error while cancelling request."
+        }
+      },
+      "Chat": {
+        "Action": {
+          "ReadSuccess": "Marked as read successfully"
+        },
+        "Upload": {
+          "Fail": "Chat image upload error: {{error}}"
+        }
+      },
+      "Search": {
+        "Query": {
+          "TooShort": "Search query must be at least 2 characters long!"
+        }
+      },
+      "FullNameRequired": "Full Name is required",
+      "FullNameInvalid": "Full Name can only contain letters and spaces",
+      "FullNameLength": "Full Name must be between 2 and 100 characters",
+      "EmailRequired": "Email is required",
+      "EmailInvalid": "Invalid email format",
+      "EmailExists": "Email already exists",
+      "UsernameRequired": "Username is required",
+      "UsernameInvalid": "Username can only contain lowercase letters, numbers, and underscores",
+      "UsernameLength": "Username must be between 4 and 30 characters",
+      "UsernameExists": "Username already exists",
+      "PasswordRequired": "Password is required",
+      "PasswordInvalid": "Password must have at least 1 uppercase, 1 lowercase, and 1 digit",
+      "PasswordLength": "Password must be between 6 and 50 characters",
+      "ContentRequired": "Content is required",
+      "PostTooLong": "Post is too long (max 5000 characters)",
+      "CommentTooLong": "Comment is too long (max 1000 characters)",
+      "BioTooLong": "Bio is too long (max 255 characters)"
+    },
     "messaging": {
       "title": "Messages",
       "activeNow": "Active now",

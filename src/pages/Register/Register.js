@@ -37,7 +37,7 @@ const Register = () => {
     }
     if (!fullNameRegex.test(formData.fullName)) {
       setIsLoading(false);
-      const msg = formData.fullName.length < 2 || formData.fullName.length > 100 
+      const msg = formData.fullName.length < 2 || formData.fullName.length > 100
         ? 'Họ và tên phải từ 2 đến 100 ký tự'
         : 'Họ và tên chỉ được chứa chữ cái và khoảng trắng';
       setError(msg);
