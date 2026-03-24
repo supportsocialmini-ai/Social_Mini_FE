@@ -97,16 +97,16 @@ const Profile = () => {
     catch (error) { toast.error(error.errorMessage || t('profile.friendRequestError') || "Error sending request"); }
   };
   const handleAcceptRequest = async () => {
-    try { if (!requestId) return; await friendService.acceptRequest(requestId); setFriendshipStatus('Accepted'); toast.success(t('profile.friendAccepted')); }
-    catch (error) { toast.error(error.errorMessage || "Error accepting request"); }
+    try { if (!requestId) return; await friendService.acceptRequest(requestId); setFriendshipStatus('Accepted'); toast.success(t('api.Friend.Action.AcceptSuccess')); }
+    catch (error) { toast.error(t(`api.${error.errorMessage || 'Friend.Action.AcceptFail'}`)); }
   };
   const handleCancelRequest = async () => {
-    try { if (!requestId) return; await friendService.cancelRequest(requestId); setFriendshipStatus('None'); setRequestId(null); toast.success(t('profile.requestCancelled')); }
-    catch (error) { toast.error(error.errorMessage || "Error cancelling request"); }
+    try { if (!requestId) return; await friendService.cancelRequest(requestId); setFriendshipStatus('None'); setRequestId(null); toast.success(t('api.Friend.Action.CancelSuccess')); }
+    catch (error) { toast.error(t(`api.${error.errorMessage || 'Friend.Action.CancelFail'}`)); }
   };
   const handleUnfriend = async () => {
-    try { await friendService.unfriend(profileUser.userId); setFriendshipStatus('None'); setRequestId(null); toast.success(t('profile.unfriendSuccess')); }
-    catch (error) { toast.error(error.errorMessage || "Error unfriending"); }
+    try { await friendService.unfriend(profileUser.userId); setFriendshipStatus('None'); setRequestId(null); toast.success(t('api.Friend.Action.UnfriendSuccess')); }
+    catch (error) { toast.error(t(`api.${error.errorMessage || 'Friend.Action.UnfriendFail'}`)); }
   };
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleSubmit = async (e) => {
@@ -117,34 +117,37 @@ const Profile = () => {
     const usernameRegex = /^[a-z0-9_]{4,30}$/;
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-    if (!formData.fullName) return toast.warn('Họ và tên không được để trống');
+    if (!formData.fullName) return toast.warn(t('api.FullNameRequired'));
     if (!fullNameRegex.test(formData.fullName)) {
       return toast.warn(formData.fullName.length < 2 || formData.fullName.length > 100
-        ? 'Họ và tên phải từ 2 đến 100 ký tự'
-        : 'Họ và tên chỉ được chứa chữ cái và khoảng trắng');
+        ? t('api.FullNameLength')
+        : t('api.FullNameInvalid'));
     }
 
-    if (!formData.username) return toast.warn('Username không được để trống');
+    if (!formData.username) return toast.warn(t('api.UsernameRequired'));
     if (!usernameRegex.test(formData.username)) {
       return toast.warn(formData.username.length < 4 || formData.username.length > 30
-        ? 'Username phải từ 4 đến 30 ký tự'
-        : 'Username chỉ gồm chữ thường, số và dấu _');
+        ? t('api.UsernameLength')
+        : t('api.UsernameInvalid'));
     }
 
     if (formData.bio && formData.bio.length > 255) {
-      return toast.warn("Tiểu sử tối đa 255 ký tự.");
+      return toast.warn(t('api.BioTooLong'));
     }
 
     if (formData.email && (!emailRegex.test(formData.email) || formData.email.length > 255)) {
-      return toast.warn(!emailRegex.test(formData.email) ? 'Email không đúng định dạng' : 'Email tối đa 255 ký tự');
+      return toast.warn(!emailRegex.test(formData.email) ? t('api.EmailInvalid') : t('api.EmailLength') || 'Email too long');
     }
 
     setLoading(true);
     try {
       const response = await userService.updateUser(formData);
       updateUserData(response || formData);
-      setIsEditing(false); toast.success(t('profile.updateSuccess'));
-    } catch (error) { toast.error(error.errorMessage || t('profile.updateError')); }
+      setIsEditing(false); 
+      toast.success(t('api.User.Profile.UpdateSuccess'));
+    } catch (error) { 
+      toast.error(t(`api.${error.errorMessage || 'User.Profile.UpdateFail'}`)); 
+    }
     finally { setLoading(false); }
   };
 
@@ -164,9 +167,9 @@ const Profile = () => {
         updateUserData(updated);
         setProfileUser(updated);
       }
-      toast.success(t('profile.avatarSuccess'));
+      toast.success(t('api.User.Avatar.UploadSuccess'));
     } catch (error) {
-      toast.error(error.errorMessage || t('profile.avatarError'));
+      toast.error(t(`api.${error.errorMessage || 'User.Avatar.UploadFail'}`));
     } finally {
       setAvatarUploading(false);
       e.target.value = '';

@@ -111,7 +111,7 @@ const CommentSection = ({ postId, isOpen, onClose, getFullAvatarUrl }) => {
       await fetchComments();
       toast.success(t('posts.commentSuccess'));
     } catch (error) {
-      toast.error(error.errorMessage || t('posts.commentError'));
+      toast.error(t(`api.${error.errorMessage || 'posts.commentError'}`));
     } finally {
       setIsLoading(false);
     }
@@ -123,7 +123,7 @@ const CommentSection = ({ postId, isOpen, onClose, getFullAvatarUrl }) => {
       await fetchComments();
       toast.success(t('posts.deleteCommentSuccess'));
     } catch (error) {
-      toast.error(error.errorMessage || t('posts.deleteCommentError'));
+      toast.error(t(`api.${error.errorMessage || 'posts.deleteCommentError'}`));
     }
   };
 
@@ -141,9 +141,6 @@ const CommentSection = ({ postId, isOpen, onClose, getFullAvatarUrl }) => {
         <div className="flex items-center justify-between mb-6 flex-shrink-0">
           <div className="flex items-center gap-2">
             <h3 className="text-xl font-black text-slate-900 tracking-tight">{t('posts.commentHeader')}</h3>
-            <span className="bg-slate-100 text-slate-500 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">
-              {postId}
-            </span>
           </div>
           <button
             onClick={onClose}
@@ -218,12 +215,12 @@ const CommentSection = ({ postId, isOpen, onClose, getFullAvatarUrl }) => {
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
-                  maxLength={1000}
+                  maxLength={200}
                   placeholder={replyTo ? t('posts.replyPlaceholder', { name: replyTo.fullName.split(' ')[0] }) : t('posts.commentPlaceholder')}
                   className="w-full bg-white rounded-2xl px-4 py-2.5 outline-none border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-sm shadow-sm text-slate-900 pr-16"
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-300 pointer-events-none">
-                   {newComment.length}/1000
+                   {newComment.length}/200
                 </div>
               </div>
               <button

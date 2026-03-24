@@ -39,7 +39,7 @@ const Search = () => {
       setPosts(data?.posts || data?.Posts || []);
     } catch (error) {
       console.error('Search error:', error);
-      toast.error(error.errorMessage || 'Không thể tìm kiếm, thử lại sau!');
+      toast.error(t(`api.${error.errorMessage || 'Search.Query.Fail'}`));
     } finally {
       setLoading(false);
     }
@@ -66,9 +66,9 @@ const Search = () => {
   const handleAddFriend = async (userId, fullName) => {
     try {
       await friendService.sendRequest(userId);
-      toast.success(`Đã gửi lời mời kết bạn đến ${fullName}!`);
-    } catch {
-      toast.error('Không thể gửi lời mời. Có thể đã gửi rồi!');
+      toast.success(t('api.Friend.Action.RequestSuccess', { name: fullName }));
+    } catch (error) {
+      toast.error(t(`api.${error.errorMessage || 'Friend.Action.RequestFail'}`));
     }
   };
 
@@ -91,7 +91,7 @@ const Search = () => {
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Tìm người dùng hoặc bài viết..."
+              placeholder={t('search.placeholder')}
               className="flex-1 outline-none text-base font-medium text-gray-800 placeholder:text-gray-400 bg-transparent"
               autoFocus
             />
@@ -121,7 +121,7 @@ const Search = () => {
                     : 'bg-white text-gray-600 border border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
                 }`}
               >
-                {tab === 'all' ? 'Tất cả' : tab === 'people' ? `People (${users.length})` : `Posts (${posts.length})`}
+                {tab === 'all' ? t('search.tabAll') : tab === 'people' ? `${t('search.tabPeople')} (${users.length})` : `${t('search.tabPosts')} (${posts.length})`}
               </button>
             ))}
           </div>
@@ -132,7 +132,7 @@ const Search = () => {
           <div className="flex justify-center py-16">
             <div className="flex flex-col items-center gap-3">
               <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent"></div>
-              <p className="text-sm text-gray-500 font-medium">Đang tìm kiếm...</p>
+              <p className="text-sm text-gray-500 font-medium">{t('search.searching')}</p>
             </div>
           </div>
         )}
@@ -143,8 +143,8 @@ const Search = () => {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <p className="text-lg font-semibold">Không tìm thấy kết quả</p>
-            <p className="text-sm mt-1">Thử từ khóa khác nhé!</p>
+            <p className="text-lg font-semibold">{t('search.noResults')}</p>
+            <p className="text-sm mt-1">{t('search.tryAnother')}</p>
           </div>
         )}
 
@@ -154,8 +154,8 @@ const Search = () => {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <p className="text-lg font-semibold">Tìm kiếm người dùng & bài viết</p>
-            <p className="text-sm mt-1">Nhập ít nhất 2 ký tự để bắt đầu</p>
+            <p className="text-lg font-semibold">{t('search.startTitle')}</p>
+            <p className="text-sm mt-1">{t('search.startDesc')}</p>
           </div>
         )}
 
@@ -164,8 +164,8 @@ const Search = () => {
           <section className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-1 h-5 bg-gradient-to-b from-indigo-600 to-blue-600 rounded-full"></div>
-              <h2 className="font-black text-gray-700 uppercase tracking-widest text-xs">People</h2>
-              <span className="ml-auto text-xs text-gray-400 font-medium">{users.length} kết quả</span>
+              <h2 className="font-black text-gray-700 uppercase tracking-widest text-xs">{t('search.tabPeople')}</h2>
+              <span className="ml-auto text-xs text-gray-400 font-medium">{users.length} {t('search.results')}</span>
             </div>
             <div className="space-y-3">
               {users.map((u) => (
@@ -195,7 +195,7 @@ const Search = () => {
                     onClick={() => handleAddFriend(u.userId, u.fullName)}
                     className="flex-shrink-0 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all transform hover:scale-105"
                   >
-                    + Add
+                    {t('search.addFriend')}
                   </button>
                 </div>
               ))}
@@ -208,8 +208,8 @@ const Search = () => {
           <section>
             <div className="flex items-center gap-2 mb-4">
               <div className="w-1 h-5 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full"></div>
-              <h2 className="font-black text-gray-700 uppercase tracking-widest text-xs">Posts</h2>
-              <span className="ml-auto text-xs text-gray-400 font-medium">{posts.length} kết quả</span>
+              <h2 className="font-black text-gray-700 uppercase tracking-widest text-xs">{t('search.tabPosts')}</h2>
+              <span className="ml-auto text-xs text-gray-400 font-medium">{posts.length} {t('search.results')}</span>
             </div>
             <div className="space-y-4">
               {posts.map((post) => (

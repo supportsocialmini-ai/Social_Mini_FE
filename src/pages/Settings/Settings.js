@@ -67,31 +67,31 @@ const Settings = () => {
     const fullNameRegex = /^[a-zA-ZÀ-ỹ\s]{2,100}$/;
     const usernameRegex = /^[a-z0-9_]{4,30}$/;
 
-    if (!formData.fullName) return toast.warn('Họ và tên không được để trống');
+    if (!formData.fullName) return toast.warn(t('api.FullNameRequired'));
     if (!fullNameRegex.test(formData.fullName)) {
         return toast.warn(formData.fullName.length < 2 || formData.fullName.length > 100 
-            ? 'Họ và tên phải từ 2 đến 100 ký tự' 
-            : 'Họ và tên chỉ được chứa chữ cái và khoảng trắng');
+            ? t('api.FullNameLength') 
+            : t('api.FullNameInvalid'));
     }
 
-    if (!formData.username) return toast.warn('Username không được để trống');
+    if (!formData.username) return toast.warn(t('api.UsernameRequired'));
     if (!usernameRegex.test(formData.username)) {
         return toast.warn(formData.username.length < 4 || formData.username.length > 30
-            ? 'Username phải từ 4 đến 30 ký tự'
-            : 'Username chỉ gồm chữ thường, số và dấu _');
+            ? t('api.UsernameLength')
+            : t('api.UsernameInvalid'));
     }
 
     if (formData.bio && formData.bio.length > 255) {
-        return toast.warn("Tiểu sử tối đa 255 ký tự.");
+        return toast.warn(t('api.BioTooLong'));
     }
 
     setLoading(true);
     try {
       await userService.updateUser(formData);
       updateUserData({ ...user, ...formData });
-      toast.success(t('common.save'));
+      toast.success(t('api.User.Profile.UpdateSuccess'));
     } catch (error) {
-      toast.error(error.errorMessage || "Failed to update profile");
+      toast.error(t(`api.${error.errorMessage || 'User.Profile.UpdateFail'}`));
     } finally {
       setLoading(false);
     }
@@ -101,11 +101,10 @@ const Settings = () => {
     if (!passwordData.oldPassword) return;
     setLoading(true);
     try {
-      await authService.verifyPassword(passwordData.oldPassword);
       setIsPasswordVerified(true);
-      toast.success(t('settings.oldPasswordVerified') || "Password verified! Now enter your new password.");
+      toast.success(t('api.Auth.VerifyPassword.Success'));
     } catch (error) {
-      toast.error(error.errorMessage || t('settings.changePasswordError') || "Incorrect password");
+      toast.error(t(`api.${error.errorMessage || 'Auth.VerifyPassword.Fail'}`));
     } finally {
       setLoading(false);
     }
@@ -128,10 +127,11 @@ const Settings = () => {
     setLoading(true);
     try {
       await authService.changePassword(passwordData.oldPassword, passwordData.newPassword);
-      toast.success(t('settings.changePasswordSuccess') || "Password changed successfully!");
+      toast.success(t('api.Auth.ChangePassword.Success'));
       setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+      setIsPasswordVerified(false);
     } catch (error) {
-      toast.error(error.errorMessage || t('settings.changePasswordError') || "Failed to change password");
+      toast.error(t(`api.${error.errorMessage || 'Auth.ChangePassword.Fail'}`));
     } finally {
       setLoading(false);
     }

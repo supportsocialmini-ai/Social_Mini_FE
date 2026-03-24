@@ -99,10 +99,15 @@ const Navbar = () => {
   const { connection } = useChat();
   useEffect(() => {
     if (connection && connection.state === 'Connected') {
-      connection.on("ReceiveNotification", (message) => {
+      connection.on("ReceiveNotification", (rawMsg) => {
+        // rawMsg format: "Key|SenderName"
+        const [key, senderName] = rawMsg.split('|');
         setUnreadCount(prev => prev + 1);
         fetchNotifications();
-        toast.info(message);
+        
+        // Translate real-time notification
+        const translated = t(`api.${key}`, { name: senderName || t('navbar.user') });
+        toast.info(translated);
       });
       return () => connection.off("ReceiveNotification");
     }
@@ -220,11 +225,15 @@ const Navbar = () => {
                   </div>
                   <div className="overflow-y-auto flex-1">
                     {notifications.length > 0 ? (
-                      notifications.slice(0, 10).map((notif) => (
-                        <div key={notif.notificationId} className="px-4 py-3 border-b border-gray-50 hover:bg-gray-50">
-                          <p className="text-sm text-gray-900">{notif.message}</p>
-                        </div>
-                      ))
+                      notifications.slice(0, 10).map((notif) => {
+                        const senderName = notif.sender?.fullName || notif.sender?.username || t('navbar.user');
+                        const translatedMsg = t(`api.${notif.message}`, { name: senderName });
+                        return (
+                          <div key={notif.notificationId} className="px-4 py-3 border-b border-gray-50 hover:bg-gray-50">
+                            <p className="text-sm text-gray-900">{translatedMsg}</p>
+                          </div>
+                        );
+                      })
                     ) : (
                       <p className="p-4 text-center text-gray-400 text-sm">{t('navbar.noNotifs')}</p>
                     )}

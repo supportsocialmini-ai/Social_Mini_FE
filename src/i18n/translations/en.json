@@ -117,6 +117,7 @@
           "EmailExists": "Email already in use!"
         },
         "Login": {
+          "Success": "Login successful! Welcome back.",
           "Fail": "Incorrect username or password.",
           "UserNotVerified": "Your account is not verified. Please enter the 6-digit code to activate."
         },
@@ -194,6 +195,14 @@
           "Fail": "Chat image upload error: {{error}}"
         }
       },
+      "Notification": {
+        "Action": {
+          "Like": "{{name}} liked your post.",
+          "Comment": "{{name}} commented on your post.",
+          "FriendRequest": "{{name}} sent you a friend request.",
+          "FriendAccept": "{{name}} accepted your friend request."
+        }
+      },
       "Search": {
         "Query": {
           "TooShort": "Search query must be at least 2 characters long!"
@@ -213,8 +222,8 @@
       "PasswordInvalid": "Password must have at least 1 uppercase, 1 lowercase, and 1 digit",
       "PasswordLength": "Password must be between 6 and 50 characters",
       "ContentRequired": "Content is required",
-      "PostTooLong": "Post is too long (max 5000 characters)",
-      "CommentTooLong": "Comment is too long (max 1000 characters)",
+      "PostTooLong": "Post is too long (max 1000 characters)",
+      "CommentTooLong": "Comment is too long (max 200 characters)",
       "BioTooLong": "Bio is too long (max 255 characters)"
     },
     "messaging": {

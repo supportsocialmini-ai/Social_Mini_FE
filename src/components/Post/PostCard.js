@@ -66,7 +66,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
       toast.success(newIsLiked ? t('posts.liked') : t('posts.unliked'));
     } catch (error) {
       console.error("Lỗi khi like:", error);
-      toast.error(error.errorMessage || t('posts.likeError'));
+      toast.error(t(`api.${error.errorMessage || 'likeError'}`));
     } finally {
       setIsLiking(false);
     }
@@ -83,7 +83,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
       }
     } catch (error) {
       console.error("Lỗi khi xóa:", error);
-      toast.error(error.errorMessage || t('posts.deleteError'));
+      toast.error(t(`api.${error.errorMessage || 'posts.deleteError'}`));
     } finally {
       setIsDeleting(false);
       setIsMenuOpen(false);
@@ -110,9 +110,9 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
                     onClick={async () => {
                       try {
                         await friendService.sendRequest(post.userId);
-                        toast.success(t('posts.friendRequestSent', { name: post.author }));
+                        toast.success(t('api.Friend.Request.Success'));
                       } catch (err) {
-                        toast.error(t('posts.addFriendError'));
+                        toast.error(t(`api.${err.errorMessage || 'Friend.Request.Fail'}`));
                       }
                     }}
                     className="text-[10px] font-bold text-indigo-600 hover:text-white hover:bg-indigo-600 border border-indigo-600 px-2 py-0.5 rounded-full transition-all"

@@ -69,7 +69,8 @@
           "EmailExists": "Email đã được sử dụng!"
         },
         "Login": {
-          "Fail": "Tài khoản hoặc mật khẩu không chính xác.",
+          "Success": "Đăng nhập thành công! Chào mừng bạn quay trở lại.",
+          "Fail": "Tài khoản hoặc mật khẩu chưa đúng.",
           "UserNotVerified": "Tài khoản của bạn chưa được xác nhận. Vui lòng nhập mã 6 chữ số để kích hoạt."
         },
         "Verify": {
@@ -146,6 +147,14 @@
           "Fail": "Lỗi khi tải ảnh chat: {{error}}"
         }
       },
+      "Notification": {
+        "Action": {
+          "Like": "{{name}} đã thích bài viết của bạn.",
+          "Comment": "{{name}} đã bình luận vào bài viết của bạn.",
+          "FriendRequest": "{{name}} đã gửi lời mời kết bạn cho bạn.",
+          "FriendAccept": "{{name}} đã chấp nhận lời mời kết bạn."
+        }
+      },
       "Search": {
         "Query": {
           "TooShort": "Từ khóa tìm kiếm phải ít nhất 2 ký tự!"
@@ -165,8 +174,8 @@
       "PasswordInvalid": "Mật khẩu phải có nhất 1 chữ hoa, 1 chữ thường và 1 số",
       "PasswordLength": "Mật khẩu phải từ 6 đến 50 ký tự",
       "ContentRequired": "Nội dung không được để trống",
-      "PostTooLong": "Bài viết quá dài (tối đa 5000 ký tự)",
-      "CommentTooLong": "Bình luận quá dài (tối đa 1000 ký tự)",
+      "PostTooLong": "Bài viết quá dài (tối đa 1000 ký tự)",
+      "CommentTooLong": "Bình luận quá dài (tối đa 200 ký tự)",
       "BioTooLong": "Tiểu sử quá dài (tối đa 255 ký tự)"
     },
     "home": {

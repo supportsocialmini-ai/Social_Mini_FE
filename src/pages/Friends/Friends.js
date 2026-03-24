@@ -40,32 +40,34 @@ const Friends = () => {
     const handleAccept = async (requestId) => {
         try {
             await friendService.acceptRequest(requestId);
-            toast.success(t('friends.acceptSuccess'));
+            toast.success(t('api.Friend.Action.AcceptSuccess'));
             fetchData();
         } catch (error) {
-            toast.error(error.errorMessage || "Lỗi khi chấp nhận lời mời.");
+            toast.error(t(`api.${error.errorMessage || 'Friend.Action.AcceptFail'}`));
         }
     };
 
     const handleDecline = async (requestId) => {
         try {
             await friendService.declineRequest(requestId);
-            toast.info(t('friends.declineSuccess'));
+            toast.info(t('api.Friend.Action.DeclineSuccess'));
             fetchData();
         } catch (error) {
-            toast.error(error.errorMessage || "Lỗi khi từ chối lời mời.");
+            toast.error(t(`api.${error.errorMessage || 'Friend.Action.DeclineFail'}`));
         }
     };
 
-    const handleUnfriend = async (friendId) => {
-        if (window.confirm("Bạn có chắc chắn muốn hủy kết bạn?")) {
-            try {
-                await friendService.unfriend(friendId);
-                toast.success(t('friends.unfriendSuccess'));
-                fetchData();
-            } catch (error) {
-                toast.error(error.errorMessage || "Lỗi khi hủy kết bạn.");
-            }
+    const handleUnfriend = async () => {
+        const friendId = confirmData.friendId;
+        if (!friendId) return;
+        
+        try {
+            await friendService.unfriend(friendId);
+            toast.success(t('api.Friend.Action.UnfriendSuccess'));
+            setConfirmData({ ...confirmData, isOpen: false });
+            fetchData();
+        } catch (error) {
+            toast.error(t(`api.${error.errorMessage || 'Friend.Action.UnfriendFail'}`));
         }
     };
 

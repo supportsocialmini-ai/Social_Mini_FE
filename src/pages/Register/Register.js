@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import authService from '../../services/authService';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 
 const Register = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     fullName: '',
     username: '',
@@ -32,62 +34,63 @@ const Register = () => {
 
     if (!formData.fullName) {
       setIsLoading(false);
-      setError('Họ và tên không được để trống');
-      return toast.warn('Họ và tên không được để trống');
+      setError(t('api.FullNameRequired'));
+      return toast.warn(t('api.FullNameRequired'));
     }
     if (!fullNameRegex.test(formData.fullName)) {
       setIsLoading(false);
       const msg = formData.fullName.length < 2 || formData.fullName.length > 100
-        ? 'Họ và tên phải từ 2 đến 100 ký tự'
-        : 'Họ và tên chỉ được chứa chữ cái và khoảng trắng';
+        ? t('api.FullNameLength')
+        : t('api.FullNameInvalid');
       setError(msg);
       return toast.warn(msg);
     }
 
     if (!formData.username) {
       setIsLoading(false);
-      setError('Username không được để trống');
-      return toast.warn('Username không được để trống');
+      setError(t('api.UsernameRequired'));
+      return toast.warn(t('api.UsernameRequired'));
     }
     if (!usernameRegex.test(formData.username)) {
       setIsLoading(false);
       const msg = formData.username.length < 4 || formData.username.length > 30
-        ? 'Username phải từ 4 đến 30 ký tự'
-        : 'Username chỉ gồm chữ thường, số và dấu _';
+        ? t('api.UsernameLength')
+        : t('api.UsernameInvalid');
       setError(msg);
       return toast.warn(msg);
     }
 
     if (!formData.email) {
       setIsLoading(false);
-      setError('Email không được để trống');
-      return toast.warn('Email không được để trống');
+      setError(t('api.EmailRequired'));
+      return toast.warn(t('api.EmailRequired'));
     }
     if (!emailRegex.test(formData.email) || formData.email.length > 255) {
       setIsLoading(false);
-      const msg = !emailRegex.test(formData.email) ? 'Email không đúng định dạng' : 'Email tối đa 255 ký tự';
+      const msg = !emailRegex.test(formData.email) ? t('api.EmailInvalid') : t('api.EmailLength') || 'Email too long';
       setError(msg);
       return toast.warn(msg);
     }
 
     if (!formData.password) {
       setIsLoading(false);
-      setError('Mật khẩu không được để trống');
-      return toast.warn('Mật khẩu không được để trống');
+      setError(t('api.PasswordRequired'));
+      return toast.warn(t('api.PasswordRequired'));
     }
     if (!passwordRegex.test(formData.password)) {
       setIsLoading(false);
       const msg = formData.password.length < 6 || formData.password.length > 50
-        ? 'Mật khẩu phải từ 6 đến 50 ký tự'
-        : 'Mật khẩu phải có nhất 1 chữ hoa, 1 chữ thường và 1 số';
+        ? t('api.PasswordLength')
+        : t('api.PasswordInvalid');
       setError(msg);
       return toast.warn(msg);
     }
 
     if (formData.password !== formData.confirmPassword) {
       setIsLoading(false);
-      setError('Mật khẩu xác nhận không khớp.');
-      return toast.warn('Mật khẩu xác nhận không khớp.');
+      const msg = t('register.passwordMismatch') || 'Mật khẩu xác nhận không khớp.';
+      setError(msg);
+      return toast.warn(msg);
     }
 
     try {
@@ -102,13 +105,12 @@ const Register = () => {
         isActive: true
       };
       await authService.register(registerData);
-      toast.success('Đăng ký thành công! Vui lòng kiểm tra email để lấy mã xác nhận 6 chữ số.');
-      // Sau khi đăng ký thành công, chuyển hướng về trang đăng nhập
+      toast.success(t('api.Auth.Register.Success'));
       navigate('/login');
     } catch (err) {
-      const msg = err.errorMessage || 'Đăng ký thất bại. Vui lòng thử lại.';
-      setError(msg);
-      toast.error(msg);
+      const translatedMsg = t(`api.${err.errorMessage || 'Auth.Register.Fail'}`);
+      setError(translatedMsg);
+      toast.error(translatedMsg);
     } finally {
       setIsLoading(false);
     }

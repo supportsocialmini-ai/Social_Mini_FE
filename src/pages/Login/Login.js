@@ -23,17 +23,21 @@ const Login = () => {
     setIsLoading(true);
     try {
       await login(username, password);
-      toast.success('Chào mừng bạn quay trở lại!');
-      navigate('/'); // Chuyển hướng về trang chủ sau khi đăng nhập thành công
+      toast.success(t('api.Auth.Login.Success'));
+      navigate('/');
     } catch (err) {
-      const msg = err.errorMessage || 'Đăng nhập thất bại. Vui lòng thử lại.';
-      if (msg === 'USER_NOT_VERIFIED' || msg.includes('chưa được kích hoạt')) {
+      const rawMsg = err.errorMessage || 'Auth.Login.Fail';
+      
+      // Kiểm tra nếu tài khoản chưa confirm
+      if (rawMsg === 'Auth.Login.UserNotVerified' || rawMsg === 'USER_NOT_VERIFIED') {
         setIsVerifyModalOpen(true);
-        toast.info('Tài khoản của bạn chưa được xác nhận. Vui lòng nhập mã 6 chữ số để kích hoạt.');
+        toast.info(t('api.Auth.Login.UserNotVerified'));
+        setError(t('api.Auth.Login.UserNotVerified'));
       } else {
-        toast.error(msg);
+        const translatedMsg = t(`api.${rawMsg}`);
+        toast.error(translatedMsg);
+        setError(translatedMsg);
       }
-      setError(msg);
     } finally {
       setIsLoading(false);
     }
@@ -48,12 +52,13 @@ const Login = () => {
     setIsVerifying(true);
     try {
       await authService.verifyEmail(verifyToken);
-      toast.success('Xác nhận thành công! Bây giờ bạn có thể đăng nhập.');
+      toast.success(t('api.Auth.Verify.Success'));
       setIsVerifyModalOpen(false);
       setVerifyToken('');
       setError('');
     } catch (err) {
-      toast.error(err.errorMessage || 'Mã xác nhận không đúng hoặc đã hết hạn.');
+      const translatedMsg = t(`api.${err.errorMessage || 'Auth.Verify.Fail'}`);
+      toast.error(translatedMsg);
     } finally {
       setIsVerifying(false);
     }

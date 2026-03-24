@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import axiosClient from '../../api/axiosClient';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
@@ -10,11 +11,12 @@ const VerifyEmail = () => {
   const [inputToken, setInputToken] = useState('');
   const tokenFromUrl = searchParams.get('token');
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const verifyToken = async (tokenToVerify) => {
     if (!tokenToVerify) {
       setStatus('idle');
-      setMessage('Vui lòng nhập mã xác nhận 6 chữ số từ email của bạn.');
+      setMessage(t('api.Auth.VerifyEmail.EnterCode'));
       return;
     }
 
@@ -22,11 +24,11 @@ const VerifyEmail = () => {
     try {
       const response = await axiosClient.post(`api/auth/verify-email?token=${tokenToVerify}`);
       setStatus('success');
-      setMessage(response || 'Xác nhận tài khoản thành công! Bây giờ bạn có thể đăng nhập.');
-      toast.success(response || 'Xác nhận thành công!');
+      setMessage(t('api.Auth.VerifyEmail.Success'));
+      toast.success(t('api.Auth.VerifyEmail.Success'));
     } catch (err) {
       setStatus('error');
-      const msg = err.errorMessage || 'Xác nhận thất bại. Mã có thể đã hết hạn hoặc không đúng.';
+      const msg = t(`api.${err.errorMessage || 'Auth.VerifyEmail.Fail'}`);
       setMessage(msg);
       toast.error(msg);
     }
@@ -43,7 +45,7 @@ const VerifyEmail = () => {
   const handleManualVerify = (e) => {
     e.preventDefault();
     if (inputToken.length !== 6) {
-      toast.warning('Mã xác nhận phải có đúng 6 chữ số!');
+      toast.warning(t('api.Auth.VerifyEmail.InvalidFormat'));
       return;
     }
     verifyToken(inputToken);
@@ -56,21 +58,21 @@ const VerifyEmail = () => {
         {/* Header decoration */}
         <div className="mb-6">
             <div className="w-16 h-1 w-12 bg-indigo-600 rounded-full mx-auto mb-4"></div>
-            <h1 className="text-3xl font-black text-slate-800 tracking-tight">Kích hoạt tài khoản</h1>
+            <h1 className="text-3xl font-black text-slate-800 tracking-tight">{t('auth.activateTitle')}</h1>
         </div>
 
         {status === 'verifying' && (
           <div className="py-8 space-y-4">
             <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <h2 className="text-xl font-bold text-gray-800">Đang kiểm tra mã...</h2>
-            <p className="text-gray-500 text-sm">Vui lòng chờ trong giây lát.</p>
+            <h2 className="text-xl font-bold text-gray-800">{t('auth.verifying')}</h2>
+            <p className="text-gray-500 text-sm">{t('auth.pleaseWait')}</p>
           </div>
         )}
 
         {status === 'idle' && (
           <div className="space-y-6 py-4">
             <p className="text-gray-600 font-medium">
-                Vui lòng kiểm tra email để nhấn vào link xác nhận hoặc nhập mã 6 chữ số bên dưới.
+                {t('auth.verifyIdleDesc')}
             </p>
             <form onSubmit={handleManualVerify} className="space-y-4">
               <input
@@ -78,19 +80,19 @@ const VerifyEmail = () => {
                 maxLength="6"
                 value={inputToken}
                 onChange={(e) => setInputToken(e.target.value.replace(/\D/g, ''))}
-                placeholder="Nhập mã 6 chữ số"
+                placeholder={t('auth.enter6Digit')}
                 className="w-full px-6 py-4 text-center text-3xl font-bold tracking-[0.5em] bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-indigo-500 focus:bg-white outline-none transition-all placeholder:text-gray-300 placeholder:tracking-normal placeholder:text-base"
               />
               <button
                 type="submit"
                 className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200 transition-all active:scale-95"
               >
-                Xác nhận ngay
+                {t('auth.verifyNow')}
               </button>
             </form>
             <div className="pt-4 border-t border-gray-50">
                 <Link to="/login" className="text-sm font-bold text-gray-400 hover:text-indigo-600 transition-colors">
-                    Hủy và quay lại Đăng nhập
+                    {t('auth.cancelAndLogin')}
                 </Link>
             </div>
           </div>
@@ -104,14 +106,14 @@ const VerifyEmail = () => {
               </svg>
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-green-700">Tuyệt vời!</h2>
+              <h2 className="text-2xl font-bold text-green-700">{t('auth.verifySuccessTitle')}</h2>
               <p className="text-gray-600">{message}</p>
             </div>
             <Link
               to="/login"
               className="block w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-green-200 active:scale-95"
             >
-              Đăng nhập ngay
+              {t('auth.loginNow')}
             </Link>
           </div>
         )}
@@ -124,18 +126,18 @@ const VerifyEmail = () => {
               </svg>
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-red-700">Xác nhận thất bại</h2>
+              <h2 className="text-2xl font-bold text-red-700">{t('auth.verifyFailTitle')}</h2>
               <p className="text-gray-600">{message}</p>
             </div>
             <button
               onClick={() => { setStatus('idle'); setInputToken(''); }}
               className="w-full py-4 bg-gray-800 hover:bg-black text-white font-bold rounded-2xl transition-all shadow-lg active:scale-95"
             >
-              Thử nhập lại mã khác
+              {t('auth.tryAgain')}
             </button>
             <div className="pt-2">
                 <Link to="/login" className="text-sm font-bold text-gray-400 hover:text-indigo-600">
-                    Quay lại trang Đăng nhập
+                    {t('auth.backToLogin')}
                 </Link>
             </div>
           </div>
