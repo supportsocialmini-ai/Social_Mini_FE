@@ -415,7 +415,7 @@ const Profile = () => {
                 </div>
               )}
             </div>
-          </>
+          </>   
         )}
 
         {activeTab === 'saved' && (
