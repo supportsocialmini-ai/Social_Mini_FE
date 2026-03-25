@@ -27,6 +27,7 @@ const Home = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile]       = useState(null);
   const [sentIds, setSentIds]           = useState(new Set());
+  const [privacy, setPrivacy]           = useState('Public');
 
   /* ── fetch posts ───────────────────────────────────────── */
   const fetchPosts = async () => {
@@ -68,9 +69,9 @@ const Home = () => {
     setIsPosting(true);
     try {
       if (imageFile) {
-        await postService.createPostWithImage(postContent, 'Public', imageFile);
+        await postService.createPostWithImage(postContent, privacy, imageFile);
       } else {
-        await postService.createPost({ Content: postContent, privacy: 'Public' });
+        await postService.createPost({ Content: postContent, privacy: privacy });
       }
       setPostContent(''); setImagePreview(null); setImageFile(null);
       fetchPosts();
@@ -208,22 +209,44 @@ const Home = () => {
               <Link to="/profile" className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden bg-gradient-to-br from-indigo-400 to-blue-500">
                 <img src={getFullAvatarUrl(user?.avatarUrl, user?.fullName || user?.username)} alt="" className="w-full h-full object-cover" />
               </Link>
-              <div className="flex-1 relative">
+              <div className="flex-1 relative group/input">
                 <textarea
                   value={postContent}
                   onChange={e => setPostContent(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handlePostSubmit())}
                   maxLength={1000}
                   placeholder={t('home.whatsOnYourMind', { name: user?.fullName?.split(' ').pop() || t('navbar.user') })}
-                  className="w-full bg-[#f0f2f5] rounded-2xl px-4 py-2.5 text-sm outline-none text-gray-700 placeholder:text-gray-500 focus:bg-gray-100 transition-all resize-none min-h-[44px]"
+                  className="w-full bg-[#f0f2f5] rounded-2xl px-4 pt-3 pb-10 text-sm outline-none text-gray-700 placeholder:text-gray-500 focus:bg-gray-100 transition-all resize-none min-h-[90px]"
                 />
-                <div className="absolute right-3 bottom-2 text-[9px] font-bold text-gray-400 opacity-50">
+                
+                {/* Privacy Badge inside Input */}
+                <div className="absolute left-3 bottom-3">
+                   <div className="relative group/privacy">
+                      <select 
+                        value={privacy} 
+                        onChange={(e) => setPrivacy(e.target.value)}
+                        className="appearance-none pl-7 pr-7 py-1 text-[11px] font-bold text-gray-600 bg-white/60 hover:bg-white border border-gray-200 shadow-sm rounded-full outline-none transition-all cursor-pointer"
+                      >
+                        <option value="Public">{t('home.privacyPublic')}</option>
+                        <option value="Friends">{t('home.privacyFriends')}</option>
+                        <option value="OnlyMe">{t('home.privacyOnlyMe')}</option>
+                      </select>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] pointer-events-none">
+                        {privacy === 'Friends' ? '👥' : privacy === 'OnlyMe' ? '🔒' : '🌎'}
+                      </span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                   </div>
+                </div>
+
+                <div className="absolute right-4 bottom-3 text-[10px] font-bold text-gray-400 opacity-60">
                   {postContent.length}/1000
                 </div>
               </div>
             </div>
-            <div className="flex items-center px-2 py-2">
-              <label className="flex items-center gap-2 px-4 py-2 rounded-xl text-gray-600 hover:bg-gray-50 cursor-pointer transition-all text-sm font-semibold">
+            <div className="flex items-center px-4 py-3 gap-2">
+              <label className="flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:bg-gray-50 cursor-pointer transition-all text-sm font-semibold">
                 <input type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />

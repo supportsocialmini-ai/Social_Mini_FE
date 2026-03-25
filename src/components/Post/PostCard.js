@@ -90,11 +90,29 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
     }
   };
 
+  const handlePrivacyChange = async (newPrivacy) => {
+    setIsSaving(true);
+    try {
+      await postService.updatePost(post.postId || post.id, { 
+        Content: post.postContent, 
+        Privacy: newPrivacy 
+      });
+      post.privacy = newPrivacy; // Cập nhật local để UI thay đổi
+      toast.success(t('api.Post.Upsert.UpdateSuccess'));
+    } catch (error) {
+      console.error("Lỗi khi đổi quyền riêng tư:", error);
+      toast.error(t(`api.${error.errorMessage || 'Post.Upsert.UpdateFail'}`));
+    } finally {
+      setIsSaving(false);
+      setIsMenuOpen(false);
+    }
+  };
+
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 mb-6 overflow-hidden border border-gray-100/50 group">
+      <div className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 mb-6 border border-gray-100/50 group relative">
         {/* Header */}
-        <div className="px-6 py-4 flex items-center justify-between border-b border-gray-50">
+        <div className="px-6 py-4 flex items-center justify-between border-b border-gray-50 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <Link to={isPostOwner ? "/profile" : `/profile/${post.userId}`} className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-blue-500 flex-shrink-0 border-2 border-white overflow-hidden shadow-md hover:scale-110 transition-transform">
               <img src={getFullAvatarUrl(post.avatarUrl || post.authorAvatar, post.author)} alt={post.author} className="w-full h-full object-cover" />
@@ -121,7 +139,13 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
                   </button>
                 )}
               </div>
-              <p className="text-xs text-gray-500 mt-1">{getTimeAgo(post.time || post.createdAt)}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-gray-500">{getTimeAgo(post.time || post.createdAt)}</p>
+                <span className="text-gray-300 text-[10px]">•</span>
+                <span className="text-xs text-gray-400" title={t(`home.privacy${post.privacy || 'Public'}`)}>
+                  {post.privacy === 'Friends' ? '👥' : post.privacy === 'OnlyMe' ? '🔒' : '🌎'}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -137,14 +161,45 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
 
             {/* Menu */}
             {isMenuOpen && isPostOwner && (
-              <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 z-50 min-w-[160px] overflow-hidden animate-in fade-in">
+              <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 z-50 min-w-[180px] overflow-hidden animate-in fade-in py-1">
+                {/* Privacy Options */}
+                <div className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50/50">
+                  {t('home.privacy') || 'Quyền riêng tư'}
+                </div>
+                
+                <button
+                  onClick={() => handlePrivacyChange('Public')}
+                  className={`w-full px-4 py-2 text-left text-sm transition-all flex items-center gap-3 ${post.privacy === 'Public' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'hover:bg-gray-50 text-gray-700'}`}
+                >
+                  <span className="text-base">🌎</span>
+                  {t('home.privacyPublic')}
+                </button>
+
+                <button
+                  onClick={() => handlePrivacyChange('Friends')}
+                  className={`w-full px-4 py-2 text-left text-sm transition-all flex items-center gap-3 ${post.privacy === 'Friends' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'hover:bg-gray-50 text-gray-700'}`}
+                >
+                  <span className="text-base">👥</span>
+                  {t('home.privacyFriends')}
+                </button>
+
+                <button
+                  onClick={() => handlePrivacyChange('OnlyMe')}
+                  className={`w-full px-4 py-2 text-left text-sm transition-all flex items-center gap-3 ${post.privacy === 'OnlyMe' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'hover:bg-gray-50 text-gray-700'}`}
+                >
+                  <span className="text-base">🔒</span>
+                  {t('home.privacyOnlyMe')}
+                </button>
+
+                <div className="h-[1px] bg-gray-100 my-1" />
+
                 <button
                   onClick={() => {
                     setIsConfirmDeleteOpen(true);
                     setIsMenuOpen(false);
                   }}
                   disabled={isDeleting}
-                  className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 font-semibold text-sm transition-all flex items-center gap-2 disabled:opacity-50"
+                  className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 font-semibold text-sm transition-all flex items-center gap-3 disabled:opacity-50"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -207,7 +262,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-2 px-3 py-3 bg-gray-50/30 border-t border-gray-100">
+        <div className="flex items-center gap-2 px-3 py-3 bg-gray-50/30 border-t border-gray-100 rounded-b-2xl">
           <button
             onClick={handleLike}
             disabled={isLiking}

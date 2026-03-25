@@ -198,7 +198,10 @@
       "privacy": "Quyền riêng tư",
       "terms": "Điều khoản",
       "suggestedForYou": "Gợi ý cho bạn",
-      "trending": "Chủ đề xu hướng"
+      "trending": "Chủ đề xu hướng",
+      "privacyPublic": "Công khai",
+      "privacyFriends": "Bạn bè",
+      "privacyOnlyMe": "Chỉ mình tôi"
     },
     "settings": {
       "title": "Cài đặt",

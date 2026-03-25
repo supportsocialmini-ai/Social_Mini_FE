@@ -81,7 +81,10 @@
       "privacy": "Privacy",
       "terms": "Terms",
       "suggestedForYou": "Suggested for you",
-      "trending": "Trending Topics"
+      "trending": "Trending Topics",
+      "privacyPublic": "Public",
+      "privacyFriends": "Friends",
+      "privacyOnlyMe": "Only Me"
     },
     "settings": {
       "title": "Settings",
