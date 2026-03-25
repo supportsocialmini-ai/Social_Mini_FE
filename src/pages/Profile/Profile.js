@@ -198,27 +198,42 @@ const Profile = () => {
       );
     }
     const btnClass = "flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all";
-    switch (friendshipStatus) {
-      case 'Accepted': return (
-        <div className="flex gap-2">
-          <button onClick={() => setIsConfirmOpen(true)} className={`${btnClass} bg-red-50 text-red-600 hover:bg-red-100`}>{t('friends.unfriend')}</button>
-        </div>
-      );
-      case 'Sent': return <button onClick={handleCancelRequest} className={`${btnClass} bg-gray-100 text-gray-700 hover:bg-gray-200`}>{t('profile.cancelRequest') || 'Cancel Request'}</button>;
-      case 'Received': return <button onClick={handleAcceptRequest} className={`${btnClass} bg-gray-900 text-white hover:bg-gray-700`}>{t('friends.accept')}</button>;
-      default: return (
-        <div className="flex items-center gap-2">
+    
+    return (
+      <div className="flex items-center gap-2">
+        {friendshipStatus === 'Accepted' && (
+          <button onClick={() => setIsConfirmOpen(true)} className={`${btnClass} bg-red-50 text-red-600 hover:bg-red-100`}>
+            {t('friends.unfriend')}
+          </button>
+        )}
+        {friendshipStatus === 'Sent' && (
+          <button onClick={handleCancelRequest} className={`${btnClass} bg-gray-100 text-gray-700 hover:bg-gray-200`}>
+            {t('profile.cancelRequest') || 'Cancel Request'}
+          </button>
+        )}
+        {friendshipStatus === 'Received' && (
+          <button onClick={handleAcceptRequest} className={`${btnClass} bg-gray-900 text-white hover:bg-gray-700`}>
+            {t('friends.accept')}
+          </button>
+        )}
+        {friendshipStatus === 'None' && (
           <button onClick={handleAddFriend} className={`${btnClass} bg-gray-900 text-white hover:bg-gray-700`}>
             {t('profile.follow')}
           </button>
-          <button className="p-2 rounded-full hover:bg-gray-100 transition-all border border-gray-200">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-          </button>
-        </div>
-      );
-    }
+        )}
+        
+        {/* Always show Message button for others */}
+        <button 
+          onClick={() => window.location.href = `/messaging?userId=${profileUser.userId}`}
+          className="flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white rounded-full text-sm font-semibold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+          </svg>
+          {t('messaging.title')}
+        </button>
+      </div>
+    );
   };
 
   // Posts có ảnh để hiển thị dạng grid

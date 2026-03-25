@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from '../../components/Layout/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
@@ -10,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 const Messaging = () => {
   const { user, getFullAvatarUrl } = useAuth();
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const targetUserId = searchParams.get('userId');
   const {
     connection, onlineUsers,
     unreadCountsPerUser, setUnreadCountsPerUser, fetchUnreadCount,
@@ -42,7 +45,7 @@ const Messaging = () => {
         const res = response?.data || response;
         let rawData = res?.result || res?.Result || res?.$values || (Array.isArray(res) ? res : []);
 
-        const normalizedData = (Array.isArray(rawData) ? rawData : [])
+        let normalizedData = (Array.isArray(rawData) ? rawData : [])
           .filter(u => u && u.userId !== user?.userId)
           .map(u => ({
             ...u,
@@ -50,13 +53,37 @@ const Messaging = () => {
             displayAvatar: getFullAvatarUrl(u.avatarUrl || u.AvatarUrl) || ''
           }));
 
+        // Xử lý nếu được điều hướng từ Profile
+        if (targetUserId) {
+          const existingUser = normalizedData.find(u => u.userId?.toString() === targetUserId);
+          if (existingUser) {
+            setSelectedUser(existingUser);
+          } else {
+            // Nếu chưa từng chat, lấy info để hiện tạm
+            try {
+              const newUser = await userService.getUserById(targetUserId);
+              if (newUser) {
+                const preparedUser = {
+                  ...newUser,
+                  displayName: newUser.fullName || newUser.username || 'Người dùng',
+                  displayAvatar: getFullAvatarUrl(newUser.avatarUrl) || ''
+                };
+                normalizedData = [preparedUser, ...normalizedData];
+                setSelectedUser(preparedUser);
+              }
+            } catch (err) {
+              console.error("Lỗi lấy thông tin người dùng mục tiêu:", err);
+            }
+          }
+        }
+
         setUsers(normalizedData);
       } catch (error) {
         console.error("Lỗi lấy danh sách người dùng:", error);
       }
     };
     if (user) fetchUsers();
-  }, [user, getFullAvatarUrl]);
+  }, [user, getFullAvatarUrl, targetUserId]);
 
   // 2. Lấy lịch sử tin nhắn và báo Seen khi chọn người dùng
   useEffect(() => {
@@ -376,17 +403,19 @@ const Messaging = () => {
                       {isUploading ? <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div> : 
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>}
                     </button>
-                     <input 
-                       type="text" 
-                       value={inputText} 
-                       onChange={handleInputChange} 
-                       onKeyDown={handleKeyDown} 
-                       maxLength={500}
-                       placeholder={t('messaging.messagePlaceholder', { name: selectedUser.displayName.split(' ')[0] })} 
-                       className="flex-1 bg-slate-50 border border-slate-100 rounded-xl lg:rounded-2xl px-4 lg:px-5 py-2.5 lg:py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all font-medium text-sm" 
-                     />
-                     <div className="absolute right-24 bottom-full mb-2 text-[10px] font-bold text-slate-300">
-                       {inputText.length}/500
+                     <div className="flex-1 relative">
+                       <input 
+                         type="text" 
+                         value={inputText} 
+                         onChange={handleInputChange} 
+                         onKeyDown={handleKeyDown} 
+                         maxLength={500}
+                         placeholder={t('messaging.messagePlaceholder', { name: selectedUser.displayName.split(' ')[0] })} 
+                         className="w-full bg-slate-50 border border-slate-100 rounded-xl lg:rounded-2xl px-4 lg:px-5 pr-14 lg:pr-16 py-2.5 lg:py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all font-medium text-sm" 
+                       />
+                       <div className="absolute right-3 lg:right-4 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-300 pointer-events-none">
+                         {inputText.length}/500
+                       </div>
                      </div>
                      <button type="submit" disabled={!inputText.trim()} className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-5 lg:px-7 py-2.5 lg:py-3 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all active:scale-95">{t('messaging.send')}</button>
                   </form>
