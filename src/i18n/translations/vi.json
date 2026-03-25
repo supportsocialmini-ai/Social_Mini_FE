@@ -74,7 +74,7 @@
           "UserNotVerified": "Tài khoản của bạn chưa được xác nhận. Vui lòng nhập mã 6 chữ số để kích hoạt."
         },
         "Verify": {
-          "Success": "Xác nhận thành công! Bây giờ bạn có thể đăng nhập.",
+          "Success": "Xác nhận thành công! Chào mừng bạn đến với mạng xã hội mini.",
           "Fail": "Mã xác nhận không đúng hoặc đã hết hạn."
         },
         "Password": {

@@ -122,7 +122,7 @@
           "UserNotVerified": "Your account is not verified. Please enter the 6-digit code to activate."
         },
         "Verify": {
-          "Success": "Verification successful! You can now log in.",
+          "Success": "Verification successful! Welcome to Social Mini App.",
           "Fail": "Invalid or expired verification code."
         },
         "Password": {

@@ -77,6 +77,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithToken = async (token) => {
+    if (token) {
+      if (token.startsWith('Bearer ')) {
+        token = token.substring(7);
+      }
+      localStorage.setItem('accessToken', token);
+      try {
+        const userData = await userService.getProfile();
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+        return userData;
+      } catch (error) {
+        console.error("Lỗi lấy thông tin profile sau khi verify:", error);
+        throw error;
+      }
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('user');
@@ -89,7 +107,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateUserData, getFullAvatarUrl, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, logout, loginWithToken, updateUserData, getFullAvatarUrl, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

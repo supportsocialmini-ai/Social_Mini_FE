@@ -159,8 +159,8 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
         {/* Content */}
         <div className="px-6 py-4">
           <p className="text-gray-800 text-[15px] leading-relaxed font-medium break-words">
-            {post.postContent.length > 200 && !isExpanded 
-              ? `${post.postContent.substring(0, 200)}...` 
+            {post.postContent.length > 200 && !isExpanded
+              ? `${post.postContent.substring(0, 200)}...`
               : post.postContent}
             {post.postContent.length > 200 && (
               <button
@@ -175,8 +175,12 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
 
         {/* Image Display */}
         {post.imageUrl && (
-          <div className="w-full h-96 overflow-hidden bg-gray-100 border-y border-gray-100">
-            <img src={getFullImageUrl(post.imageUrl)} alt="post" className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+          <div className="w-full max-h-[580px] overflow-hidden bg-slate-50 flex items-center justify-center border-y border-slate-100/50 relative z-10">
+            <img 
+              src={getFullImageUrl(post.imageUrl)} 
+              alt="post" 
+              className="w-full h-auto max-h-[580px] object-contain group-hover:scale-[1.01] transition-transform duration-700 shadow-sm" 
+            />
           </div>
         )}
 

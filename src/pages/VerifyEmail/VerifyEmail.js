@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import axiosClient from '../../api/axiosClient';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../context/AuthContext';
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
@@ -12,11 +13,12 @@ const VerifyEmail = () => {
   const tokenFromUrl = searchParams.get('token');
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { loginWithToken } = useAuth();
 
   const verifyToken = async (tokenToVerify) => {
     if (!tokenToVerify) {
       setStatus('idle');
-      setMessage(t('api.Auth.VerifyEmail.EnterCode'));
+      setMessage(t('auth.enter6Digit'));
       return;
     }
 
@@ -24,11 +26,16 @@ const VerifyEmail = () => {
     try {
       const response = await axiosClient.post(`api/auth/verify-email?token=${tokenToVerify}`);
       setStatus('success');
-      setMessage(t('api.Auth.VerifyEmail.Success'));
-      toast.success(t('api.Auth.VerifyEmail.Success'));
+      setMessage(t('api.Auth.Verify.Success'));
+      toast.success(t('api.Auth.Verify.Success'));
+
+      // Chờ 2s để user thấy thông báo thành công rồi về home
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
     } catch (err) {
       setStatus('error');
-      const msg = t(`api.${err.errorMessage || 'Auth.VerifyEmail.Fail'}`);
+      const msg = t(`api.${err.errorMessage || 'Auth.Verify.Fail'}`);
       setMessage(msg);
       toast.error(msg);
     }
@@ -45,7 +52,7 @@ const VerifyEmail = () => {
   const handleManualVerify = (e) => {
     e.preventDefault();
     if (inputToken.length !== 6) {
-      toast.warning(t('api.Auth.VerifyEmail.InvalidFormat'));
+      toast.warning(t('auth.enter6Digit'));
       return;
     }
     verifyToken(inputToken);
@@ -110,10 +117,10 @@ const VerifyEmail = () => {
               <p className="text-gray-600">{message}</p>
             </div>
             <Link
-              to="/login"
+              to="/"
               className="block w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-green-200 active:scale-95"
             >
-              {t('auth.loginNow')}
+              {t('auth.goHome') || 'Về trang chủ'}
             </Link>
           </div>
         )}

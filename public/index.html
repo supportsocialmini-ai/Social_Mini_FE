@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.png" />
     <title>Social Mini App</title>
+    <script>
+      (function() {
+        const originalLog = console.log;
+        const originalInfo = console.info;
+        const originalWarn = console.warn;
+        const filterMsg = (args) => {
+          const msg = Array.from(args).join(' ');
+          if (typeof msg === 'string' && (
+              msg.includes('React DevTools') || 
+              msg.includes('Locize') || 
+              msg.includes('i18next is made possible')
+          )) return true;
+          return false;
+        };
+        console.log = function(...args) { if (!filterMsg(args)) originalLog.apply(console, args); };
+        console.info = function(...args) { if (!filterMsg(args)) originalInfo.apply(console, args); };
+        console.warn = function(...args) { if (!filterMsg(args)) originalWarn.apply(console, args); };
+      })();
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
