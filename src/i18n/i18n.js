@@ -13,6 +13,10 @@ i18n
       vi: viTranslation
     },
     fallbackLng: 'vi',
+    detection: {
+      order: ['localStorage', 'htmlTag', 'cookie', 'navigator', 'path', 'subdomain'],
+      caches: ['localStorage'],
+    },
     interpolation: {
       escapeValue: false
     },

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import i18n from '../i18n/i18n';
 
 const axiosClient = axios.create({
   baseURL: process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL}/` : 'https://social-mini-app.onrender.com/',
@@ -13,6 +14,9 @@ axiosClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Set language header from i18n
+    config.headers['Accept-Language'] = i18n.language || 'vi';
 
     // Log request for debugging 400 errors
     if (config.url?.includes('auth/login')) {
