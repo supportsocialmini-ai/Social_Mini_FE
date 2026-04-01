@@ -25,6 +25,12 @@ const authService = {
   },
   verifyEmail: (token) => {
     return axiosClient.post(`api/auth/verify-email?token=${token}`);
+  },
+  forgotPassword: (email) => {
+    return axiosClient.post('api/auth/forgot-password', { email });
+  },
+  resetPassword: (token, newPassword, confirmPassword) => {
+    return axiosClient.post('api/auth/reset-password', { token, newPassword, confirmPassword });
   }
 };
 

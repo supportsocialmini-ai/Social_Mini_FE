@@ -12,6 +12,8 @@ import Messaging from './pages/Messaging/Messaging';
 import Friends from './pages/Friends/Friends';
 import Search from './pages/Search/Search';
 import Settings from './pages/Settings/Settings';
+import ForgotPassword from './pages/ForgotPassword/ForgotPassword';
+import ResetPassword from './pages/ResetPassword/ResetPassword';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import MentalLetterModal from './components/Common/MentalLetterModal';
@@ -46,6 +48,8 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
             <Route path="/profile/:userId" element={<PrivateRoute><Profile /></PrivateRoute>} />
