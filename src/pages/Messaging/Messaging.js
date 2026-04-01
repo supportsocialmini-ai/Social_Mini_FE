@@ -374,7 +374,12 @@ const Messaging = () => {
                             <p className="whitespace-pre-wrap break-words leading-relaxed">{m.messageContent}</p>
                           )}
                           <div className={`text-[8px] lg:text-[9px] mt-2 font-bold uppercase tracking-tighter opacity-60 flex items-center gap-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                             {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                             {(() => {
+                               const dateString = m.createdAt || m.CreatedAt;
+                               if (!dateString) return '';
+                               const utcString = dateString.endsWith('Z') || dateString.includes('+') ? dateString : `${dateString}Z`;
+                               return new Date(utcString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                             })()}
                              {isMe && m.isRead && <span className="text-indigo-200 ml-1 font-black">· SEEN</span>}
                           </div>
                         </div>

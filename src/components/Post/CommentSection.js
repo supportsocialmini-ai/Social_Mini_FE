@@ -25,7 +25,12 @@ const CommentItem = ({ comment, user, getFullAvatarUrl, onDelete, onReply, depth
           </div>
           <div className="flex items-center gap-3 mt-1.5 px-1 flex-wrap">
             <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">
-              {new Date(comment.createdAt).toLocaleDateString(t('language') === 'vi' ? 'vi-VN' : 'en-US')}
+              {(() => {
+                const dateString = comment.createdAt;
+                if (!dateString) return '';
+                const utcString = dateString.endsWith('Z') || dateString.includes('+') ? dateString : `${dateString}Z`;
+                return new Date(utcString).toLocaleDateString(t('language') === 'vi' ? 'vi-VN' : 'en-US');
+              })()}
             </p>
             <button
               onClick={() => onReply(comment)}

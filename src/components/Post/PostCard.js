@@ -38,7 +38,9 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
 
   // Format time ago
   const getTimeAgo = (dateString) => {
-    const date = new Date(dateString);
+    if (!dateString) return '';
+    const utcString = dateString.endsWith('Z') || dateString.includes('+') ? dateString : `${dateString}Z`;
+    const date = new Date(utcString);
     const now = new Date();
     const seconds = Math.floor((now - date) / 1000);
 
