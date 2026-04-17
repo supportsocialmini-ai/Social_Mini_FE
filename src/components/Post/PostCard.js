@@ -54,6 +54,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
   const [isExpanded, setIsExpanded]         = useState(false);
   const [likeAnimating, setLikeAnimating]   = useState(false);
+  const [isSentRequest, setIsSentRequest]   = useState(false);
 
   const isPostOwner = currentUser?.userId === post.userId;
   const privacy = post.privacy || 'Public';
@@ -216,20 +217,24 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
                 ) : (
                   <button
                     onClick={async () => {
+                      setIsSentRequest(true); // Optimistic update
                       try {
                         await friendService.sendRequest(post.userId);
                         // Silencing success toast per user request
                       } catch (err) {
-                        // Silent error per user request
+                        // Silent error per user request - we keep 'Sent' for UX
                         console.error('Lỗi gửi kết bạn:', err);
                       }
                     }}
-                    className="text-[10px] font-bold text-indigo-600 px-2 py-0.5 rounded-full transition-all hover:scale-105 active:scale-95"
-                    style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'linear-gradient(135deg,#6366f1,#8b5cf6)', e.currentTarget.style.color = '#fff')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.08)', e.currentTarget.style.color = '#6366f1')}
+                    disabled={isSentRequest}
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-full transition-all hover:scale-105 active:scale-95"
+                    style={isSentRequest 
+                      ? { background: 'rgba(99,102,241,0.06)', color: '#94a3b8', cursor: 'default' }
+                      : { background: 'rgba(99,102,241,0.08)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.2)' }}
+                    onMouseEnter={e => !isSentRequest && (e.currentTarget.style.background = 'linear-gradient(135deg,#6366f1,#8b5cf6)', e.currentTarget.style.color = '#fff')}
+                    onMouseLeave={e => !isSentRequest && (e.currentTarget.style.background = 'rgba(99,102,241,0.08)', e.currentTarget.style.color = '#6366f1')}
                   >
-                    + Kết bạn
+                    {isSentRequest ? 'Đã gửi' : '+ Kết bạn'}
                   </button>
                 )}
               </div>

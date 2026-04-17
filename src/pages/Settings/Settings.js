@@ -361,6 +361,9 @@ const Settings = () => {
                 <p className="text-gray-400 text-sm mb-8">{t('settings.securityDesc')}</p>
 
                 <div className="space-y-6">
+                  {/* Hidden field to trap browser's auto-fill (prevents it from filling the Navbar search) */}
+                  <input type="text" name="username" style={{ display: 'none' }} autoComplete="username" />
+                  
                   <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100">
                     <div className="space-y-5">
                       {!isPasswordVerified ? (

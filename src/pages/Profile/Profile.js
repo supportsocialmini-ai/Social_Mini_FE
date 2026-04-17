@@ -94,8 +94,14 @@ const Profile = () => {
   }, [routeUserId, currentUser, isOwnProfile]);
 
   const handleAddFriend = async () => {
-    try { await friendService.sendRequest(routeUserId); setFriendshipStatus('Sent'); }
-    catch (error) { console.error("Error sending request:", error); }
+    // Optimistic update
+    setFriendshipStatus('Sent');
+    try { 
+      await friendService.sendRequest(routeUserId); 
+    } catch (error) { 
+      console.error("Error sending request:", error); 
+      // We keep 'Sent' status for better UX if the error is 400 (already sent)
+    }
   };
   const handleAcceptRequest = async () => {
     try { if (!requestId) return; await friendService.acceptRequest(requestId); setFriendshipStatus('Accepted'); }

@@ -48,7 +48,15 @@
       "friendRequestSent": "Friend request sent!",
       "friendAccepted": "You are now friends!",
       "requestCancelled": "Request cancelled.",
-      "unfriendSuccess": "Unfriended."
+      "unfriendSuccess": "Unfriended.",
+      "cancelRequest": "Cancel Request"
+    },
+    "friends": {
+      "accept": "Accept",
+      "unfriend": "Unfriend"
+    },
+    "messaging": {
+      "title": "Messages"
     },
     "auth": {
       "passwordMismatch": "Passwords do not match."

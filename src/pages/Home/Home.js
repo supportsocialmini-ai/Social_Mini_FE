@@ -73,10 +73,44 @@ const Home = () => {
         const response = await userService.getUsers();
         let data = response?.$values || response || [];
         if (!Array.isArray(data)) data = [data];
-        setSuggestions(data.filter(u => u && u.userId !== user?.userId).slice(0, 5));
-      } catch (err) { console.error('Lỗi lấy suggestions:', err); }
+        
+        // Filter out self and take a few more than needed to account for existing friends
+        const potentialSuggestions = data.filter(u => u && u.userId !== user?.userId).slice(0, 15);
+        
+        // Fetch statuses in parallel
+        const suggestionsWithStatus = await Promise.all(
+          potentialSuggestions.map(async (u) => {
+            try {
+              const statusRes = await friendService.getFriendshipStatus(u.userId);
+              return { ...u, friendshipStatus: statusRes?.status || 'None' };
+            } catch {
+              return { ...u, friendshipStatus: 'None' };
+            }
+          })
+        );
+
+        // Filter out those who are already friends (Accepted)
+        const finalFiltered = suggestionsWithStatus
+          .filter(u => u.friendshipStatus !== 'Accepted')
+          .slice(0, 5);
+
+        // Initialize sentIds state for those already 'Sent'
+        const initiallySent = new Set(
+          finalFiltered
+            .filter(u => u.friendshipStatus === 'Sent')
+            .map(u => u.userId)
+        );
+
+        setSentIds(initiallySent);
+        setSuggestions(finalFiltered);
+      } catch (err) { 
+        console.error('Lỗi lấy suggestions:', err); 
+      }
     };
-    if (user) { fetchSuggestions(); fetchPosts(); }
+    if (user) { 
+      fetchSuggestions(); 
+      fetchPosts(); 
+    }
   }, [user]);
 
   const handlePostSubmit = async () => {
@@ -106,13 +140,16 @@ const Home = () => {
   };
 
   const handleFollow = async (userId, fullName) => {
+    // Optimistic update
+    setSentIds(prev => new Set([...prev, userId]));
+    
     try {
       await friendService.sendRequest(userId);
-      setSentIds(prev => new Set([...prev, userId]));
-      // Silencing success toast per user request
-    } catch { 
-      // Silencing error toast per user request
-      console.error('Không thể gửi lời mời kết bạn');
+      // Success
+    } catch (error) { 
+      // If error is not 400 (which usually means already sent/pending), we might want to revert
+      // But for a better UX, we'll just keep it as 'Sent' to avoid repeated failed clicks
+      console.error('Không thể gửi lời mời kết bạn:', error);
     }
   };
 

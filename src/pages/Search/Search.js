@@ -19,6 +19,7 @@ const Search = () => {
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'people' | 'posts'
   const [inputValue, setInputValue] = useState(query);
   const [expandedPosts, setExpandedPosts] = useState({});
+  const [sentIds, setSentIds] = useState(new Set());
 
   const toggleExpand = (postId) => {
     setExpandedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
@@ -64,11 +65,14 @@ const Search = () => {
   }, [inputValue]);
 
   const handleAddFriend = async (userId, fullName) => {
+    // Optimistic update
+    setSentIds(prev => new Set([...prev, userId]));
     try {
       await friendService.sendRequest(userId);
-      toast.success(t('api.Friend.Action.RequestSuccess', { name: fullName }));
+      // Success toast removed as per silent UI preference, but keeping name for reference if needed
     } catch (error) {
-      toast.error(t(`api.${error.errorMessage || 'Friend.Action.RequestFail'}`));
+      console.error('Error sending friend request:', error);
+      // Keep it as sent for UX if already pending
     }
   };
 
@@ -193,9 +197,13 @@ const Search = () => {
                   </Link>
                   <button
                     onClick={() => handleAddFriend(u.userId, u.fullName)}
-                    className="flex-shrink-0 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all transform hover:scale-105"
+                    disabled={sentIds.has(u.userId)}
+                    className="flex-shrink-0 text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all transform hover:scale-105"
+                    style={sentIds.has(u.userId)
+                      ? { background: 'rgba(99,102,241,0.06)', color: '#94a3b8', cursor: 'default' }
+                      : { background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff' }}
                   >
-                    {t('search.addFriend')}
+                    {sentIds.has(u.userId) ? t('profile.friendRequestSent') || 'Đã gửi' : t('search.addFriend')}
                   </button>
                 </div>
               ))}

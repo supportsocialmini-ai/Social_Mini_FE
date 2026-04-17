@@ -48,7 +48,15 @@
       "friendRequestSent": "Đã gửi lời mời kết bạn!",
       "friendAccepted": "Hai bạn đã trở thành bạn bè!",
       "requestCancelled": "Đã hủy lời mời.",
-      "unfriendSuccess": "Đã hủy kết bạn."
+      "unfriendSuccess": "Đã hủy kết bạn.",
+      "cancelRequest": "Hủy yêu cầu"
+    },
+    "friends": {
+      "accept": "Chấp nhận",
+      "unfriend": "Hủy kết bạn"
+    },
+    "messaging": {
+      "title": "Nhắn tin"
     },
     "auth": {
       "passwordMismatch": "Mật khẩu không khớp."

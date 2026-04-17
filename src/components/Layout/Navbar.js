@@ -1,6 +1,6 @@
 /** No-op to fix casing **/
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import notificationService from '../../services/notificationService';
 import { useChat } from '../../context/ChatContext';
@@ -13,6 +13,7 @@ const Navbar = () => {
   const { unreadMessageCount, onlineUsers, unreadCountsPerUser, connection } = useChat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -40,6 +41,15 @@ const Navbar = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Close all dropdowns on route change
+  useEffect(() => {
+    setIsSuggestOpen(false);
+    setIsNotifOpen(false);
+    setIsMenuOpen(false);
+    setIsMobileSearchOpen(false);
+    setSearchInput(''); // Clear search on navigation
+  }, [location.pathname]);
 
   useEffect(() => {
     if (searchInput.trim().length < 2) { setSuggestions([]); setIsSuggestOpen(false); return; }
@@ -143,6 +153,8 @@ const Navbar = () => {
               </svg>
               <input
                 type="text"
+                name="navbar-search-desktop"
+                autoComplete="off"
                 placeholder={t('navbar.search')}
                 value={searchInput}
                 onChange={(e) => { setSearchInput(e.target.value); }}
@@ -303,7 +315,7 @@ const Navbar = () => {
       </nav>
 
       {/* Mobile search slide-down */}
-      {isMobileSearchOpen && (
+       {isMobileSearchOpen && (
         <div ref={mobileSearchRef} className="sm:hidden fixed inset-x-0 top-[64px] z-40 bg-white border-b border-gray-100 p-3 shadow-md">
           <div className="relative">
             <div className="flex items-center bg-gray-100 border border-gray-200 px-4 py-2 rounded-full focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-400 transition-all">
@@ -312,6 +324,8 @@ const Navbar = () => {
               </svg>
               <input
                 type="text"
+                name="navbar-search-mobile"
+                autoComplete="off"
                 autoFocus
                 placeholder={t('navbar.search')}
                 value={searchInput}

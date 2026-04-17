@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import authService from '../../services/authService';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
@@ -29,6 +30,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -70,6 +72,14 @@ const Register = () => {
       return toast.warn(msg);
     }
 
+    setIsLoading(false);
+    setIsTermsModalOpen(true);
+  };
+
+  const handleConfirmRegister = async () => {
+    setIsTermsModalOpen(false);
+    setIsLoading(true);
+
     try {
       const registerData = {
         username: formData.username,
@@ -81,7 +91,6 @@ const Register = () => {
         isActive: true
       };
       await authService.register(registerData);
-      // Silencing success toast per user request
       navigate('/login', {
         state: { username: formData.username, password: formData.password, showVerify: true }
       });
@@ -400,6 +409,150 @@ const Register = () => {
             </p>
           </div>
         </div>
+
+        {/* Terms of Service Modal */}
+        {isTermsModalOpen && createPortal(
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <style>{`
+            @keyframes modalFadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes modalScaleUp {
+              from { opacity: 0; transform: scale(0.95) translateY(10px); }
+              to { opacity: 1; transform: scale(1) translateY(0); }
+            }
+            .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+            .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
+            .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+          `}</style>
+
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              style={{ animation: 'modalFadeIn 0.3s ease-out forwards' }}
+              onClick={() => setIsTermsModalOpen(false)}
+            />
+
+            {/* Modal Container */}
+            <div
+              className="relative w-full max-w-2xl bg-white rounded-[32px] shadow-[0_30px_100px_rgba(0,0,0,0.25)] flex flex-col max-h-[85vh] overflow-hidden"
+              style={{ animation: 'modalScaleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' }}
+            >
+              {/* Header */}
+              <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tight">ĐIỀU KHOẢN SỬ DỤNG</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Cập nhật lần cuối: {new Date().toLocaleDateString('vi-VN')}</p>
+                </div>
+                <button
+                  onClick={() => setIsTermsModalOpen(false)}
+                  className="w-10 h-10 rounded-full flex items-center justify-center bg-slate-50 text-slate-400 hover:text-slate-900 transition-all active:scale-90"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="p-8 overflow-y-auto custom-scrollbar">
+                <div className="space-y-6 text-slate-600 leading-relaxed">
+                  <p className="font-semibold text-slate-800">
+                    Chào mừng bạn đến với MiniSocial – nền tảng mạng xã hội mini cho phép người dùng kết nối, chia sẻ và tương tác.
+                  </p>
+                  <p className="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-r-xl text-sm italic">
+                    Khi truy cập hoặc sử dụng dịch vụ của chúng tôi, bạn đồng ý tuân thủ các điều khoản dưới đây.
+                  </p>
+
+                  <section className="space-y-3">
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">1. Điều kiện sử dụng</h4>
+                    <ul className="list-disc ml-5 space-y-1 text-sm">
+                      <li>Bạn phải từ 13 tuổi trở lên để sử dụng dịch vụ.</li>
+                      <li>Bạn chịu trách nhiệm về tài khoản của mình (email, mật khẩu).</li>
+                      <li>Không được mạo danh người khác hoặc cung cấp thông tin sai lệch.</li>
+                    </ul>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">2. Tài khoản người dùng</h4>
+                    <p className="text-sm">Bạn cần đăng ký tài khoản để sử dụng đầy đủ chức năng. Bạn phải giữ bảo mật thông tin đăng nhập. Chúng tôi có quyền tạm khóa hoặc xóa tài khoản nếu phát hiện vi phạm.</p>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">3. Nội dung người dùng</h4>
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                      <p className="font-bold text-xs text-slate-400 uppercase tracking-widest">Nghĩa vụ</p>
+                      <p className="text-sm">Bạn chịu trách nhiệm với nội dung bạn đăng tải, bao gồm: Bài viết, hình ảnh, video, bình luận.</p>
+                      <p className="font-bold text-xs text-red-400 uppercase tracking-widest mt-4">Hành vi bị cấm</p>
+                      <ul className="list-disc ml-5 space-y-1 text-sm text-red-500/80">
+                        <li>Nội dung vi phạm pháp luật</li>
+                        <li>Nội dung xúc phạm, thù địch</li>
+                        <li>Spam, quảng cáo trái phép</li>
+                        <li>Nội dung xâm phạm quyền riêng tư</li>
+                      </ul>
+                    </div>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">4. Quyền riêng tư</h4>
+                    <p className="text-sm">Chúng tôi thu thập và xử lý dữ liệu theo Chính sách bảo mật. Không chia sẻ dữ liệu cá nhân cho bên thứ ba nếu không có sự đồng ý (trừ khi pháp luật yêu cầu).</p>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">5. Quyền và nghĩa vụ hệ thống</h4>
+                    <p className="text-sm">Chúng tôi có quyền: Thay đổi, nâng cấp hệ thống; Tạm ngưng dịch vụ để bảo trì; Xóa nội dung hoặc tài khoản vi phạm.</p>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">6. Hành vi bị cấm</h4>
+                    <p className="text-sm text-red-600 font-medium">Bạn không được: Tấn công hệ thống (hack, DDOS, exploit); Thu thập dữ liệu trái phép; Sử dụng bot spam; Phát tán mã độc.</p>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">7. Quyền sở hữu</h4>
+                    <p className="text-sm">Bạn giữ quyền sở hữu nội dung của mình. Khi đăng tải, bạn cấp cho chúng tôi quyền sử dụng nội dung đó để vận hành hệ thống.</p>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">8. Giới hạn trách nhiệm</h4>
+                    <p className="text-sm">Chúng tôi không chịu trách nhiệm với nội dung do người dùng đăng. Không đảm bảo dịch vụ luôn hoạt động liên tục, không lỗi.</p>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">9. Thay đổi điều khoản</h4>
+                    <p className="text-sm">Điều khoản có thể được cập nhật bất kỳ lúc nào. Việc tiếp tục sử dụng đồng nghĩa bạn chấp nhận thay đổi.</p>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">10. Liên hệ</h4>
+                    <p className="text-sm">Nếu có thắc mắc, vui lòng liên hệ Email: <span className="font-bold text-indigo-500">support.socialmini@gmail.com</span></p>
+                  </section>
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsTermsModalOpen(false)}
+                  className="flex-1 py-4 px-6 rounded-2xl bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-100 transition-all active:scale-[0.98]"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmRegister}
+                  className="flex-[2] py-4 px-6 rounded-2xl bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all active:scale-[0.98]"
+                >
+                  Chấp nhận và Đăng ký
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
       </div>
     </div>
   );
