@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { toast } from 'react-toastify';
 import authService from '../../services/authService';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +28,13 @@ const Login = () => {
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
   const [verifyToken, setVerifyToken] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  
+  // Forgot password states
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [isForgotLoading, setIsForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+  const [isForgotSuccess, setIsForgotSuccess] = useState(false);
   const { login } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -79,6 +87,28 @@ const Login = () => {
     } finally { setIsVerifying(false); }
   };
 
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+    setForgotError('');
+    setIsForgotLoading(true);
+    try {
+      await authService.forgotPassword(forgotEmail);
+      setIsForgotSuccess(true);
+      // Wait bit and then navigate to reset password page
+      setTimeout(() => {
+        setIsForgotModalOpen(false);
+        navigate('/reset-password', { state: { email: forgotEmail } });
+      }, 2000);
+    } catch (err) {
+      const rawMsg = err.errorMessage || 'Auth.Password.ForgotFail';
+      const translatedMsg = t(`api.${rawMsg}`);
+      setForgotError(translatedMsg);
+      toast.error(translatedMsg);
+    } finally {
+      setIsForgotLoading(false);
+    }
+  };
+
   return (
     <div
       className="min-h-screen w-full flex items-center justify-center relative overflow-hidden"
@@ -107,6 +137,13 @@ const Login = () => {
         .animate-gradient {
           background-size: 200% auto;
           animation: gradientFlow 5s ease infinite;
+        }
+        @keyframes modalScaleUp {
+          from { transform: scale(0.95) translateY(20px); opacity: 0; }
+          to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .animate-modal {
+          animation: modalScaleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
       `}</style>
 
@@ -263,9 +300,17 @@ const Login = () => {
                   </button>
                 </div>
                 <div className="flex justify-end mt-1.5">
-                  <Link to="/forgot-password" className="text-sm font-medium text-blue-500 hover:text-blue-600 hover:underline transition-colors">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setIsForgotModalOpen(true);
+                      setForgotError('');
+                      setIsForgotSuccess(false);
+                    }}
+                    className="text-sm font-medium text-blue-500 hover:text-blue-600 hover:underline transition-colors"
+                  >
                     Quên mật khẩu?
-                  </Link>
+                  </button>
                 </div>
               </div>
 
@@ -373,6 +418,91 @@ const Login = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* ===== Forgot Password Modal ===== */}
+      {isForgotModalOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => !isForgotLoading && setIsForgotModalOpen(false)}
+          />
+          
+          {/* Modal Container */}
+          <div className="relative w-full max-w-sm bg-white rounded-[2.5rem] p-8 shadow-2xl animate-modal overflow-hidden">
+            {/* Header */}
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-50 text-indigo-500 rounded-2xl mb-4 shadow-sm">
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-1">Quên mật khẩu</h3>
+              <p className="text-slate-400 text-sm">Nhập email để nhận mã khôi phục.</p>
+            </div>
+
+            {forgotError && (
+              <div className="bg-red-50 text-red-500 p-3 rounded-xl text-[10px] mb-4 border border-red-100 flex items-center gap-2">
+                <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {forgotError}
+              </div>
+            )}
+
+            {isForgotSuccess ? (
+              <div className="bg-green-50 text-green-600 p-6 rounded-2xl border border-green-100 text-center animate-pulse">
+                 <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                 </div>
+                 <h4 className="font-bold mb-1">Đã gửi email!</h4>
+                 <p className="text-xs opacity-80">Vui lòng chờ giây lát để chuyển sang bước tiếp theo...</p>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPasswordSubmit} className="space-y-5">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">ĐỊA CHỈ EMAIL</label>
+                  <input
+                    type="email"
+                    placeholder="email@example.com"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    required
+                    className="w-full px-5 py-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:border-indigo-400 text-slate-700 placeholder:text-slate-300 transition-all font-medium text-sm bg-slate-50"
+                  />
+                </div>
+                
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotModalOpen(false)}
+                    disabled={isForgotLoading}
+                    className="flex-1 px-4 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm rounded-xl transition-all active:scale-95"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isForgotLoading}
+                    className="flex-[2] py-4 rounded-xl font-bold text-white text-sm transition-all shadow-lg hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
+                    style={{ background: 'linear-gradient(90deg, #6366f1 0%, #4f46e5 100%)' }}
+                  >
+                    {isForgotLoading ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Đang gửi...
+                      </div>
+                    ) : 'Gửi mã xác nhận'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

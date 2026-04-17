@@ -236,7 +236,7 @@ const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUs
 const ChatBubbleManager = ({ openChats, onClose, connection, getFullAvatarUrl, currentUser, onlineUsers }) => {
   if (openChats.length === 0) return null;
   return (
-    <div className="fixed bottom-4 right-4 z-[9000] flex flex-row-reverse items-start gap-3 flex-wrap-reverse max-w-[calc(100vw-2rem)]">
+    <div className="fixed bottom-4 right-4 z-[3000] flex flex-row-reverse items-start gap-3 flex-wrap-reverse max-w-[calc(100vw-2rem)]">
       {openChats.map((chatUser) => (
         <ChatWindow
           key={chatUser.userId}

@@ -45,7 +45,9 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
   const currentUser = parentUser || user;
   const [isCommentOpen, setIsCommentOpen]   = useState(false);
   const [isLikesModalOpen, setIsLikesModalOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen]         = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0 });
+  const menuRef = useRef(null);
   const [likeCount, setLikeCount]           = useState(post.likeCount || 0);
   const [isLiked, setIsLiked]               = useState(post.isLiked || false);
   const [isLiking, setIsLiking]             = useState(false);
@@ -58,7 +60,6 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
 
   const isPostOwner = currentUser?.userId === post.userId;
   const privacy = post.privacy || 'Public';
-  const menuRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -71,6 +72,25 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isMenuOpen]);
+
+  // Close menu on scroll - important for portals
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const handleScroll = () => setIsMenuOpen(false);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [isMenuOpen]);
+
+  const handleMenuToggle = (e) => {
+    if (!isMenuOpen && menuRef.current) {
+      const rect = menuRef.current.getBoundingClientRect();
+      setMenuCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.right + window.scrollX,
+      });
+    }
+    setIsMenuOpen(!isMenuOpen);
+  };
 
   const getFullImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
@@ -190,7 +210,8 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
       `}</style>
 
       <div
-        className="rounded-2xl overflow-visible post-card-glass"
+        className="rounded-2xl overflow-visible post-card-glass relative"
+        style={{ zIndex: isMenuOpen ? 900 : 1 }}
       >
         {/* ── Header ─────────────────────────────────── */}
         <div className="px-5 py-4 flex items-center justify-between">
@@ -248,57 +269,13 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
 
           {/* 3-dot menu */}
           <div className="relative" ref={menuRef}>
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)}
+            <button onClick={handleMenuToggle}
               className="w-8 h-8 rounded-full text-slate-400 flex items-center justify-center transition-all duration-200 hover:bg-slate-50 hover:text-indigo-500"
             >
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
               </svg>
             </button>
-
-            {isPostOwner && (
-              <div className="absolute right-0 top-full mt-1 z-[999] rounded-[1rem] overflow-hidden min-w-[180px] py-1.5 transition-all duration-200 shadow-2xl border border-slate-200"
-                style={{
-                  backgroundColor: '#ffffff',
-                  backdropFilter: 'none',
-                  WebkitBackdropFilter: 'none',
-                  opacity: isMenuOpen ? 1 : 0,
-                  transform: isMenuOpen ? 'translateY(0) scale(1)' : 'translateY(5px) scale(0.95)',
-                  pointerEvents: isMenuOpen ? 'auto' : 'none',
-                  transformOrigin: 'top right',
-                }}>
-                <p className="px-4 py-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Quyền riêng tư</p>
-                {[
-                  { key: 'Public', label: 'Công khai' },
-                  { key: 'Friends', label: 'Bạn bè' },
-                  { key: 'OnlyMe', label: 'Chỉ mình tôi' },
-                ].map(p => (
-                  <button key={p.key} onClick={() => { handlePrivacyChange(p.key); setIsMenuOpen(false); }}
-                    className="w-full px-4 py-2 text-left text-[13px] flex items-center gap-2.5 transition-all duration-150"
-                    style={privacy === p.key
-                      ? { background: 'rgba(99,102,241,0.06)', color: '#6366f1', fontWeight: 700 }
-                      : { color: '#445164' }}
-                  >
-                    <span className={privacy === p.key ? 'text-indigo-500' : 'text-slate-400'}>
-                      <PrivacyIcon privacy={p.key} />
-                    </span>
-                    <span className="flex-1">{p.label}</span>
-                  </button>
-                ))}
-                
-                <div className="h-px my-1.5 mx-3 bg-slate-100" />
-                
-                <button onClick={() => { setIsConfirmDeleteOpen(true); setIsMenuOpen(false); }}
-                  disabled={isDeleting}
-                  className="w-full px-4 py-2 text-left text-[13px] flex items-center gap-2.5 transition-all duration-150 text-red-500 font-semibold hover:bg-red-50/50"
-                >
-                  <svg className="h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  {isDeleting ? 'Đang xóa...' : 'Xóa bài viết'}
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
@@ -421,6 +398,61 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
             title={t('posts.deleteConfirmTitle')} message={t('posts.deleteConfirmMsg')}
             confirmText={t('posts.deleteConfirmBtn')} type="danger" />
         </>,
+        document.body
+      )}
+
+      {/* ===== 3-Dot Menu Portal ===== */}
+      {isMenuOpen && createPortal(
+        <div 
+          className="fixed z-[5000] rounded-[1.2rem] overflow-hidden min-w-[200px] py-2 shadow-[0_20px_50px_rgba(0,0,0,0.2),0_10px_20px_rgba(99,102,241,0.1)] border border-slate-100/50"
+          style={{
+            top: menuCoords.top - window.scrollY + 8,
+            left: menuCoords.left - window.scrollX - 200, // Align right edge
+            backgroundColor: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(12px)',
+            animation: 'modalScaleUp 0.15s ease-out forwards',
+          }}
+        >
+          {isPostOwner && (
+            <>
+              <p className="px-4 py-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 opacity-60">QUYỀN RIÊNG TƯ</p>
+              {[
+                { key: 'Public', label: 'Công khai' },
+                { key: 'Friends', label: 'Bạn bè' },
+                { key: 'OnlyMe', label: 'Chỉ mình tôi' },
+              ].map(p => (
+                <button key={p.key} onClick={() => { handlePrivacyChange(p.key); setIsMenuOpen(false); }}
+                  className="w-full px-4 py-2.5 text-left text-[14px] flex items-center gap-3 transition-all duration-150 hover:bg-slate-50"
+                  style={privacy === p.key
+                    ? { background: 'rgba(99,102,241,0.06)', color: '#6366f1', fontWeight: 700 }
+                    : { color: '#4d5b7c' }}
+                >
+                  <span className={privacy === p.key ? 'text-indigo-500 scale-110' : 'text-slate-400'}>
+                    <PrivacyIcon privacy={p.key} />
+                  </span>
+                  <span className="flex-1">{p.label}</span>
+                  {privacy === p.key && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
+                  )}
+                </button>
+              ))}
+              
+              <div className="h-px my-2 mx-3 bg-slate-100/80" />
+              
+              <button onClick={() => { setIsConfirmDeleteOpen(true); setIsMenuOpen(false); }}
+                disabled={isDeleting}
+                className="w-full px-4 py-2.5 text-left text-[14px] flex items-center gap-3 transition-all duration-150 text-red-500 font-bold hover:bg-red-50"
+              >
+                <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
+                  <svg className="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </div>
+                {isDeleting ? 'Đang xóa...' : 'Xóa bài viết'}
+              </button>
+            </>
+          )}
+        </div>,
         document.body
       )}
     </>

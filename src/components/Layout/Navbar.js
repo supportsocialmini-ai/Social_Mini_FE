@@ -132,7 +132,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 px-4 py-2 sm:py-3"
+      <nav className="sticky top-0 z-[2000] px-4 py-2 sm:py-3"
         style={{
           background: 'rgba(255,255,255,0.75)',
           backdropFilter: 'blur(24px)',

@@ -88,7 +88,7 @@ const PostCreator = ({ user, getFullAvatarUrl, onPostSuccess }) => {
         WebkitBackdropFilter: 'blur(20px)',
         border: '1px solid rgba(255,255,255,0.55)',
         boxShadow: '0 4px 24px rgba(99,102,241,0.06)',
-        zIndex: isPrivacyOpen ? 40 : 1,
+        zIndex: isPrivacyOpen ? 1000 : 1,
       }}
     >
       {/* Image preview */}
