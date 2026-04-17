@@ -44,7 +44,7 @@ const Login = () => {
     setIsLoading(true);
     try {
       await login(username, password);
-      // Silencing success toast per user request
+      toast.success(t('api.Auth.Login.Success'));
       navigate('/');
     } catch (err) {
       const rawMsg = err.errorMessage || 'Auth.Login.Fail';
@@ -130,7 +130,7 @@ const Login = () => {
           {/* Headline */}
           <h1 className="animate-fade-up delay-100 text-[3.6rem] font-extrabold text-slate-800 leading-[1.15] mb-4" style={{ letterSpacing: '-0.02em' }}>
             Kết nối bạn bè,<br />
-            <span 
+            <span
               className="animate-gradient"
               style={{
                 background: 'linear-gradient(90deg, #6366f1, #a855f7, #ec4899, #6366f1)',
@@ -234,7 +234,7 @@ const Login = () => {
                 <label className="block text-base font-semibold text-slate-700 mb-2">Tên đăng nhập</label>
                 <input
                   type="text"
-                  placeholder="username"
+                  placeholder="Tên người dùng"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full px-5 py-4 rounded-xl border border-slate-200 bg-white text-slate-700 placeholder:text-slate-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-400 transition-all"

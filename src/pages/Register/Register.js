@@ -167,7 +167,7 @@ const Register = () => {
           {/* Headline */}
           <h1 className="animate-fade-up delay-100 text-[3.6rem] font-extrabold text-slate-800 leading-[1.15] mb-4" style={{ letterSpacing: '-0.02em' }}>
             Tham gia<br />
-            <span 
+            <span
               className="animate-gradient"
               style={{
                 background: 'linear-gradient(90deg, #6366f1, #a855f7, #ec4899, #6366f1)',
@@ -266,7 +266,7 @@ const Register = () => {
                 <input
                   name="fullName"
                   type="text"
-                  placeholder="Nguyễn Văn A"
+                  placeholder="Trần Quốc B"
                   value={formData.fullName}
                   onChange={handleChange}
                   className="w-full px-5 py-4 rounded-xl border border-slate-200 bg-white text-slate-700 placeholder:text-slate-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-400 transition-all"
@@ -277,11 +277,11 @@ const Register = () => {
               {/* Username & Email */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-base font-semibold text-slate-700 mb-2">Username</label>
+                  <label className="block text-base font-semibold text-slate-700 mb-2">Tên người dùng</label>
                   <input
                     name="username"
                     type="text"
-                    placeholder="username"
+                    placeholder="Tên người dùng"
                     value={formData.username}
                     onChange={handleChange}
                     className="w-full px-5 py-4 rounded-xl border border-slate-200 bg-white text-slate-700 placeholder:text-slate-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-400 transition-all"
@@ -323,7 +323,7 @@ const Register = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-base font-semibold text-slate-700 mb-2">Nhập lại</label>
+                  <label className="block text-base font-semibold text-slate-700 mb-2">Nhập lại mật khẩu</label>
                   <div className="relative">
                     <input
                       name="confirmPassword"

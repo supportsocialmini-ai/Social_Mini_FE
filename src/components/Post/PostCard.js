@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -57,6 +57,19 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
 
   const isPostOwner = currentUser?.userId === post.userId;
   const privacy = post.privacy || 'Public';
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMenuOpen]);
 
   const getFullImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
@@ -229,53 +242,52 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
           </div>
 
           {/* 3-dot menu */}
-          <div className="relative">
+          <div className="relative" ref={menuRef}>
             <button onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="w-8 h-8 rounded-full text-slate-400 flex items-center justify-center transition-all duration-200 hover:scale-110"
-              style={{ background: isMenuOpen ? 'rgba(99,102,241,0.1)' : 'transparent' }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.08)'}
-              onMouseLeave={e => !isMenuOpen && (e.currentTarget.style.background = 'transparent')}
+              className="w-8 h-8 rounded-full text-slate-400 flex items-center justify-center transition-all duration-200 hover:bg-slate-50 hover:text-indigo-500"
             >
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M5 12a1 1 0 11-2 0 1 1 0 012 0zM12 12a1 1 0 11-2 0 1 1 0 012 0zM19 12a1 1 0 11-2 0 1 1 0 012 0z" />
+                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
               </svg>
             </button>
 
-            {isMenuOpen && isPostOwner && (
-              <div className="absolute right-0 top-full mt-2 z-50 rounded-2xl overflow-hidden min-w-[190px] py-1.5"
+            {isPostOwner && (
+              <div className="absolute right-0 top-full mt-1 z-[999] rounded-[1rem] overflow-hidden min-w-[180px] py-1.5 transition-all duration-200 shadow-2xl border border-slate-200"
                 style={{
-                  background: 'rgba(255,255,255,0.92)',
-                  backdropFilter: 'blur(24px)',
-                  WebkitBackdropFilter: 'blur(24px)',
-                  border: '1px solid rgba(255,255,255,0.7)',
-                  boxShadow: '0 8px 32px rgba(99,102,241,0.15), 0 2px 8px rgba(0,0,0,0.08)',
+                  backgroundColor: '#ffffff',
+                  backdropFilter: 'none',
+                  WebkitBackdropFilter: 'none',
+                  opacity: isMenuOpen ? 1 : 0,
+                  transform: isMenuOpen ? 'translateY(0) scale(1)' : 'translateY(5px) scale(0.95)',
+                  pointerEvents: isMenuOpen ? 'auto' : 'none',
+                  transformOrigin: 'top right',
                 }}>
-                <p className="px-4 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Quyền riêng tư</p>
+                <p className="px-4 py-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Quyền riêng tư</p>
                 {[
                   { key: 'Public', label: 'Công khai' },
                   { key: 'Friends', label: 'Bạn bè' },
                   { key: 'OnlyMe', label: 'Chỉ mình tôi' },
                 ].map(p => (
-                  <button key={p.key} onClick={() => handlePrivacyChange(p.key)}
-                    className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 transition-all duration-150"
+                  <button key={p.key} onClick={() => { handlePrivacyChange(p.key); setIsMenuOpen(false); }}
+                    className="w-full px-4 py-2 text-left text-[13px] flex items-center gap-2.5 transition-all duration-150"
                     style={privacy === p.key
-                      ? { background: 'rgba(99,102,241,0.08)', color: '#6366f1', fontWeight: 700 }
-                      : { color: '#475569' }}
-                    onMouseEnter={e => privacy !== p.key && (e.currentTarget.style.background = 'rgba(99,102,241,0.04)')}
-                    onMouseLeave={e => privacy !== p.key && (e.currentTarget.style.background = 'transparent')}
+                      ? { background: 'rgba(99,102,241,0.06)', color: '#6366f1', fontWeight: 700 }
+                      : { color: '#445164' }}
                   >
-                    <span className="text-slate-400"><PrivacyIcon privacy={p.key} /></span>
-                    {p.label}
+                    <span className={privacy === p.key ? 'text-indigo-500' : 'text-slate-400'}>
+                      <PrivacyIcon privacy={p.key} />
+                    </span>
+                    <span className="flex-1">{p.label}</span>
                   </button>
                 ))}
-                <div className="h-px my-1.5 mx-3" style={{ background: 'rgba(99,102,241,0.08)' }} />
+                
+                <div className="h-px my-1.5 mx-3 bg-slate-100" />
+                
                 <button onClick={() => { setIsConfirmDeleteOpen(true); setIsMenuOpen(false); }}
                   disabled={isDeleting}
-                  className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 transition-all duration-150 text-red-500 disabled:opacity-50"
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.06)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  className="w-full px-4 py-2 text-left text-[13px] flex items-center gap-2.5 transition-all duration-150 text-red-500 font-semibold hover:bg-red-50/50"
                 >
-                  <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                   {isDeleting ? 'Đang xóa...' : 'Xóa bài viết'}

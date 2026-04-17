@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams } from 'react-router-dom';
 import Navbar from '../../components/Layout/Navbar';
 import PostCard from '../../components/Post/PostCard';
@@ -241,6 +242,22 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <style>{`
+        @keyframes modalFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes modalScaleUp {
+          from { transform: scale(0.95) translateY(10px); opacity: 0; }
+          to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .modal-backdrop {
+          animation: modalFadeIn 0.3s ease-out forwards;
+        }
+        .modal-content {
+          animation: modalScaleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+      `}</style>
       <Navbar />
 
       {/* Cover Banner */}
@@ -312,32 +329,6 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Edit Form */}
-        {isEditing && (
-          <div className="mb-6 bg-gray-50 rounded-2xl p-6 border border-gray-100">
-            <h3 className="font-bold text-gray-900 mb-4">{t('profile.editProfile')}</h3>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input name="fullName" value={formData.fullName} onChange={handleChange} placeholder={t('profile.fullNamePlaceholder')} required minLength={2} maxLength={100}
-                className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-gray-900/20" />
-              <input name="username" value={formData.username} onChange={handleChange} placeholder={t('profile.usernamePlaceholder')} required minLength={4} maxLength={30}
-                className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-gray-900/20" />
-              <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder={t('profile.emailPlaceholder')} required
-                className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-gray-900/20" />
-              <input name="avatarUrl" value={formData.avatarUrl} onChange={handleChange} placeholder={t('profile.avatarUrlPlaceholder')}
-                className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-gray-900/20" />
-              <textarea name="bio" value={formData.bio} onChange={handleChange} placeholder={t('profile.bioPlaceholder') || "Tiểu sử"} maxLength={255}
-                className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-gray-900/20 md:col-span-2 resize-none" rows="3" />
-              <div className="flex gap-3 md:col-span-2 pt-2">
-                <button type="submit" disabled={loading} className="flex-1 bg-gray-900 text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-700 transition-all">
-                  {loading ? t('profile.saving') : t('profile.saveChanges')}
-                </button>
-                <button type="button" onClick={() => setIsEditing(false)} className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-200 transition-all">
-                  {t('profile.cancel')}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
 
         {/* Name, Username, Bio */}
         <div className="mb-5">
@@ -381,7 +372,7 @@ const Profile = () => {
         <div className="flex items-center border-b border-gray-100 mb-6">
           <button
             onClick={() => setActiveTab('posts')}
-            className={`flex items-center gap-2 px-6 py-4 border-t-2 transition-all ${activeTab === 'posts' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+            className={`flex items-center gap-2 px-6 py-4 border-b-2 transition-all ${activeTab === 'posts' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -390,7 +381,7 @@ const Profile = () => {
           </button>
           <button
             onClick={() => setActiveTab('saved')}
-            className={`flex items-center gap-2 px-6 py-4 border-t-2 transition-all ${activeTab === 'saved' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+            className={`flex items-center gap-2 px-6 py-4 border-b-2 transition-all ${activeTab === 'saved' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
@@ -399,7 +390,7 @@ const Profile = () => {
           </button>
           <button
             onClick={() => setActiveTab('tagged')}
-            className={`flex items-center gap-2 px-6 py-4 border-t-2 transition-all ${activeTab === 'tagged' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+            className={`flex items-center gap-2 px-6 py-4 border-b-2 transition-all ${activeTab === 'tagged' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -464,6 +455,84 @@ const Profile = () => {
         confirmText={t('profile.unfriendConfirmBtn')}
         type="danger"
       />
+
+      {/* Edit Profile Modal */}
+      {isEditing && createPortal(
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center px-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm modal-backdrop"
+            onClick={() => setIsEditing(false)}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl overflow-hidden modal-content"
+            style={{ backgroundColor: '#ffffff', backdropFilter: 'none' }}
+          >
+            <div className="px-8 pt-8 pb-4">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tight">{t('profile.editProfile')}</h3>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{t('profile.personalInfo')}</p>
+                </div>
+                <button 
+                  onClick={() => setIsEditing(false)}
+                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-slate-900 transition-all"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('profile.fullNamePlaceholder')}</label>
+                  <input name="fullName" value={formData.fullName} onChange={handleChange} required minLength={2} maxLength={100}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('profile.usernamePlaceholder')}</label>
+                  <input name="username" value={formData.username} onChange={handleChange} required minLength={4} maxLength={30}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('profile.emailLabel')}</label>
+                  <input name="email" type="email" value={formData.email} onChange={handleChange} required
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('profile.bioPlaceholder')}</label>
+                  <textarea name="bio" value={formData.bio} onChange={handleChange} maxLength={255} rows="3"
+                    placeholder={t('profile.bioPlaceholder')}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none" />
+                </div>
+
+                <div className="flex gap-3 pt-4 pb-8">
+                  <button 
+                    type="button" 
+                    onClick={() => setIsEditing(false)}
+                    className="flex-1 px-6 py-3.5 rounded-2xl bg-slate-100 text-slate-600 font-bold text-sm hover:bg-slate-200 transition-all"
+                  >
+                    {t('profile.cancel')}
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={loading}
+                    className="flex-1 px-6 py-3.5 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50"
+                  >
+                    {loading ? t('profile.saving') : t('profile.saveChanges')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

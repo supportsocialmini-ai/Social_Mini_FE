@@ -309,22 +309,23 @@ const MessengerDropdown = ({ onOpenChat, getFullAvatarUrl, onlineUsers, unreadCo
 
       {/* Dropdown — always rendered with CSS transitions to prevent backdrop-filter jitter */}
       <div
-        className="absolute right-0 top-full mt-3 bg-white/95 rounded-[1.5rem] shadow-2xl border border-white/50 z-50 overflow-hidden"
+        className="absolute right-0 top-full mt-3 bg-white rounded-[1.5rem] shadow-[0_25px_70px_-15px_rgba(99,102,241,0.35),0_10px_30px_-5px_rgba(0,0,0,0.12)] border border-slate-100 z-50 overflow-hidden"
         style={{
           width: 340,
           maxHeight: 520,
           fontFamily: "'Plus Jakarta Sans', sans-serif",
+          backgroundColor: '#ffffff',
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none',
           opacity: isOpen ? 1 : 0,
           transform: isOpen ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.95)',
           pointerEvents: isOpen ? 'auto' : 'none',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease',
+          transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease',
           willChange: 'transform, opacity',
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50/50 bg-slate-50/30">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-white">
           <h3 className="font-extrabold text-slate-900 text-base tracking-tight">Tin nhắn</h3>
           <button
             onClick={() => { setIsOpen(false); navigate('/messaging'); }}

@@ -220,18 +220,19 @@ const Navbar = () => {
               </button>
               {/* Notification Dropdown — always rendered to prevent jitter */}
               <div
-                className="absolute right-0 top-full mt-3 bg-white/95 rounded-[1.5rem] shadow-2xl border border-white/50 z-50 w-80 max-h-96 overflow-hidden flex flex-col"
+                className="absolute right-0 top-full mt-3 bg-white rounded-[1.5rem] shadow-[0_20px_60px_-15px_rgba(99,102,241,0.3),0_10px_20px_-5px_rgba(0,0,0,0.1)] border border-slate-100 z-50 w-80 max-h-96 overflow-hidden flex flex-col"
                 style={{
+                  backgroundColor: '#ffffff',
+                  backdropFilter: 'none',
+                  WebkitBackdropFilter: 'none',
                   opacity: isNotifOpen ? 1 : 0,
                   transform: isNotifOpen ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.95)',
                   pointerEvents: isNotifOpen ? 'auto' : 'none',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease',
+                  transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease',
                   willChange: 'transform, opacity',
                 }}
               >
-                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50/50 bg-slate-50/30">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-white">
                   <h3 className="font-extrabold text-slate-900 text-base tracking-tight">{t('navbar.notifications')}</h3>
                 </div>
                 <div className="overflow-y-auto flex-1 px-1 py-1">
