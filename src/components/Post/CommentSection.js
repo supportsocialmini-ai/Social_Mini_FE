@@ -114,7 +114,7 @@ const CommentSection = ({ postId, isOpen, onClose, getFullAvatarUrl }) => {
       setNewComment('');
       setReplyTo(null);
       await fetchComments();
-      toast.success(t('posts.commentSuccess'));
+      // Silencing success toast per user request
     } catch (error) {
       toast.error(t(`api.${error.errorMessage || 'posts.commentError'}`));
     } finally {
@@ -126,7 +126,7 @@ const CommentSection = ({ postId, isOpen, onClose, getFullAvatarUrl }) => {
     try {
       await commentService.deleteComment(commentId);
       await fetchComments();
-      toast.success(t('posts.deleteCommentSuccess'));
+      // Silencing success toast per user request
     } catch (error) {
       toast.error(t(`api.${error.errorMessage || 'posts.deleteCommentError'}`));
     }

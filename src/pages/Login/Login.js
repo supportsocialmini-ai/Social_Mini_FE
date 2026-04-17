@@ -44,7 +44,7 @@ const Login = () => {
     setIsLoading(true);
     try {
       await login(username, password);
-      toast.success(t('api.Auth.Login.Success'));
+      // Silencing success toast per user request
       navigate('/');
     } catch (err) {
       const rawMsg = err.errorMessage || 'Auth.Login.Fail';
@@ -87,6 +87,29 @@ const Login = () => {
         fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}
     >
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes gradientFlow {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .animate-fade-up {
+          animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          opacity: 0;
+        }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .animate-gradient {
+          background-size: 200% auto;
+          animation: gradientFlow 5s ease infinite;
+        }
+      `}</style>
+
       {/* Decorative blobs */}
       <div className="absolute top-0 left-0 w-80 h-80 rounded-full bg-purple-300/30 blur-[80px]" style={{ transform: 'translate(-40%, -40%)' }} />
       <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-pink-300/25 blur-[100px]" style={{ transform: 'translate(30%, 30%)' }} />
@@ -99,22 +122,28 @@ const Login = () => {
         {/* ===== LEFT: Branding ===== */}
         <div className="hidden md:flex flex-col justify-center flex-1 pr-8">
           {/* Tag */}
-          <div className="inline-flex items-center gap-2 bg-white/50 border border-white/80 rounded-full px-4 py-1.5 mb-6 w-fit backdrop-blur-sm">
+          <div className="animate-fade-up inline-flex items-center gap-2 bg-white/50 border border-white/80 rounded-full px-4 py-1.5 mb-6 w-fit backdrop-blur-sm">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             <span className="text-slate-600 text-sm font-semibold tracking-wide">MiniSocial Network</span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-[3.6rem] font-extrabold text-slate-800 leading-[1.15] mb-4" style={{ letterSpacing: '-0.02em' }}>
+          <h1 className="animate-fade-up delay-100 text-[3.6rem] font-extrabold text-slate-800 leading-[1.15] mb-4" style={{ letterSpacing: '-0.02em' }}>
             Kết nối bạn bè,<br />
-            <span style={{
-              background: 'linear-gradient(90deg, #6366f1, #a855f7)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}>chia sẻ khoảnh khắc.</span>
+            <span 
+              className="animate-gradient"
+              style={{
+                background: 'linear-gradient(90deg, #6366f1, #a855f7, #ec4899, #6366f1)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundSize: '200% auto',
+              }}
+            >
+              chia sẻ khoảnh khắc.
+            </span>
           </h1>
 
-          <p className="text-slate-500 text-base leading-relaxed max-w-sm mb-10">
+          <p className="animate-fade-up delay-200 text-slate-500 text-base leading-relaxed max-w-sm mb-10">
             Nền tảng mạng xã hội nhỏ gọn — nơi bạn có thể chat, đăng bài và kết nối với mọi người trong tích tắc.
           </p>
 

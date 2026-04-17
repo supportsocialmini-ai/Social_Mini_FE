@@ -40,7 +40,7 @@ const Friends = () => {
     const handleAccept = async (requestId) => {
         try {
             await friendService.acceptRequest(requestId);
-            toast.success(t('api.Friend.Action.AcceptSuccess'));
+            // Silencing success toast per user request
             fetchData();
         } catch (error) {
             toast.error(t(`api.${error.errorMessage || 'Friend.Action.AcceptFail'}`));
@@ -50,7 +50,7 @@ const Friends = () => {
     const handleDecline = async (requestId) => {
         try {
             await friendService.declineRequest(requestId);
-            toast.info(t('api.Friend.Action.DeclineSuccess'));
+            // Silencing success toast per user request
             fetchData();
         } catch (error) {
             toast.error(t(`api.${error.errorMessage || 'Friend.Action.DeclineFail'}`));
@@ -63,7 +63,7 @@ const Friends = () => {
         
         try {
             await friendService.unfriend(friendId);
-            toast.success(t('api.Friend.Action.UnfriendSuccess'));
+            // Silencing success toast per user request
             setConfirmData({ ...confirmData, isOpen: false });
             fetchData();
         } catch (error) {

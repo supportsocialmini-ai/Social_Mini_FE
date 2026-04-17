@@ -291,9 +291,6 @@ const Navbar = () => {
                   <Link to="/profile" className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all border-b border-gray-100">
                     <span className="font-semibold">{t('navbar.profile')}</span>
                   </Link>
-                  <Link to="/settings" className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all border-b border-gray-100">
-                    <span className="font-semibold">{t('navbar.settings')}</span>
-                  </Link>
                   <button onClick={logout} className="w-full text-left flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-all font-semibold">
                     {t('navbar.logout')}
                   </button>

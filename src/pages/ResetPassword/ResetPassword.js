@@ -28,7 +28,7 @@ const ResetPassword = () => {
     setIsLoading(true);
     try {
       await authService.resetPassword(token, newPassword, confirmPassword);
-      toast.success(t('api.Auth.Password.ResetSuccess'));
+      // Silencing success toast per user request
       navigate('/login');
     } catch (err) {
       const rawMsg = err.errorMessage || 'Auth.Password.ResetFail';

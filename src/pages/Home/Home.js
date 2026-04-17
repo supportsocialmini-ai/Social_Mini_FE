@@ -55,7 +55,6 @@ const Home = () => {
         postId: post.postId || post.id,
         author: post.fullName || post.FullName || t('navbar.user'),
         authorAvatar: getFullAvatarUrl(post.avatarUrl || post.AvatarUrl, post.fullName || 'User'),
-        time: post.createdAt ? new Date(post.createdAt).toLocaleDateString('vi-VN') : 'Vừa xong',
         likeCount: post.likeCount || 0,
         commentCount: post.commentCount || 0,
         isLiked: post.isLiked || false,
@@ -110,8 +109,11 @@ const Home = () => {
     try {
       await friendService.sendRequest(userId);
       setSentIds(prev => new Set([...prev, userId]));
-      toast.success(`Đã gửi lời mời kết bạn đến ${fullName}`);
-    } catch { toast.error('Không thể gửi lời mời.'); }
+      // Silencing success toast per user request
+    } catch { 
+      // Silencing error toast per user request
+      console.error('Không thể gửi lời mời kết bạn');
+    }
   };
 
   const STORY_GRADS = [

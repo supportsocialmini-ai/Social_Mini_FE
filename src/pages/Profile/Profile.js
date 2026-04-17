@@ -93,20 +93,20 @@ const Profile = () => {
   }, [routeUserId, currentUser, isOwnProfile]);
 
   const handleAddFriend = async () => {
-    try { await friendService.sendRequest(routeUserId); setFriendshipStatus('Sent'); toast.success(t('profile.friendRequestSent')); }
-    catch (error) { toast.error(error.errorMessage || t('profile.friendRequestError') || "Error sending request"); }
+    try { await friendService.sendRequest(routeUserId); setFriendshipStatus('Sent'); }
+    catch (error) { console.error("Error sending request:", error); }
   };
   const handleAcceptRequest = async () => {
-    try { if (!requestId) return; await friendService.acceptRequest(requestId); setFriendshipStatus('Accepted'); toast.success(t('api.Friend.Action.AcceptSuccess')); }
-    catch (error) { toast.error(t(`api.${error.errorMessage || 'Friend.Action.AcceptFail'}`)); }
+    try { if (!requestId) return; await friendService.acceptRequest(requestId); setFriendshipStatus('Accepted'); }
+    catch (error) { console.error("Error accepting request:", error); }
   };
   const handleCancelRequest = async () => {
-    try { if (!requestId) return; await friendService.cancelRequest(requestId); setFriendshipStatus('None'); setRequestId(null); toast.success(t('api.Friend.Action.CancelSuccess')); }
-    catch (error) { toast.error(t(`api.${error.errorMessage || 'Friend.Action.CancelFail'}`)); }
+    try { if (!requestId) return; await friendService.cancelRequest(requestId); setFriendshipStatus('None'); setRequestId(null); }
+    catch (error) { console.error("Error canceling request:", error); }
   };
   const handleUnfriend = async () => {
-    try { await friendService.unfriend(profileUser.userId); setFriendshipStatus('None'); setRequestId(null); toast.success(t('api.Friend.Action.UnfriendSuccess')); }
-    catch (error) { toast.error(t(`api.${error.errorMessage || 'Friend.Action.UnfriendFail'}`)); }
+    try { await friendService.unfriend(profileUser.userId); setFriendshipStatus('None'); setRequestId(null); }
+    catch (error) { console.error("Error unfriending:", error); }
   };
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleSubmit = async (e) => {
@@ -167,7 +167,7 @@ const Profile = () => {
         updateUserData(updated);
         setProfileUser(updated);
       }
-      toast.success(t('api.User.Avatar.UploadSuccess'));
+      // Silencing success toast per user request
     } catch (error) {
       toast.error(t(`api.${error.errorMessage || 'User.Avatar.UploadFail'}`));
     } finally {

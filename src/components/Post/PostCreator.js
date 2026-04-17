@@ -28,7 +28,7 @@ const PostCreator = ({ user, getFullAvatarUrl, onPostSuccess }) => {
       setPostContent('');
       setImagePreview(null);
       setImageFile(null);
-      toast.success(t('home.postSuccess'));
+      // Silencing success toast per user request
       if (onPostSuccess) onPostSuccess();
     } catch (error) {
       toast.error(error.errorMessage || t('home.postError'));

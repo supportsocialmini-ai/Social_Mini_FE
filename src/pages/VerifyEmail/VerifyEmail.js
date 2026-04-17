@@ -27,7 +27,7 @@ const VerifyEmail = () => {
       const response = await axiosClient.post(`api/auth/verify-email?token=${tokenToVerify}`);
       setStatus('success');
       setMessage(t('api.Auth.Verify.Success'));
-      toast.success(t('api.Auth.Verify.Success'));
+      // Silencing success toast per user request
 
       // Chờ 2s để user thấy thông báo thành công rồi về home
       setTimeout(() => {

@@ -81,7 +81,7 @@ const Register = () => {
         isActive: true
       };
       await authService.register(registerData);
-      toast.success(t('api.Auth.Register.Success'));
+      // Silencing success toast per user request
       navigate('/login', {
         state: { username: formData.username, password: formData.password, showVerify: true }
       });
@@ -125,6 +125,28 @@ const Register = () => {
         fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}
     >
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes gradientFlow {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .animate-fade-up {
+          animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          opacity: 0;
+        }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .animate-gradient {
+          background-size: 200% auto;
+          animation: gradientFlow 5s ease infinite;
+        }
+      `}</style>
+
       {/* Decorative blobs */}
       <div className="absolute top-0 left-0 w-80 h-80 rounded-full bg-purple-300/30 blur-[80px]" style={{ transform: 'translate(-40%, -40%)' }} />
       <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-pink-300/25 blur-[100px]" style={{ transform: 'translate(30%, 30%)' }} />
@@ -137,22 +159,28 @@ const Register = () => {
         {/* ===== LEFT: Branding ===== */}
         <div className="hidden md:flex flex-col justify-center flex-1 pr-8">
           {/* Tag */}
-          <div className="inline-flex items-center gap-2 bg-white/50 border border-white/80 rounded-full px-4 py-1.5 mb-6 w-fit backdrop-blur-sm">
-            <span className="w-2 h-2 rounded-full bg-violet-400" />
+          <div className="animate-fade-up inline-flex items-center gap-2 bg-white/50 border border-white/80 rounded-full px-4 py-1.5 mb-6 w-fit backdrop-blur-sm">
+            <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
             <span className="text-slate-600 text-sm font-semibold tracking-wide">Tạo tài khoản miễn phí</span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-[3.6rem] font-extrabold text-slate-800 leading-[1.15] mb-4" style={{ letterSpacing: '-0.02em' }}>
+          <h1 className="animate-fade-up delay-100 text-[3.6rem] font-extrabold text-slate-800 leading-[1.15] mb-4" style={{ letterSpacing: '-0.02em' }}>
             Tham gia<br />
-            <span style={{
-              background: 'linear-gradient(90deg, #6366f1, #a855f7)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}>cộng đồng người dùng.</span>
+            <span 
+              className="animate-gradient"
+              style={{
+                background: 'linear-gradient(90deg, #6366f1, #a855f7, #ec4899, #6366f1)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundSize: '200% auto',
+              }}
+            >
+              cộng đồng người dùng.
+            </span>
           </h1>
 
-          <p className="text-slate-500 text-base leading-relaxed max-w-sm mb-10">
+          <p className="animate-fade-up delay-200 text-slate-500 text-base leading-relaxed max-w-sm mb-10">
             Chỉ mất vài giây để tạo tài khoản và bắt đầu kết nối với mọi người xung quanh.
           </p>
 

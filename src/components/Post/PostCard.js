@@ -67,12 +67,28 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
   };
 
   const getTimeAgo = (dateString) => {
-    if (!dateString) return '';
-    const utcString = dateString.endsWith('Z') || dateString.includes('+') ? dateString : `${dateString}Z`;
+    if (!dateString) return t('post.justNow') || 'Vừa xong';
+    
+    // Attempt to parse. If it's an ISO string from backend, it works.
+    // Handle the case where the string might not be UTC-marked
+    const utcString = (typeof dateString === 'string' && !dateString.endsWith('Z') && !dateString.includes('+')) 
+      ? `${dateString}Z` 
+      : dateString;
+      
     const date = new Date(utcString);
+    
+    // Check if the date is actually valid
+    if (isNaN(date.getTime())) {
+      // If it failed, try the original string without the Z hack
+      const fallbackDate = new Date(dateString);
+      if (isNaN(fallbackDate.getTime())) return '...'; // Last resort
+      return fallbackDate.toLocaleDateString('vi-VN');
+    }
+
     const now = new Date();
     const seconds = Math.floor((now - date) / 1000);
-    if (seconds < 60) return 'Vừa xong';
+    
+    if (seconds < 60) return t('post.justNow') || 'Vừa xong';
     if (seconds < 3600) return `${Math.floor(seconds / 60)} phút trước`;
     if (seconds < 86400) return `${Math.floor(seconds / 3600)} giờ trước`;
     if (seconds < 604800) return `${Math.floor(seconds / 86400)} ngày trước`;
@@ -101,7 +117,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
     setIsDeleting(true);
     try {
       await postService.deletePost(post.postId || post.id);
-      toast.success(t('posts.deleted'));
+      // Silencing success toast per user request
       if (onPostDelete) onPostDelete();
     } catch (error) {
       toast.error(t(`api.${error.errorMessage || 'posts.deleteError'}`));
@@ -189,9 +205,10 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
                     onClick={async () => {
                       try {
                         await friendService.sendRequest(post.userId);
-                        toast.success(t('api.Friend.Request.Success'));
+                        // Silencing success toast per user request
                       } catch (err) {
-                        toast.error(t(`api.${err.errorMessage || 'Friend.Request.Fail'}`));
+                        // Silent error per user request
+                        console.error('Lỗi gửi kết bạn:', err);
                       }
                     }}
                     className="text-[10px] font-bold text-indigo-600 px-2 py-0.5 rounded-full transition-all hover:scale-105 active:scale-95"

@@ -18,7 +18,7 @@ const ForgotPassword = () => {
     setIsLoading(true);
     try {
       await authService.forgotPassword(email);
-      toast.success(t('api.Auth.Password.ForgotEmailSent'));
+      // Silencing success toast per user request
       setIsSuccess(true);
       // Wait a bit and navigate to reset password page
       setTimeout(() => {

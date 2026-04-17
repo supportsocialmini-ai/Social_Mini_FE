@@ -79,7 +79,7 @@ const Settings = () => {
     try {
       await userService.updateUser(formData);
       updateUserData({ ...user, ...formData });
-      toast.success(t('api.User.Profile.UpdateSuccess'));
+      // Silencing success toast per user request
     } catch (error) {
       toast.error(t(`api.${error.errorMessage || 'User.Profile.UpdateFail'}`));
     } finally {
@@ -92,7 +92,7 @@ const Settings = () => {
     setLoading(true);
     try {
       setIsPasswordVerified(true);
-      toast.success(t('api.Auth.VerifyPassword.Success'));
+      // Silencing success toast per user request
     } catch (error) {
       toast.error(t(`api.${error.errorMessage || 'Auth.VerifyPassword.Fail'}`));
     } finally {
@@ -117,7 +117,7 @@ const Settings = () => {
     setLoading(true);
     try {
       await authService.changePassword(passwordData.oldPassword, passwordData.newPassword);
-      toast.success(t('api.Auth.ChangePassword.Success'));
+      // Silencing success toast per user request
       setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
       setIsPasswordVerified(false);
     } catch (error) {
@@ -216,7 +216,7 @@ const Settings = () => {
                               // axiosClient đã bóc result nên res là { avatarUrl, user }
                               const newAvatarUrl = res?.avatarUrl;
                               updateUserData({ ...user, avatarUrl: newAvatarUrl });
-                              toast.success("Avatar updated!");
+                              // Silencing success toast per user request
                             } catch (err) {
                               toast.error(err.errorMessage || "Upload failed");
                             } finally {
