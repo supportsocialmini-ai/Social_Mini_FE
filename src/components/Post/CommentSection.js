@@ -138,11 +138,31 @@ const CommentSection = ({ postId, isOpen, onClose, getFullAvatarUrl }) => {
     document.getElementById('comment-input')?.focus();
   };
 
-  if (!isOpen) return null;
-
+  // Always render (never unmount) — use CSS transitions to show/hide
+  // This prevents browser from recalculating backdrop-filter on every open → no jitter
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-lg rounded-[2.5rem] p-8 max-h-[85vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{
+        opacity: isOpen ? 1 : 0,
+        pointerEvents: isOpen ? 'auto' : 'none',
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+        transition: 'opacity 0.22s ease',
+        willChange: 'opacity',
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="bg-white w-full max-w-lg rounded-[2.5rem] p-8 max-h-[85vh] flex flex-col shadow-2xl"
+        style={{
+          transform: isOpen ? 'scale(1) translateY(0)' : 'scale(0.96) translateY(12px)',
+          opacity: isOpen ? 1 : 0,
+          transition: 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.22s ease',
+          willChange: 'transform, opacity',
+        }}
+      >
         <div className="flex items-center justify-between mb-6 flex-shrink-0">
           <div className="flex items-center gap-2">
             <h3 className="text-xl font-black text-slate-900 tracking-tight">{t('posts.commentHeader')}</h3>

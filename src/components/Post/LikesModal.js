@@ -29,11 +29,28 @@ const LikesModal = ({ postId, isOpen, onClose }) => {
         }
     };
 
-    if (!isOpen) return null;
-
+    // Always render — CSS opacity transition, no mount/unmount jitter
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[70vh]">
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          style={{
+            opacity: isOpen ? 1 : 0,
+            pointerEvents: isOpen ? 'auto' : 'none',
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            transition: 'opacity 0.2s ease',
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
+            <div
+              className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl flex flex-col max-h-[70vh]"
+              style={{
+                transform: isOpen ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(12px)',
+                opacity: isOpen ? 1 : 0,
+                transition: 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease',
+              }}
+            >
                 <div className="flex items-center justify-between mb-6 flex-shrink-0">
                     <h3 className="text-xl font-black text-slate-900 tracking-tight">Người đã thích</h3>
                     <button

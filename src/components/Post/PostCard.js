@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -10,64 +11,86 @@ import postService from '../../services/postService';
 import friendService from '../../services/friendService';
 import { useAuth } from '../../context/AuthContext';
 
+/* ── Glassmorphism card style ── */
+const glassCard = {
+  background: 'rgba(255,255,255,0.68)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  border: '1px solid rgba(255,255,255,0.55)',
+  boxShadow: '0 4px 24px rgba(99,102,241,0.06), 0 1px 6px rgba(0,0,0,0.04)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+};
+
+const PrivacyIcon = ({ privacy }) => {
+  if (privacy === 'Friends') return (
+    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+  if (privacy === 'OnlyMe') return (
+    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
+  );
+  return (
+    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+};
+
 const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: parentUser }) => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const currentUser = parentUser || user;
-  const [isCommentOpen, setIsCommentOpen] = useState(false);
+  const [isCommentOpen, setIsCommentOpen]   = useState(false);
   const [isLikesModalOpen, setIsLikesModalOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likeCount || 0);
-  const [isLiked, setIsLiked] = useState(post.isLiked || false);
-  const [isLiking, setIsLiking] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isMenuOpen, setIsMenuOpen]         = useState(false);
+  const [likeCount, setLikeCount]           = useState(post.likeCount || 0);
+  const [isLiked, setIsLiked]               = useState(post.isLiked || false);
+  const [isLiking, setIsLiking]             = useState(false);
+  const [isDeleting, setIsDeleting]         = useState(false);
+  const [isSaved, setIsSaved]               = useState(false);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded]         = useState(false);
+  const [likeAnimating, setLikeAnimating]   = useState(false);
 
   const isPostOwner = currentUser?.userId === post.userId;
+  const privacy = post.privacy || 'Public';
 
-  // Get full image URL
   const getFullImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
-    if (imageUrl.startsWith('http')) return imageUrl; // Already full URL
+    if (imageUrl.startsWith('http')) return imageUrl;
     const apiBase = process.env.REACT_APP_API_URL || 'https://social-mini-app.onrender.com';
     const cleanBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
     return `${cleanBase}${imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl}`;
   };
 
-  // Format time ago
   const getTimeAgo = (dateString) => {
     if (!dateString) return '';
     const utcString = dateString.endsWith('Z') || dateString.includes('+') ? dateString : `${dateString}Z`;
     const date = new Date(utcString);
     const now = new Date();
     const seconds = Math.floor((now - date) / 1000);
-
-    if (seconds < 60) return t('posts.time.now');
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}${t('posts.time.m')}`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}${t('posts.time.h')}`;
-    if (seconds < 604800) return `${Math.floor(seconds / 86400)}${t('posts.time.d')}`;
-    return date.toLocaleDateString(t('language') === 'vi' ? 'vi-VN' : 'en-US');
+    if (seconds < 60) return 'Vừa xong';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} phút trước`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} giờ trước`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)} ngày trước`;
+    return date.toLocaleDateString('vi-VN');
   };
 
   const handleLike = async () => {
+    if (isLiking) return;
     setIsLiking(true);
+    setLikeAnimating(true);
+    setTimeout(() => setLikeAnimating(false), 400);
     try {
       const response = await likeService.toggleLike(post.postId || post.id);
-      // axiosClient đã bóc result nên response chính là { isLiked: ... }
       const newIsLiked = response?.isLiked ?? !isLiked;
-
       setIsLiked(newIsLiked);
       setLikeCount(newIsLiked ? likeCount + 1 : likeCount - 1);
-
-      if (onLikeChange) {
-        onLikeChange();
-      }
-
-      toast.success(newIsLiked ? t('posts.liked') : t('posts.unliked'));
+      if (onLikeChange) onLikeChange();
     } catch (error) {
-      console.error("Lỗi khi like:", error);
       toast.error(t(`api.${error.errorMessage || 'likeError'}`));
     } finally {
       setIsLiking(false);
@@ -79,12 +102,8 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
     try {
       await postService.deletePost(post.postId || post.id);
       toast.success(t('posts.deleted'));
-
-      if (onPostDelete) {
-        onPostDelete();
-      }
+      if (onPostDelete) onPostDelete();
     } catch (error) {
-      console.error("Lỗi khi xóa:", error);
       toast.error(t(`api.${error.errorMessage || 'posts.deleteError'}`));
     } finally {
       setIsDeleting(false);
@@ -93,39 +112,79 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
   };
 
   const handlePrivacyChange = async (newPrivacy) => {
-    setIsSaving(true);
     try {
-      await postService.updatePost(post.postId || post.id, { 
-        Content: post.postContent, 
-        Privacy: newPrivacy 
-      });
-      post.privacy = newPrivacy; // Cập nhật local để UI thay đổi
+      await postService.updatePost(post.postId || post.id, { Content: post.postContent, Privacy: newPrivacy });
+      post.privacy = newPrivacy;
       toast.success(t('api.Post.Upsert.UpdateSuccess'));
     } catch (error) {
-      console.error("Lỗi khi đổi quyền riêng tư:", error);
       toast.error(t(`api.${error.errorMessage || 'Post.Upsert.UpdateFail'}`));
     } finally {
-      setIsSaving(false);
       setIsMenuOpen(false);
     }
   };
 
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 mb-6 border border-gray-100/50 group relative">
-        {/* Header */}
-        <div className="px-6 py-4 flex items-center justify-between border-b border-gray-50 rounded-t-2xl">
+      <style>{`
+        /* PostCard CSS-only hover — no JS state, no re-render, no jitter */
+        .post-card-glass {
+          background: rgba(255,255,255,0.68);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,0.55);
+          box-shadow: 0 4px 24px rgba(99,102,241,0.06), 0 1px 6px rgba(0,0,0,0.04);
+          transition: box-shadow 0.3s ease, transform 0.3s ease, background 0.3s ease;
+          will-change: transform;
+        }
+        .post-card-glass:hover {
+          background: rgba(255,255,255,0.82);
+          box-shadow: 0 12px 40px rgba(99,102,241,0.1), 0 2px 12px rgba(0,0,0,0.06);
+          transform: translateY(-2px);
+        }
+        .post-card-glass .post-img {
+          transition: transform 0.6s ease;
+        }
+        .post-card-glass:hover .post-img {
+          transform: scale(1.01);
+        }
+        @keyframes likeHeartPop {
+          0%   { transform: scale(1); }
+          30%  { transform: scale(1.4) rotate(-8deg); }
+          60%  { transform: scale(0.9); }
+          100% { transform: scale(1); }
+        }
+        .like-heart-pop { animation: likeHeartPop 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+        .action-btn { transition: all 0.2s ease; }
+        .action-btn:hover { transform: translateY(-2px); }
+        .action-btn:active { transform: scale(0.95); }
+      `}</style>
+
+      <div
+        className="rounded-2xl overflow-visible post-card-glass"
+      >
+        {/* ── Header ─────────────────────────────────── */}
+        <div className="px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to={isPostOwner ? "/profile" : `/profile/${post.userId}`} className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-blue-500 flex-shrink-0 border-2 border-white overflow-hidden shadow-md hover:scale-110 transition-transform">
-              <img src={getFullAvatarUrl(post.avatarUrl || post.authorAvatar, post.author)} alt={post.author} className="w-full h-full object-cover" />
+            <Link to={isPostOwner ? '/profile' : `/profile/${post.userId}`}
+              className="relative flex-shrink-0 transition-transform duration-200 hover:scale-105">
+              <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-indigo-200/50">
+                <img src={getFullAvatarUrl(post.avatarUrl || post.authorAvatar, post.author)} alt={post.author}
+                  className="w-full h-full object-cover" />
+              </div>
+              {/* Online indicator */}
+              <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />
             </Link>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <Link to={isPostOwner ? "/profile" : `/profile/${post.userId}`} className="font-bold text-gray-900 text-sm hover:text-indigo-600 transition-colors">{post.author || 'Người dùng'}</Link>
-                {isPostOwner && (
-                  <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">{t('posts.you')}</span>
-                )}
-                {!isPostOwner && (
+
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Link to={isPostOwner ? '/profile' : `/profile/${post.userId}`}
+                  className="font-bold text-slate-900 text-sm hover:text-indigo-600 transition-colors duration-200">
+                  {post.author || 'Người dùng'}
+                </Link>
+                {isPostOwner ? (
+                  <span className="text-[10px] font-bold text-indigo-600 px-2 py-0.5 rounded-full"
+                    style={{ background: 'rgba(99,102,241,0.1)' }}>Bạn</span>
+                ) : (
                   <button
                     onClick={async () => {
                       try {
@@ -135,193 +194,201 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
                         toast.error(t(`api.${err.errorMessage || 'Friend.Request.Fail'}`));
                       }
                     }}
-                    className="text-[10px] font-bold text-indigo-600 hover:text-white hover:bg-indigo-600 border border-indigo-600 px-2 py-0.5 rounded-full transition-all"
+                    className="text-[10px] font-bold text-indigo-600 px-2 py-0.5 rounded-full transition-all hover:scale-105 active:scale-95"
+                    style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'linear-gradient(135deg,#6366f1,#8b5cf6)', e.currentTarget.style.color = '#fff')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.08)', e.currentTarget.style.color = '#6366f1')}
                   >
-                    {t('posts.addFriend')}
+                    + Kết bạn
                   </button>
                 )}
               </div>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-xs text-gray-500">{getTimeAgo(post.time || post.createdAt)}</p>
-                <span className="text-gray-300 text-[10px]">•</span>
-                <span className="text-xs text-gray-400" title={t(`home.privacy${post.privacy || 'Public'}`)}>
-                  {post.privacy === 'Friends' ? '👥' : post.privacy === 'OnlyMe' ? '🔒' : '🌎'}
-                </span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-xs text-slate-400">{getTimeAgo(post.time || post.createdAt)}</span>
+                <span className="text-slate-200 text-[10px]">•</span>
+                <span className="text-slate-400" title={privacy}><PrivacyIcon privacy={privacy} /></span>
               </div>
             </div>
           </div>
 
+          {/* 3-dot menu */}
           <div className="relative">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-all flex items-center justify-center"
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="w-8 h-8 rounded-full text-slate-400 flex items-center justify-center transition-all duration-200 hover:scale-110"
+              style={{ background: isMenuOpen ? 'rgba(99,102,241,0.1)' : 'transparent' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.08)'}
+              onMouseLeave={e => !isMenuOpen && (e.currentTarget.style.background = 'transparent')}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M5 12a1 1 0 11-2 0 1 1 0 012 0zM12 12a1 1 0 11-2 0 1 1 0 012 0zM19 12a1 1 0 11-2 0 1 1 0 012 0z" />
               </svg>
             </button>
 
-            {/* Menu */}
             {isMenuOpen && isPostOwner && (
-              <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 z-50 min-w-[180px] overflow-hidden animate-in fade-in py-1">
-                {/* Privacy Options */}
-                <div className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50/50">
-                  {t('home.privacy') || 'Quyền riêng tư'}
-                </div>
-                
-                <button
-                  onClick={() => handlePrivacyChange('Public')}
-                  className={`w-full px-4 py-2 text-left text-sm transition-all flex items-center gap-3 ${post.privacy === 'Public' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'hover:bg-gray-50 text-gray-700'}`}
-                >
-                  <span className="text-base">🌎</span>
-                  {t('home.privacyPublic')}
-                </button>
-
-                <button
-                  onClick={() => handlePrivacyChange('Friends')}
-                  className={`w-full px-4 py-2 text-left text-sm transition-all flex items-center gap-3 ${post.privacy === 'Friends' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'hover:bg-gray-50 text-gray-700'}`}
-                >
-                  <span className="text-base">👥</span>
-                  {t('home.privacyFriends')}
-                </button>
-
-                <button
-                  onClick={() => handlePrivacyChange('OnlyMe')}
-                  className={`w-full px-4 py-2 text-left text-sm transition-all flex items-center gap-3 ${post.privacy === 'OnlyMe' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'hover:bg-gray-50 text-gray-700'}`}
-                >
-                  <span className="text-base">🔒</span>
-                  {t('home.privacyOnlyMe')}
-                </button>
-
-                <div className="h-[1px] bg-gray-100 my-1" />
-
-                <button
-                  onClick={() => {
-                    setIsConfirmDeleteOpen(true);
-                    setIsMenuOpen(false);
-                  }}
+              <div className="absolute right-0 top-full mt-2 z-50 rounded-2xl overflow-hidden min-w-[190px] py-1.5"
+                style={{
+                  background: 'rgba(255,255,255,0.92)',
+                  backdropFilter: 'blur(24px)',
+                  WebkitBackdropFilter: 'blur(24px)',
+                  border: '1px solid rgba(255,255,255,0.7)',
+                  boxShadow: '0 8px 32px rgba(99,102,241,0.15), 0 2px 8px rgba(0,0,0,0.08)',
+                }}>
+                <p className="px-4 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Quyền riêng tư</p>
+                {[
+                  { key: 'Public', label: 'Công khai' },
+                  { key: 'Friends', label: 'Bạn bè' },
+                  { key: 'OnlyMe', label: 'Chỉ mình tôi' },
+                ].map(p => (
+                  <button key={p.key} onClick={() => handlePrivacyChange(p.key)}
+                    className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 transition-all duration-150"
+                    style={privacy === p.key
+                      ? { background: 'rgba(99,102,241,0.08)', color: '#6366f1', fontWeight: 700 }
+                      : { color: '#475569' }}
+                    onMouseEnter={e => privacy !== p.key && (e.currentTarget.style.background = 'rgba(99,102,241,0.04)')}
+                    onMouseLeave={e => privacy !== p.key && (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <span className="text-slate-400"><PrivacyIcon privacy={p.key} /></span>
+                    {p.label}
+                  </button>
+                ))}
+                <div className="h-px my-1.5 mx-3" style={{ background: 'rgba(99,102,241,0.08)' }} />
+                <button onClick={() => { setIsConfirmDeleteOpen(true); setIsMenuOpen(false); }}
                   disabled={isDeleting}
-                  className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 font-semibold text-sm transition-all flex items-center gap-3 disabled:opacity-50"
+                  className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 transition-all duration-150 text-red-500 disabled:opacity-50"
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.06)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
-                  {isDeleting ? t('posts.deleting') : t('posts.delete')}
+                  {isDeleting ? 'Đang xóa...' : 'Xóa bài viết'}
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Content */}
-        <div className="px-6 py-4">
-          <p className="text-gray-800 text-[15px] leading-relaxed font-medium break-words">
-            {post.postContent.length > 200 && !isExpanded
-              ? `${post.postContent.substring(0, 200)}...`
+        {/* ── Content ────────────────────────────────── */}
+        <div className="px-5 pb-3">
+          <p className="text-slate-800 text-[15px] leading-relaxed break-words">
+            {post.postContent?.length > 250 && !isExpanded
+              ? `${post.postContent.substring(0, 250)}...`
               : post.postContent}
-            {post.postContent.length > 200 && (
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="ml-1 text-indigo-600 font-bold hover:underline transition-all"
-              >
-                {isExpanded ? t('common.seeLess') || 'Thu gọn' : t('common.seeMore') || 'Xem thêm'}
+            {post.postContent?.length > 250 && (
+              <button onClick={() => setIsExpanded(!isExpanded)}
+                className="ml-1 font-bold text-sm transition-colors hover:underline"
+                style={{ color: '#6366f1' }}>
+                {isExpanded ? 'Thu gọn' : 'Xem thêm'}
               </button>
             )}
           </p>
         </div>
 
-        {/* Image Display */}
+        {/* ── Image ──────────────────────────────────── */}
         {post.imageUrl && (
-          <div className="w-full max-h-[580px] overflow-hidden bg-slate-50 flex items-center justify-center border-y border-slate-100/50 relative z-10">
-            <img 
-              src={getFullImageUrl(post.imageUrl)} 
-              alt="post" 
-              className="w-full h-auto max-h-[580px] object-contain group-hover:scale-[1.01] transition-transform duration-700 shadow-sm" 
+          <div className="w-full max-h-[560px] overflow-hidden flex items-center justify-center relative"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.5)', borderBottom: '1px solid rgba(255,255,255,0.5)' }}>
+            <img src={getFullImageUrl(post.imageUrl)} alt="post"
+              className="w-full h-auto max-h-[560px] object-contain post-img"
             />
           </div>
         )}
 
-        {/* Stats */}
+        {/* ── Stats ──────────────────────────────────── */}
         {(likeCount > 0 || (post.commentCount || 0) > 0) && (
-          <div className="flex items-center gap-6 text-xs text-gray-500 font-semibold px-6 py-3 bg-gray-50/50 border-y border-gray-50">
+          <div className="flex items-center gap-4 text-xs text-slate-500 font-medium px-5 py-2.5"
+            style={{ borderBottom: '1px solid rgba(99,102,241,0.06)' }}>
             {likeCount > 0 && (
-              <span
-                onClick={() => setIsLikesModalOpen(true)}
-                className="hover:text-indigo-600 cursor-pointer transition-colors"
-              >
-                ❤️ <span className="text-gray-700">{likeCount}</span> {t('posts.likes')}
-              </span>
+              <button onClick={() => setIsLikesModalOpen(true)}
+                className="flex items-center gap-1.5 transition-all duration-200 hover:scale-105 active:scale-95">
+                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
+                  style={{ background: 'linear-gradient(135deg, #f43f5e, #ec4899)' }}>❤️</div>
+                <span className="font-semibold text-slate-700 hover:text-indigo-600 transition-colors">{likeCount}</span>
+                <span>lượt thích</span>
+              </button>
             )}
             {(post.commentCount || 0) > 0 && (
-              <span
-                onClick={() => setIsCommentOpen(true)}
-                className="hover:text-indigo-600 cursor-pointer transition-colors"
-              >
-                💬 <span className="text-gray-700">{post.commentCount}</span> {t('posts.comments')}
-              </span>
+              <button onClick={() => setIsCommentOpen(true)}
+                className="transition-all duration-200 hover:text-indigo-600 hover:scale-105 active:scale-95">
+                <span className="font-semibold text-slate-700">{post.commentCount}</span> bình luận
+              </button>
             )}
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 px-3 py-3 bg-gray-50/30 border-t border-gray-100 rounded-b-2xl">
-          <button
-            onClick={handleLike}
-            disabled={isLiking}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all flex-1 justify-center ${isLiked
-              ? 'bg-red-50/80 text-red-600 hover:bg-red-100'
-              : 'bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'
-              }`}
+        {/* ── Actions ────────────────────────────────── */}
+        <div className="flex items-center px-3 py-1.5 gap-1">
+          {/* Like */}
+          <button onClick={handleLike} disabled={isLiking}
+            className="action-btn flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm flex-1 justify-center relative overflow-hidden"
+            style={{
+              color: isLiked ? '#f43f5e' : '#64748b',
+              background: isLiked ? 'rgba(244,63,94,0.07)' : 'transparent',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={e => !isLiked && (e.currentTarget.style.background = 'rgba(99,102,241,0.06)')}
+            onMouseLeave={e => !isLiked && (e.currentTarget.style.background = 'transparent')}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-transform ${isLiked ? 'scale-110' : ''}`} fill={isLiked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            <svg className={`h-5 w-5 ${likeAnimating ? 'like-heart-pop' : ''}`}
+              fill={isLiked ? 'currentColor' : 'none'} viewBox="0 0 24 24"
+              stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
-            <span className="hidden sm:inline">{t('posts.like')}</span>
+            <span className="hidden sm:inline">{isLiked ? 'Đã thích' : 'Thích'}</span>
           </button>
 
-          <button
-            onClick={() => setIsCommentOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold text-sm hover:bg-indigo-50 hover:text-indigo-600 transition-all flex-1 justify-center"
+          {/* Comment */}
+          <button onClick={() => setIsCommentOpen(true)}
+            className="action-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-slate-600 font-semibold text-sm flex-1 justify-center"
+            style={{ background: 'transparent' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.06)', e.currentTarget.style.color = '#6366f1')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent', e.currentTarget.style.color = '#64748b')}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            <span className="hidden sm:inline">{t('posts.comment')}</span>
+            <span className="hidden sm:inline">Bình luận</span>
           </button>
 
-          <button
-            onClick={() => setIsSaving(!isSaving)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold text-sm hover:bg-amber-50 hover:text-amber-600 transition-all"
+          {/* Share */}
+          <button className="action-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-slate-600 font-semibold text-sm flex-1 justify-center"
+            style={{ background: 'transparent' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(16,185,129,0.06)', e.currentTarget.style.color = '#10b981')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent', e.currentTarget.style.color = '#64748b')}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-transform ${isSaving ? 'scale-110' : ''}`} fill={isSaving ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 19V5z" />
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            <span className="hidden sm:inline">Chia sẻ</span>
+          </button>
+
+          {/* Save */}
+          <button onClick={() => setIsSaved(!isSaved)}
+            className="action-btn p-2.5 rounded-xl transition-all duration-200"
+            style={{
+              color: isSaved ? '#f59e0b' : '#94a3b8',
+              background: isSaved ? 'rgba(245,158,11,0.08)' : 'transparent',
+            }}
+            onMouseEnter={e => !isSaved && (e.currentTarget.style.color = '#f59e0b', e.currentTarget.style.background = 'rgba(245,158,11,0.06)')}
+            onMouseLeave={e => !isSaved && (e.currentTarget.style.color = '#94a3b8', e.currentTarget.style.background = 'transparent')}
+          >
+            <svg className="h-5 w-5" fill={isSaved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 19V5z" />
             </svg>
           </button>
         </div>
       </div>
 
-      <CommentSection
-        postId={post.postId || post.id}
-        isOpen={isCommentOpen}
-        onClose={() => setIsCommentOpen(false)}
-        getFullAvatarUrl={getFullAvatarUrl}
-      />
-
-      <LikesModal
-        postId={post.postId || post.id}
-        isOpen={isLikesModalOpen}
-        onClose={() => setIsLikesModalOpen(false)}
-      />
-
-      <ConfirmModal
-        isOpen={isConfirmDeleteOpen}
-        onClose={() => setIsConfirmDeleteOpen(false)}
-        onConfirm={handleDelete}
-        title={t('posts.deleteConfirmTitle')}
-        message={t('posts.deleteConfirmMsg')}
-        confirmText={t('posts.deleteConfirmBtn')}
-        type="danger"
-      />
+      {createPortal(
+        <>
+          <CommentSection postId={post.postId || post.id} isOpen={isCommentOpen} onClose={() => setIsCommentOpen(false)} getFullAvatarUrl={getFullAvatarUrl} />
+          <LikesModal postId={post.postId || post.id} isOpen={isLikesModalOpen} onClose={() => setIsLikesModalOpen(false)} />
+          <ConfirmModal isOpen={isConfirmDeleteOpen} onClose={() => setIsConfirmDeleteOpen(false)} onConfirm={handleDelete}
+            title={t('posts.deleteConfirmTitle')} message={t('posts.deleteConfirmMsg')}
+            confirmText={t('posts.deleteConfirmBtn')} type="danger" />
+        </>,
+        document.body
+      )}
     </>
   );
 };

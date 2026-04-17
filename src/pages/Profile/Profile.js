@@ -253,7 +253,7 @@ const Profile = () => {
       </div>
 
       {/* Profile Content */}
-      <div className="max-w-4xl mx-auto px-4 md:px-6">
+      <div className="max-w-[1100px] mx-auto px-4 md:px-10">
 
         {/* Avatar + Actions Row */}
         <div className="flex items-end justify-between -mt-16 mb-4">
