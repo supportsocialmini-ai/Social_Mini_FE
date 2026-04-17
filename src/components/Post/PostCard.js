@@ -47,7 +47,9 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
   const [isLikesModalOpen, setIsLikesModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0 });
+  const [localPrivacy, setLocalPrivacy] = useState(post.privacy || 'Public');
   const menuRef = useRef(null);
+  const dropdownRef = useRef(null);
   const [likeCount, setLikeCount]           = useState(post.likeCount || 0);
   const [isLiked, setIsLiked]               = useState(post.isLiked || false);
   const [isLiking, setIsLiking]             = useState(false);
@@ -63,7 +65,11 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      // Check if click is outside both the trigger button and the portal'ed dropdown
+      const isOutsideTrigger = menuRef.current && !menuRef.current.contains(event.target);
+      const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(event.target);
+      
+      if (isOutsideTrigger && isOutsideDropdown) {
         setIsMenuOpen(false);
       }
     };
@@ -164,8 +170,10 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
   const handlePrivacyChange = async (newPrivacy) => {
     try {
       await postService.updatePost(post.postId || post.id, { Content: post.postContent, Privacy: newPrivacy });
-      post.privacy = newPrivacy;
-      toast.success(t('api.Post.Upsert.UpdateSuccess'));
+      setLocalPrivacy(newPrivacy);
+      // Update the prop for future re-renders from parent if needed
+      post.privacy = newPrivacy; 
+      // Silencing success toast per general UI policy
     } catch (error) {
       toast.error(t(`api.${error.errorMessage || 'Post.Upsert.UpdateFail'}`));
     } finally {
@@ -262,7 +270,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="text-xs text-slate-400">{getTimeAgo(post.time || post.createdAt)}</span>
                 <span className="text-slate-200 text-[10px]">•</span>
-                <span className="text-slate-400" title={privacy}><PrivacyIcon privacy={privacy} /></span>
+                <span className="text-slate-400" title={localPrivacy}><PrivacyIcon privacy={localPrivacy} /></span>
               </div>
             </div>
           </div>
@@ -404,6 +412,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
       {/* ===== 3-Dot Menu Portal ===== */}
       {isMenuOpen && createPortal(
         <div 
+          ref={dropdownRef}
           className="fixed z-[5000] rounded-[1.2rem] overflow-hidden min-w-[200px] py-2 shadow-[0_20px_50px_rgba(0,0,0,0.2),0_10px_20px_rgba(99,102,241,0.1)] border border-slate-100/50"
           style={{
             top: menuCoords.top - window.scrollY + 8,
@@ -423,15 +432,15 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
               ].map(p => (
                 <button key={p.key} onClick={() => { handlePrivacyChange(p.key); setIsMenuOpen(false); }}
                   className="w-full px-4 py-2.5 text-left text-[14px] flex items-center gap-3 transition-all duration-150 hover:bg-slate-50"
-                  style={privacy === p.key
+                  style={localPrivacy === p.key
                     ? { background: 'rgba(99,102,241,0.06)', color: '#6366f1', fontWeight: 700 }
                     : { color: '#4d5b7c' }}
                 >
-                  <span className={privacy === p.key ? 'text-indigo-500 scale-110' : 'text-slate-400'}>
+                  <span className={localPrivacy === p.key ? 'text-indigo-500 scale-110' : 'text-slate-400'}>
                     <PrivacyIcon privacy={p.key} />
                   </span>
                   <span className="flex-1">{p.label}</span>
-                  {privacy === p.key && (
+                  {localPrivacy === p.key && (
                     <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
                   )}
                 </button>
