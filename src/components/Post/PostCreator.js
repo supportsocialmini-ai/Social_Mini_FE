@@ -131,7 +131,7 @@ const PostCreator = ({ user, getFullAvatarUrl, onPostSuccess }) => {
               }
             }}
             maxLength={1000}
-            placeholder={`${user?.fullName?.split(' ').pop() || 'Bạn'} ơi, bạn đang nghĩ gì vậy?`}
+            placeholder={t('home.whatsOnYourMind', { name: user?.fullName?.split(' ').pop() || t('posts.you') })}
             rows={3}
             className="w-full rounded-2xl px-4 py-3 text-sm outline-none text-slate-700 placeholder:text-slate-400 resize-none"
             style={{
@@ -157,9 +157,9 @@ const PostCreator = ({ user, getFullAvatarUrl, onPostSuccess }) => {
       {/* Toolbar */}
       <div className="flex items-center px-4 py-2.5 gap-1">
         {[
-          { icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z', label: 'Ảnh', color: '#10b981' },
-          { icon: 'M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', label: 'Video', color: '#f43f5e' },
-          { icon: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', label: 'Cảm xúc', color: '#f59e0b' },
+          { icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z', label: t('home.photo'), color: '#10b981' },
+          { icon: 'M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', label: t('home.video'), color: '#f43f5e' },
+          { icon: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', label: t('home.feeling'), color: '#f59e0b' },
         ].map((btn, i) => (
           i === 0 ? (
             <label
@@ -204,7 +204,7 @@ const PostCreator = ({ user, getFullAvatarUrl, onPostSuccess }) => {
             <span className="text-indigo-500">
               <PrivacyIcon privacy={privacy} className="w-3.5 h-3.5" />
             </span>
-            <span>{privacy === 'Friends' ? 'Bạn bè' : privacy === 'OnlyMe' ? 'Chỉ mình tôi' : 'Công khai'}</span>
+            <span>{privacy === 'Friends' ? t('home.privacyFriends') : privacy === 'OnlyMe' ? t('home.privacyOnlyMe') : t('home.privacyPublic')}</span>
             <svg className={`w-3.5 h-3.5 transition-transform duration-300 ${isPrivacyOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
@@ -223,9 +223,9 @@ const PostCreator = ({ user, getFullAvatarUrl, onPostSuccess }) => {
             }}
           >
             {[
-              { key: 'Public', label: 'Công khai' },
-              { key: 'Friends', label: 'Bạn bè' },
-              { key: 'OnlyMe', label: 'Chỉ mình tôi' },
+              { key: 'Public', label: t('home.privacyPublic') },
+              { key: 'Friends', label: t('home.privacyFriends') },
+              { key: 'OnlyMe', label: t('home.privacyOnlyMe') },
             ].map(p => (
               <button
                 key={p.key}
@@ -258,9 +258,9 @@ const PostCreator = ({ user, getFullAvatarUrl, onPostSuccess }) => {
           {isPosting ? (
             <div className="flex items-center gap-1.5">
               <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Đang đăng...
+              {t('posts.posting')}
             </div>
-          ) : 'Đăng bài'}
+          ) : t('posts.post')}
         </button>
       </div>
     </div>

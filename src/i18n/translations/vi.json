@@ -51,13 +51,6 @@
       "unfriendSuccess": "Đã hủy kết bạn.",
       "cancelRequest": "Hủy yêu cầu"
     },
-    "friends": {
-      "accept": "Chấp nhận",
-      "unfriend": "Hủy kết bạn"
-    },
-    "messaging": {
-      "title": "Nhắn tin"
-    },
     "auth": {
       "passwordMismatch": "Mật khẩu không khớp."
     },
@@ -195,6 +188,7 @@
       "seeMore": "Xem thêm",
       "yourShortcuts": "Lối tắt của bạn",
       "yourStory": "Tin của bạn",
+      "myStory": "Của tôi",
       "whatsOnYourMind": "{{name}} ơi, bạn đang nghĩ gì thế?",
       "post": "Đăng bài",
       "postSuccess": "Bài viết của bạn đã được đăng!",
@@ -207,11 +201,26 @@
       "help": "Trợ giúp",
       "privacy": "Quyền riêng tư",
       "terms": "Điều khoản",
-      "suggestedForYou": "Gợi ý cho bạn",
-      "trending": "Chủ đề xu hướng",
+      "suggestedForYou": "Gợi ý kết bạn",
+      "trending": "Đang thịnh hành",
+      "trendingTopics": "Chủ đề xu hướng",
       "privacyPublic": "Công khai",
       "privacyFriends": "Bạn bè",
-      "privacyOnlyMe": "Chỉ mình tôi"
+      "privacyOnlyMe": "Chỉ mình tôi",
+      "noPostsTitle": "Chưa có bài viết nào",
+      "noPostsDesc": "Hãy kết bạn thêm hoặc đăng bài đầu tiên!",
+      "trendingItems": {
+        "tech": "Xu hướng · Công nghệ",
+        "design": "Xu hướng · Thiết kế",
+        "vietnam": "Xu hướng · Việt Nam",
+        "posts": "bài viết"
+      },
+      "nav": {
+        "home": "Trang chủ",
+        "friends": "Bạn bè",
+        "messages": "Tin nhắn",
+        "settings": "Cài đặt"
+      }
     },
     "settings": {
       "title": "Cài đặt",
@@ -273,10 +282,10 @@
     },
     "posts": {
       "time": {
-        "now": "vừa xong",
-        "m": "phút",
-        "h": "giờ",
-        "d": "ngày"
+        "justNow": "Vừa xong",
+        "minsAgo": "{{count}} phút trước",
+        "hoursAgo": "{{count}} giờ trước",
+        "daysAgo": "{{count}} ngày trước"
       },
       "liked": "Đã thích!",
       "unliked": "Bỏ thích!",
@@ -286,9 +295,14 @@
       "you": "Bạn",
       "addFriend": "+ Thêm bạn",
       "friendRequestSent": "Đã gửi lời mời cho {{name}}!",
+      "sent": "Đã gửi",
       "addFriendError": "Không thể gửi lời mời.",
       "delete": "Xóa",
       "deleting": "Đang xóa...",
+      "likesCount": "lượt thích",
+      "commentsCount": "bình luận",
+      "seeMore": "Xem thêm",
+      "seeLess": "Thu gọn",
       "likes": "Lượt thích",
       "comments": "Bình luận",
       "like": "Thích",

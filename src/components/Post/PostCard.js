@@ -128,10 +128,10 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
     const now = new Date();
     const seconds = Math.floor((now - date) / 1000);
     
-    if (seconds < 60) return t('post.justNow') || 'Vừa xong';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)} phút trước`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)} giờ trước`;
-    if (seconds < 604800) return `${Math.floor(seconds / 86400)} ngày trước`;
+    if (seconds < 60) return t('posts.time.justNow');
+    if (seconds < 3600) return t('posts.time.minsAgo', { count: Math.floor(seconds / 60) });
+    if (seconds < 86400) return t('posts.time.hoursAgo', { count: Math.floor(seconds / 3600) });
+    if (seconds < 604800) return t('posts.time.daysAgo', { count: Math.floor(seconds / 86400) });
     return date.toLocaleDateString('vi-VN');
   };
 
@@ -242,7 +242,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
                 </Link>
                 {isPostOwner ? (
                   <span className="text-[10px] font-bold text-indigo-600 px-2 py-0.5 rounded-full"
-                    style={{ background: 'rgba(99,102,241,0.1)' }}>Bạn</span>
+                    style={{ background: 'rgba(99,102,241,0.1)' }}>{t('posts.you')}</span>
                 ) : (
                   <button
                     onClick={async () => {
@@ -263,7 +263,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
                     onMouseEnter={e => !isSentRequest && (e.currentTarget.style.background = 'linear-gradient(135deg,#6366f1,#8b5cf6)', e.currentTarget.style.color = '#fff')}
                     onMouseLeave={e => !isSentRequest && (e.currentTarget.style.background = 'rgba(99,102,241,0.08)', e.currentTarget.style.color = '#6366f1')}
                   >
-                    {isSentRequest ? 'Đã gửi' : '+ Kết bạn'}
+                    {isSentRequest ? t('posts.sent') : t('posts.addFriend')}
                   </button>
                 )}
               </div>
@@ -297,7 +297,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
               <button onClick={() => setIsExpanded(!isExpanded)}
                 className="ml-1 font-bold text-sm transition-colors hover:underline"
                 style={{ color: '#6366f1' }}>
-                {isExpanded ? 'Thu gọn' : 'Xem thêm'}
+                {isExpanded ? t('posts.seeLess') : t('posts.seeMore')}
               </button>
             )}
           </p>
@@ -323,13 +323,13 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
                 <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
                   style={{ background: 'linear-gradient(135deg, #f43f5e, #ec4899)' }}>❤️</div>
                 <span className="font-semibold text-slate-700 hover:text-indigo-600 transition-colors">{likeCount}</span>
-                <span>lượt thích</span>
+                <span>{t('posts.likesCount')}</span>
               </button>
             )}
             {(post.commentCount || 0) > 0 && (
               <button onClick={() => setIsCommentOpen(true)}
                 className="transition-all duration-200 hover:text-indigo-600 hover:scale-105 active:scale-95">
-                <span className="font-semibold text-slate-700">{post.commentCount}</span> bình luận
+                <span className="font-semibold text-slate-700">{post.commentCount}</span> {t('posts.commentsCount')}
               </button>
             )}
           </div>
@@ -353,7 +353,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
               stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
-            <span className="hidden sm:inline">{isLiked ? 'Đã thích' : 'Thích'}</span>
+            <span className="hidden sm:inline">{isLiked ? t('posts.liked') : t('posts.like')}</span>
           </button>
 
           {/* Comment */}

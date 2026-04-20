@@ -51,13 +51,6 @@
       "unfriendSuccess": "Unfriended.",
       "cancelRequest": "Cancel Request"
     },
-    "friends": {
-      "accept": "Accept",
-      "unfriend": "Unfriend"
-    },
-    "messaging": {
-      "title": "Messages"
-    },
     "auth": {
       "passwordMismatch": "Passwords do not match."
     },
@@ -78,6 +71,7 @@
       "seeMore": "See more",
       "yourShortcuts": "Your Shortcuts",
       "yourStory": "Your story",
+      "myStory": "My Story",
       "whatsOnYourMind": "What's on your mind, {{name}}?",
       "post": "Post",
       "postSuccess": "Your post has been published!",
@@ -90,11 +84,26 @@
       "help": "Help",
       "privacy": "Privacy",
       "terms": "Terms",
-      "suggestedForYou": "Suggested for you",
-      "trending": "Trending Topics",
+      "suggestedForYou": "Suggested Friends",
+      "trending": "Trending Now",
+      "trendingTopics": "Trending Topics",
       "privacyPublic": "Public",
       "privacyFriends": "Friends",
-      "privacyOnlyMe": "Only Me"
+      "privacyOnlyMe": "Only Me",
+      "noPostsTitle": "No posts yet",
+      "noPostsDesc": "Add more friends or create your first post!",
+      "trendingItems": {
+        "tech": "Trending · Technology",
+        "design": "Trending · Design",
+        "vietnam": "Trending · Vietnam",
+        "posts": "posts"
+      },
+      "nav": {
+        "home": "Home",
+        "friends": "Friends",
+        "messages": "Messages",
+        "settings": "Settings"
+      }
     },
     "settings": {
       "title": "Settings",
@@ -273,10 +282,10 @@
     },
     "posts": {
       "time": {
-        "now": "now",
-        "m": "m",
-        "h": "h",
-        "d": "d"
+        "justNow": "Just now",
+        "minsAgo": "{{count}}m ago",
+        "hoursAgo": "{{count}}h ago",
+        "daysAgo": "{{count}}d ago"
       },
       "liked": "Liked!",
       "unliked": "Unliked!",
@@ -286,9 +295,14 @@
       "you": "You",
       "addFriend": "+ Add Friend",
       "friendRequestSent": "Friend request sent to {{name}}!",
+      "sent": "Sent",
       "addFriendError": "Could not send friend request.",
       "delete": "Delete",
       "deleting": "Deleting...",
+      "likesCount": "likes",
+      "commentsCount": "comments",
+      "seeMore": "See more",
+      "seeLess": "See less",
       "likes": "Likes",
       "comments": "Comments",
       "like": "Like",
