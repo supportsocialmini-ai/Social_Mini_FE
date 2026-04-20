@@ -17,6 +17,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedReport, setSelectedReport] = useState(null);
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [isTogglingMaintenance, setIsTogglingMaintenance] = useState(false);
 
@@ -50,10 +51,9 @@ const AdminDashboard = () => {
   const fetchReports = async () => {
     setIsLoading(true);
     try {
-      const response = await reportService.getAllReports();
-      if (response.success) {
-        setReports(response.data);
-      }
+      const data = await reportService.getAllReports();
+      // data chính là response.data.result (mảng các reports)
+      setReports(data || []);
     } catch (error) {
       toast.error('Lỗi lấy danh sách báo cáo');
     } finally {
@@ -63,11 +63,10 @@ const AdminDashboard = () => {
 
   const handleResolveReport = async (reportId, action) => {
     try {
-      const response = await reportService.resolveReport(reportId, action);
-      if (response.success) {
-        setReports(reports.map(r => r.reportId === reportId ? { ...r, status: action } : r));
-        toast.success(response.message);
-      }
+      const result = await reportService.resolveReport(reportId, action);
+      // result chính là chuỗi thông báo thành công
+      setReports(reports.map(r => r.reportId === reportId ? { ...r, status: action } : r));
+      toast.success(result || 'Đã xử lý báo cáo');
     } catch (error) {
       toast.error('Lỗi xử lý báo cáo');
     }
@@ -171,6 +170,92 @@ const AdminDashboard = () => {
                     Close Details
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL CHI TIẾT BÁO CÁO (UNIVERSAL) --- */}
+      {selectedReport && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setSelectedReport(null)}></div>
+          <div className="bg-white rounded-[2.5rem] w-full max-w-lg relative z-10 shadow-2xl overflow-hidden border border-white animate-in zoom-in-95 duration-200">
+            <div className="h-24 bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-between px-10">
+               <h3 className="text-white font-black uppercase tracking-widest text-lg">Chi tiết vi phạm</h3>
+               <button onClick={() => setSelectedReport(null)} className="text-white/60 hover:text-white transition-colors">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+               </button>
+            </div>
+            
+            <div className="p-10 space-y-8">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="bg-[#f4f7fe] p-5 rounded-[1.5rem] border border-slate-100">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Người báo cáo</p>
+                  <p className="text-sm font-black text-[#1B2559]">{selectedReport.reporterName}</p>
+                  <p className="text-[10px] font-bold text-slate-400 mt-1">{new Date(selectedReport.createdAt).toLocaleString('vi-VN')}</p>
+                </div>
+                <div className="bg-[#f4f7fe] p-5 rounded-[1.5rem] border border-slate-100">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Loại đối tượng</p>
+                  <span className="inline-block px-3 py-1 rounded-lg bg-red-100 text-red-600 text-[10px] font-black uppercase tracking-widest">
+                    {selectedReport.targetType}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-rose-50 p-6 rounded-[2rem] border border-rose-100 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-3 opacity-10">
+                    <svg className="w-12 h-12 text-rose-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.523 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-3">Nội dung bị tố cáo</p>
+                  <p className="text-sm font-bold text-rose-700 leading-relaxed italic">
+                    "{selectedReport.targetContent}"
+                  </p>
+                </div>
+
+                <div className="bg-[#f4f7fe] p-6 rounded-[2rem] border border-slate-100">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Lý do vi phạm</p>
+                  <p className="text-base font-black text-red-600 mb-2">{selectedReport.reason}</p>
+                  <p className="text-sm font-medium text-slate-500 leading-relaxed">
+                    {selectedReport.description || 'Không có mô tả bổ sung từ người báo cáo.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                {selectedReport.status === 'Pending' ? (
+                  <>
+                    <button 
+                      onClick={() => {
+                        handleResolveReport(selectedReport.reportId, 'Resolved');
+                        setSelectedReport(null);
+                      }}
+                      className="flex-1 py-4 rounded-2xl bg-emerald-500 text-white text-xs font-black uppercase tracking-widest shadow-xl shadow-emerald-200 hover:bg-emerald-600 transition-all active:scale-95"
+                    >
+                      Duyệt & Xử lý
+                    </button>
+                    <button 
+                      onClick={() => {
+                        handleResolveReport(selectedReport.reportId, 'Dismissed');
+                        setSelectedReport(null);
+                      }}
+                      className="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-500 text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95"
+                    >
+                      Bỏ qua báo cáo
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex-1 py-5 text-center bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Trạng thái xử lý</p>
+                    <p className="text-sm font-black text-slate-600 uppercase tracking-widest">{selectedReport.status}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -424,32 +509,39 @@ const AdminDashboard = () => {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="text-slate-400 text-[11px] font-black uppercase tracking-[0.2em] border-b border-slate-100">
-                      <th className="px-4 md:px-8 py-6">Reporter</th>
-                      <th className="px-8 py-6">Target Content</th>
-                      <th className="px-8 py-6">Reason & Description</th>
-                      <th className="px-8 py-6 text-center">Status</th>
-                      <th className="px-4 md:px-8 py-6 text-right">Actions</th>
+                      <th className="px-4 md:px-8 py-6">Identity</th>
+                      <th className="px-4 md:px-8 py-6">Report Info</th>
+                      <th className="px-8 py-6 text-center hidden md:table-cell">Status</th>
+                      <th className="px-4 md:px-8 py-6 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {reports.map(report => (
+                    {reports.map((report) => (
                       <tr key={report.reportId} className="hover:bg-slate-50/80 transition-all group">
                         <td className="px-4 md:px-8 py-6">
-                          <p className="font-bold text-[#1B2559] text-sm">{report.reporterName}</p>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase">{new Date(report.createdAt).toLocaleDateString('vi-VN')}</p>
+                           <p className="font-black text-[#1B2559] text-sm leading-none mb-1">{report.reporterName}</p>
+                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{new Date(report.createdAt).toLocaleDateString('vi-VN')}</p>
                         </td>
-                        <td className="px-8 py-6">
-                          <div className="max-w-xs">
-                             <span className="inline-block px-2 py-0.5 rounded bg-slate-100 text-[10px] font-black text-slate-500 uppercase mb-1">{report.targetType}</span>
-                             <p className="text-xs text-slate-600 italic line-clamp-2">"{report.targetContent}"</p>
-                          </div>
+                        <td className="px-4 md:px-8 py-6">
+                           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 rounded bg-red-100 text-[10px] font-black text-red-600 uppercase tracking-widest leading-none">{report.targetType}</span>
+                                <p className="text-sm font-bold text-slate-600 line-clamp-1">{report.reason}</p>
+                              </div>
+                              {/* STATUS TAG - ONLY MOBILE */}
+                              <div className="md:hidden">
+                                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
+                                  report.status === 'Pending' ? 'bg-amber-100 text-amber-600' :
+                                  report.status === 'Resolved' ? 'bg-emerald-100 text-emerald-600' :
+                                  'bg-slate-100 text-slate-500'
+                                }`}>
+                                  {report.status}
+                                </span>
+                              </div>
+                           </div>
                         </td>
-                        <td className="px-8 py-6">
-                          <p className="text-sm font-bold text-red-600 mb-1">{report.reason}</p>
-                          <p className="text-xs text-slate-400 line-clamp-2">{report.description || 'No additional details.'}</p>
-                        </td>
-                        <td className="px-8 py-6 text-center">
-                          <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                        <td className="px-8 py-6 text-center hidden md:table-cell">
+                          <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${
                             report.status === 'Pending' ? 'bg-amber-100 text-amber-600' :
                             report.status === 'Resolved' ? 'bg-emerald-100 text-emerald-600' :
                             'bg-slate-100 text-slate-500'
@@ -458,36 +550,19 @@ const AdminDashboard = () => {
                           </span>
                         </td>
                         <td className="px-4 md:px-8 py-6 text-right">
-                          {report.status === 'Pending' ? (
-                            <div className="flex justify-end gap-2">
-                               <button 
-                                onClick={() => handleResolveReport(report.reportId, 'Resolved')}
-                                className="p-2 text-emerald-600 bg-emerald-50 rounded-xl hover:bg-emerald-600 hover:text-white transition-all"
-                                title="Approve / Resolve"
-                               >
-                                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                                  </svg>
-                               </button>
-                               <button 
-                                onClick={() => handleResolveReport(report.reportId, 'Dismissed')}
-                                className="p-2 text-slate-400 bg-slate-50 rounded-xl hover:bg-slate-200 hover:text-slate-600 transition-all"
-                                title="Dismiss"
-                               >
-                                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                               </button>
-                            </div>
-                          ) : (
-                            <span className="text-[10px] font-bold text-slate-300 italic">Xử lý xong</span>
-                          )}
+                          <button 
+                            onClick={() => setSelectedReport(report)}
+                            className="bg-[#4318FF] text-white text-[10px] font-black uppercase tracking-widest px-4 md:px-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all outline-none"
+                          >
+                            <span className="hidden md:inline">Chi tiết</span>
+                            <span className="md:hidden">Xem</span>
+                          </button>
                         </td>
                       </tr>
                     ))}
                     {reports.length === 0 && (
                       <tr>
-                        <td colSpan="5" className="py-20 text-center text-slate-400 font-bold italic">
+                        <td colSpan="4" className="py-20 text-center text-slate-400 font-bold italic">
                            No reports to display. Everything is clean!
                         </td>
                       </tr>
