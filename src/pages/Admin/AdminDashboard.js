@@ -44,8 +44,8 @@ const AdminDashboard = () => {
 
   const fetchMaintenanceStatus = async () => {
     try {
-      const status = await adminService.getMaintenanceStatus();
-      setIsMaintenance(status);
+      const response = await adminService.getMaintenanceStatus();
+      setIsMaintenance(response.isMaintenance); // Lấy thuộc tính isMaintenance thay vì cả object
     } catch (error) {
       console.error('Lỗi lấy trạng thái bảo trì', error);
     }
@@ -54,7 +54,8 @@ const AdminDashboard = () => {
   const handleToggleMaintenance = async () => {
     setIsTogglingMaintenance(true);
     try {
-      const newStatus = await adminService.toggleMaintenance();
+      const response = await adminService.toggleMaintenance();
+      const newStatus = response.isMaintenance; // Lấy thuộc tính isMaintenance
       setIsMaintenance(newStatus);
       toast.success(newStatus ? 'Đã BẬT chế độ bảo trì hệ thống' : 'Đã TẮT chế độ bảo trì hệ thống');
     } catch (error) {

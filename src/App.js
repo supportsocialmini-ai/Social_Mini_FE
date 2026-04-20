@@ -42,8 +42,8 @@ function App() {
   useEffect(() => {
     const checkMaintenance = async () => {
       try {
-        const status = await adminService.getMaintenanceStatus();
-        setIsMaintenance(status);
+        const response = await adminService.getMaintenanceStatus();
+        setIsMaintenance(response.isMaintenance); // Lấy boolean thay vì object
       } catch (error) {
         // If 503, it means maintenance is active
         if (error.response?.status === 503) {
