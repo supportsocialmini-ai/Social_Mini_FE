@@ -32,6 +32,12 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'vi' ? 'en' : 'vi';
+    i18n.changeLanguage(newLang);
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -162,6 +168,19 @@ const Register = () => {
       <div className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full bg-blue-300/20 blur-[80px]" style={{ transform: 'translate(-80%, -30%)' }} />
       <div className="absolute top-1/3 right-1/4 w-48 h-48 rounded-full bg-violet-300/20 blur-[60px]" />
 
+      {/* Language Switcher */}
+      <button
+        onClick={toggleLanguage}
+        className="fixed top-6 right-6 z-[100] group flex items-center gap-2.5 px-3.5 py-2 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/50 rounded-2xl shadow-sm transition-all hover:scale-105 active:scale-95"
+      >
+        <span className="text-xl shadow-sm">{i18n.language === 'vi' ? '🇻🇳' : '🇺🇸'}</span>
+        <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.15em]">{i18n.language === 'vi' ? 'VI' : 'EN'}</span>
+        <div className="w-1 h-3 bg-slate-300/50 rounded-full" />
+        <svg className="w-3.5 h-3.5 text-slate-400 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
       {/* Main layout */}
       <div className="relative z-10 w-full max-w-5xl mx-auto px-6 py-10 flex items-center justify-between gap-10">
 
@@ -170,12 +189,12 @@ const Register = () => {
           {/* Tag */}
           <div className="animate-fade-up inline-flex items-center gap-2 bg-white/50 border border-white/80 rounded-full px-4 py-1.5 mb-6 w-fit backdrop-blur-sm">
             <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-            <span className="text-slate-600 text-sm font-semibold tracking-wide">Tạo tài khoản miễn phí</span>
+            <span className="text-slate-600 text-sm font-semibold tracking-wide">{t('auth.branding.tagRegister')}</span>
           </div>
 
           {/* Headline */}
           <h1 className="animate-fade-up delay-100 text-[3.6rem] font-extrabold text-slate-800 leading-[1.15] mb-4" style={{ letterSpacing: '-0.02em' }}>
-            Tham gia<br />
+            {t('auth.branding.headlineRegister1')}<br />
             <span
               className="animate-gradient"
               style={{
@@ -185,12 +204,12 @@ const Register = () => {
                 backgroundSize: '200% auto',
               }}
             >
-              cộng đồng người dùng.
+              {t('auth.branding.headlineRegister2')}
             </span>
           </h1>
 
           <p className="animate-fade-up delay-200 text-slate-500 text-base leading-relaxed max-w-sm mb-10">
-            Chỉ mất vài giây để tạo tài khoản và bắt đầu kết nối với mọi người xung quanh.
+            {t('auth.branding.subHeadlineRegister')}
           </p>
 
           {/* Steps with clean icons */}
@@ -198,8 +217,8 @@ const Register = () => {
             {[
               {
                 step: '01',
-                title: 'Điền thông tin',
-                desc: 'Tên, username, email và mật khẩu',
+                title: t('auth.branding.featReg1Title'),
+                desc: t('auth.branding.featReg1Desc'),
                 icon: (
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -208,8 +227,8 @@ const Register = () => {
               },
               {
                 step: '02',
-                title: 'Xác thực email',
-                desc: 'Nhập mã 6 số được gửi qua email',
+                title: t('auth.branding.featReg2Title'),
+                desc: t('auth.branding.featReg2Desc'),
                 icon: (
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -218,8 +237,8 @@ const Register = () => {
               },
               {
                 step: '03',
-                title: 'Bắt đầu khám phá!',
-                desc: 'Kết bạn, chat và chia sẻ ngay',
+                title: t('auth.branding.featReg3Title'),
+                desc: t('auth.branding.featReg3Desc'),
                 icon: (
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -242,9 +261,9 @@ const Register = () => {
           {/* Stats */}
           <div className="mt-10 flex gap-8">
             {[
-              { value: '10K+', label: 'Người dùng' },
-              { value: 'Free', label: 'Mãi mãi' },
-              { value: '3s', label: 'Đăng ký xong' },
+              { value: '10K+', label: t('auth.branding.stat1') },
+              { value: 'Free', label: t('auth.branding.stat2Reg') },
+              { value: '3s', label: t('auth.branding.stat3Reg') },
             ].map((s) => (
               <div key={s.label}>
                 <p className="text-2xl font-extrabold text-slate-800" style={{ letterSpacing: '-0.02em' }}>{s.value}</p>
@@ -264,18 +283,18 @@ const Register = () => {
               <span className="text-xl font-black text-yellow-300 px-2 py-0.5 rounded" style={{ background: '#1a2d6b' }}>Social</span>
             </div>
 
-            <h2 className="text-3xl font-bold text-slate-800 mb-1">Tạo tài khoản</h2>
-            <p className="text-slate-400 text-base mb-6">Chỉ mất 1 phút để bắt đầu!</p>
+            <h2 className="text-3xl font-bold text-slate-800 mb-1">{t('auth.createAccount')}</h2>
+            <p className="text-slate-400 text-base mb-6">{t('auth.registerSubtitle')}</p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
 
               {/* Họ và tên */}
               <div>
-                <label className="block text-base font-semibold text-slate-700 mb-2">Họ và tên</label>
+                <label className="block text-base font-semibold text-slate-700 mb-2">{t('auth.fullName')}</label>
                 <input
                   name="fullName"
                   type="text"
-                  placeholder="Trần Quốc B"
+                  placeholder={t('auth.fullName')}
                   value={formData.fullName}
                   onChange={handleChange}
                   className="w-full px-5 py-4 rounded-xl border border-slate-200 bg-white text-slate-700 placeholder:text-slate-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-400 transition-all"
@@ -286,11 +305,11 @@ const Register = () => {
               {/* Username & Email */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-base font-semibold text-slate-700 mb-2">Tên người dùng</label>
+                  <label className="block text-base font-semibold text-slate-700 mb-2">{t('auth.username')}</label>
                   <input
                     name="username"
                     type="text"
-                    placeholder="Tên người dùng"
+                    placeholder={t('auth.username')}
                     value={formData.username}
                     onChange={handleChange}
                     className="w-full px-5 py-4 rounded-xl border border-slate-200 bg-white text-slate-700 placeholder:text-slate-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-400 transition-all"
@@ -298,7 +317,7 @@ const Register = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-base font-semibold text-slate-700 mb-2">Email</label>
+                  <label className="block text-base font-semibold text-slate-700 mb-2">{t('auth.email')}</label>
                   <input
                     name="email"
                     type="email"
@@ -314,7 +333,7 @@ const Register = () => {
               {/* Password & Confirm */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-base font-semibold text-slate-700 mb-2">Mật khẩu</label>
+                  <label className="block text-base font-semibold text-slate-700 mb-2">{t('auth.password')}</label>
                   <div className="relative">
                     <input
                       name="password"
@@ -332,7 +351,7 @@ const Register = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-base font-semibold text-slate-700 mb-2">Nhập lại mật khẩu</label>
+                  <label className="block text-base font-semibold text-slate-700 mb-2">{t('auth.confirmPassword')}</label>
                   <div className="relative">
                     <input
                       name="confirmPassword"
@@ -352,7 +371,7 @@ const Register = () => {
               </div>
 
               <p className="text-slate-400 text-xs">
-                Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ hoa, chữ thường và số.
+                {t('auth.passwordHint')}
               </p>
 
               <button
@@ -364,16 +383,16 @@ const Register = () => {
                 {isLoading ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Đang tạo tài khoản...
+                    {t('auth.creatingAccount')}
                   </div>
-                ) : 'Tạo tài khoản'}
+                ) : t('auth.createAccount')}
               </button>
             </form>
 
             {/* Social login */}
             <div className="mt-5 flex items-center gap-3">
               <div className="flex-1 h-px bg-slate-100" />
-              <span className="text-slate-300 text-xs font-medium whitespace-nowrap">hoặc tiếp tục với</span>
+              <span className="text-slate-300 text-xs font-medium whitespace-nowrap">{t('auth.orContinueWith')}</span>
               <div className="flex-1 h-px bg-slate-100" />
             </div>
 
@@ -402,9 +421,9 @@ const Register = () => {
 
             {/* Login link */}
             <p className="mt-5 text-center text-slate-400 text-sm">
-              Đã có tài khoản?{' '}
+              {t('auth.hasAccount')}{' '}
               <Link to="/login" className="font-bold text-blue-500 hover:text-blue-600 hover:underline transition-colors">
-                Đăng nhập
+                {t('auth.login')}
               </Link>
             </p>
           </div>
@@ -443,8 +462,8 @@ const Register = () => {
               {/* Header */}
               <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
                 <div>
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight">ĐIỀU KHOẢN SỬ DỤNG</h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Cập nhật lần cuối: {new Date().toLocaleDateString('vi-VN')}</p>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tight">{t('auth.terms.title')}</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{t('auth.terms.updateDate')}: {new Date().toLocaleDateString('vi-VN')}</p>
                 </div>
                 <button
                   onClick={() => setIsTermsModalOpen(false)}
@@ -460,74 +479,74 @@ const Register = () => {
               <div className="p-8 overflow-y-auto custom-scrollbar">
                 <div className="space-y-6 text-slate-600 leading-relaxed">
                   <p className="font-semibold text-slate-800">
-                    Chào mừng bạn đến với MiniSocial – nền tảng mạng xã hội mini cho phép người dùng kết nối, chia sẻ và tương tác.
+                    {t('auth.terms.welcome')}
                   </p>
                   <p className="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-r-xl text-sm italic">
-                    Khi truy cập hoặc sử dụng dịch vụ của chúng tôi, bạn đồng ý tuân thủ các điều khoản dưới đây.
+                    {t('auth.terms.usageConsent')}
                   </p>
 
                   <section className="space-y-3">
-                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">1. Điều kiện sử dụng</h4>
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">{t('auth.terms.sections.s1Title')}</h4>
                     <ul className="list-disc ml-5 space-y-1 text-sm">
-                      <li>Bạn phải từ 13 tuổi trở lên để sử dụng dịch vụ.</li>
-                      <li>Bạn chịu trách nhiệm về tài khoản của mình (email, mật khẩu).</li>
-                      <li>Không được mạo danh người khác hoặc cung cấp thông tin sai lệch.</li>
+                      <li>{t('auth.terms.sections.s1Li1')}</li>
+                      <li>{t('auth.terms.sections.s1Li2')}</li>
+                      <li>{t('auth.terms.sections.s1Li3')}</li>
                     </ul>
                   </section>
 
                   <section className="space-y-3">
-                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">2. Tài khoản người dùng</h4>
-                    <p className="text-sm">Bạn cần đăng ký tài khoản để sử dụng đầy đủ chức năng. Bạn phải giữ bảo mật thông tin đăng nhập. Chúng tôi có quyền tạm khóa hoặc xóa tài khoản nếu phát hiện vi phạm.</p>
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">{t('auth.terms.sections.s2Title')}</h4>
+                    <p className="text-sm">{t('auth.terms.sections.s2Text')}</p>
                   </section>
 
                   <section className="space-y-3">
-                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">3. Nội dung người dùng</h4>
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">{t('auth.terms.sections.s3Title')}</h4>
                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
-                      <p className="font-bold text-xs text-slate-400 uppercase tracking-widest">Nghĩa vụ</p>
-                      <p className="text-sm">Bạn chịu trách nhiệm với nội dung bạn đăng tải, bao gồm: Bài viết, hình ảnh, video, bình luận.</p>
-                      <p className="font-bold text-xs text-red-400 uppercase tracking-widest mt-4">Hành vi bị cấm</p>
+                      <p className="font-bold text-xs text-slate-400 uppercase tracking-widest">{t('auth.terms.sections.s3Duty')}</p>
+                      <p className="text-sm">{t('auth.terms.sections.s3DutyText')}</p>
+                      <p className="font-bold text-xs text-red-400 uppercase tracking-widest mt-4">{t('auth.terms.sections.s3Prohibited')}</p>
                       <ul className="list-disc ml-5 space-y-1 text-sm text-red-500/80">
-                        <li>Nội dung vi phạm pháp luật</li>
-                        <li>Nội dung xúc phạm, thù địch</li>
-                        <li>Spam, quảng cáo trái phép</li>
-                        <li>Nội dung xâm phạm quyền riêng tư</li>
+                        <li>{t('auth.terms.sections.s3P1')}</li>
+                        <li>{t('auth.terms.sections.s3P2')}</li>
+                        <li>{t('auth.terms.sections.s3P3')}</li>
+                        <li>{t('auth.terms.sections.s3P4')}</li>
                       </ul>
                     </div>
                   </section>
 
                   <section className="space-y-3">
-                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">4. Quyền riêng tư</h4>
-                    <p className="text-sm">Chúng tôi thu thập và xử lý dữ liệu theo Chính sách bảo mật. Không chia sẻ dữ liệu cá nhân cho bên thứ ba nếu không có sự đồng ý (trừ khi pháp luật yêu cầu).</p>
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">{t('auth.terms.sections.s4Title')}</h4>
+                    <p className="text-sm">{t('auth.terms.sections.s4Text')}</p>
                   </section>
 
                   <section className="space-y-3">
-                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">5. Quyền và nghĩa vụ hệ thống</h4>
-                    <p className="text-sm">Chúng tôi có quyền: Thay đổi, nâng cấp hệ thống; Tạm ngưng dịch vụ để bảo trì; Xóa nội dung hoặc tài khoản vi phạm.</p>
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">{t('auth.terms.sections.s5Title')}</h4>
+                    <p className="text-sm">{t('auth.terms.sections.s5Text')}</p>
                   </section>
 
                   <section className="space-y-3">
-                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">6. Hành vi bị cấm</h4>
-                    <p className="text-sm text-red-600 font-medium">Bạn không được: Tấn công hệ thống (hack, DDOS, exploit); Thu thập dữ liệu trái phép; Sử dụng bot spam; Phát tán mã độc.</p>
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">{t('auth.terms.sections.s6Title')}</h4>
+                    <p className="text-sm">{t('auth.terms.sections.s6Text')}</p>
                   </section>
 
                   <section className="space-y-3">
-                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">7. Quyền sở hữu</h4>
-                    <p className="text-sm">Bạn giữ quyền sở hữu nội dung của mình. Khi đăng tải, bạn cấp cho chúng tôi quyền sử dụng nội dung đó để vận hành hệ thống.</p>
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">{t('auth.terms.sections.s7Title')}</h4>
+                    <p className="text-sm">{t('auth.terms.sections.s7Text')}</p>
                   </section>
 
                   <section className="space-y-3">
-                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">8. Giới hạn trách nhiệm</h4>
-                    <p className="text-sm">Chúng tôi không chịu trách nhiệm với nội dung do người dùng đăng. Không đảm bảo dịch vụ luôn hoạt động liên tục, không lỗi.</p>
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">{t('auth.terms.sections.s8Title')}</h4>
+                    <p className="text-sm">{t('auth.terms.sections.s8Text')}</p>
                   </section>
 
                   <section className="space-y-3">
-                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">9. Thay đổi điều khoản</h4>
-                    <p className="text-sm">Điều khoản có thể được cập nhật bất kỳ lúc nào. Việc tiếp tục sử dụng đồng nghĩa bạn chấp nhận thay đổi.</p>
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">{t('auth.terms.sections.s9Title')}</h4>
+                    <p className="text-sm">{t('auth.terms.sections.s9Text')}</p>
                   </section>
 
                   <section className="space-y-3">
-                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">10. Liên hệ</h4>
-                    <p className="text-sm">Nếu có thắc mắc, vui lòng liên hệ Email: <span className="font-bold text-indigo-500">support.socialmini@gmail.com</span></p>
+                    <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">{t('auth.terms.sections.s10Title')}</h4>
+                    <p className="text-sm">{t('auth.terms.sections.s10Text')}</p>
                   </section>
                 </div>
               </div>
@@ -539,14 +558,14 @@ const Register = () => {
                   onClick={() => setIsTermsModalOpen(false)}
                   className="flex-1 py-4 px-6 rounded-2xl bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-100 transition-all active:scale-[0.98]"
                 >
-                  Hủy
+                  {t('auth.verify.cancel')}
                 </button>
                 <button
                   type="button"
                   onClick={handleConfirmRegister}
                   className="flex-[2] py-4 px-6 rounded-2xl bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all active:scale-[0.98]"
                 >
-                  Chấp nhận và Đăng ký
+                  {t('auth.terms.acceptAndRegister')}
                 </button>
               </div>
             </div>

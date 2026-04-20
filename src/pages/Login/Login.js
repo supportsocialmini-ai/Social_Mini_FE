@@ -39,6 +39,12 @@ const Login = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const { i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'vi' ? 'en' : 'vi';
+    i18n.changeLanguage(newLang);
+  };
 
   React.useEffect(() => {
     if (location.state?.username) setUsername(location.state.username);
@@ -153,6 +159,19 @@ const Login = () => {
       <div className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full bg-blue-300/20 blur-[80px]" style={{ transform: 'translate(-80%, -30%)' }} />
       <div className="absolute top-1/3 right-1/4 w-48 h-48 rounded-full bg-violet-300/20 blur-[60px]" />
 
+      {/* Language Switcher */}
+      <button
+        onClick={toggleLanguage}
+        className="fixed top-6 right-6 z-[100] group flex items-center gap-2.5 px-3.5 py-2 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/50 rounded-2xl shadow-sm transition-all hover:scale-105 active:scale-95"
+      >
+        <span className="text-xl shadow-sm">{i18n.language === 'vi' ? '🇻🇳' : '🇺🇸'}</span>
+        <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.15em]">{i18n.language === 'vi' ? 'VI' : 'EN'}</span>
+        <div className="w-1 h-3 bg-slate-300/50 rounded-full" />
+        <svg className="w-3.5 h-3.5 text-slate-400 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
       {/* Main layout */}
       <div className="relative z-10 w-full max-w-5xl mx-auto px-6 py-10 flex items-center justify-between gap-10">
 
@@ -161,12 +180,12 @@ const Login = () => {
           {/* Tag */}
           <div className="animate-fade-up inline-flex items-center gap-2 bg-white/50 border border-white/80 rounded-full px-4 py-1.5 mb-6 w-fit backdrop-blur-sm">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-slate-600 text-sm font-semibold tracking-wide">MiniSocial Network</span>
+            <span className="text-slate-600 text-sm font-semibold tracking-wide">{t('auth.branding.tag')}</span>
           </div>
 
           {/* Headline */}
           <h1 className="animate-fade-up delay-100 text-[3.6rem] font-extrabold text-slate-800 leading-[1.15] mb-4" style={{ letterSpacing: '-0.02em' }}>
-            Kết nối bạn bè,<br />
+            {t('auth.branding.headlineLine1')}<br />
             <span
               className="animate-gradient"
               style={{
@@ -176,20 +195,20 @@ const Login = () => {
                 backgroundSize: '200% auto',
               }}
             >
-              chia sẻ khoảnh khắc.
+              {t('auth.branding.headlineLine2')}
             </span>
           </h1>
 
           <p className="animate-fade-up delay-200 text-slate-500 text-base leading-relaxed max-w-sm mb-10">
-            Nền tảng mạng xã hội nhỏ gọn — nơi bạn có thể chat, đăng bài và kết nối với mọi người trong tích tắc.
+            {t('auth.branding.subHeadline')}
           </p>
 
           {/* Feature list with SVG icons */}
           <div className="space-y-4">
             {[
               {
-                title: 'Chat thời gian thực',
-                desc: 'Nhắn tin, gửi ảnh tức thì qua SignalR',
+                title: t('auth.branding.feat1Title'),
+                desc: t('auth.branding.feat1Desc'),
                 icon: (
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -197,8 +216,8 @@ const Login = () => {
                 ),
               },
               {
-                title: 'Kết bạn dễ dàng',
-                desc: 'Gửi, chấp nhận lời mời trong một nốt nhạc',
+                title: t('auth.branding.feat2Title'),
+                desc: t('auth.branding.feat2Desc'),
                 icon: (
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -206,8 +225,8 @@ const Login = () => {
                 ),
               },
               {
-                title: 'Đăng bài & tương tác',
-                desc: 'Like, bình luận, reply thoải mái',
+                title: t('auth.branding.feat3Title'),
+                desc: t('auth.branding.feat3Desc'),
                 icon: (
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -230,9 +249,9 @@ const Login = () => {
           {/* Stats */}
           <div className="mt-10 flex gap-8">
             {[
-              { value: '10K+', label: 'Người dùng' },
-              { value: '50K+', label: 'Bài đăng' },
-              { value: '99%', label: 'Uptime' },
+              { value: '10K+', label: t('auth.branding.stat1') },
+              { value: '50K+', label: t('auth.branding.stat2') },
+              { value: '99%', label: t('auth.branding.stat3') },
             ].map((s) => (
               <div key={s.label}>
                 <p className="text-2xl font-extrabold text-slate-800" style={{ letterSpacing: '-0.02em' }}>{s.value}</p>
@@ -252,8 +271,8 @@ const Login = () => {
               <span className="text-xl font-black text-yellow-300 px-2 py-0.5 rounded" style={{ background: '#1a2d6b' }}>Social</span>
             </div>
 
-            <h2 className="text-3xl font-bold text-slate-800 mb-1">Chào mừng trở lại!</h2>
-            <p className="text-slate-400 text-base mb-8">Đăng nhập để tiếp tục hành trình của bạn.</p>
+            <h2 className="text-3xl font-bold text-slate-800 mb-1">{t('auth.welcomeBack')}</h2>
+            <p className="text-slate-400 text-base mb-8">{t('auth.loginSubtitle')}</p>
 
             {/* Error */}
             {error && (
@@ -268,10 +287,10 @@ const Login = () => {
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Username */}
               <div>
-                <label className="block text-base font-semibold text-slate-700 mb-2">Tên đăng nhập</label>
+                <label className="block text-base font-semibold text-slate-700 mb-2">{t('auth.username')}</label>
                 <input
                   type="text"
-                  placeholder="Tên người dùng"
+                  placeholder={t('auth.username')}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full px-5 py-4 rounded-xl border border-slate-200 bg-white text-slate-700 placeholder:text-slate-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-400 transition-all"
@@ -281,7 +300,7 @@ const Login = () => {
 
               {/* Password */}
               <div>
-                <label className="block text-base font-semibold text-slate-700 mb-2">Mật khẩu</label>
+                <label className="block text-base font-semibold text-slate-700 mb-2">{t('auth.password')}</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -309,7 +328,7 @@ const Login = () => {
                     }}
                     className="text-sm font-medium text-blue-500 hover:text-blue-600 hover:underline transition-colors"
                   >
-                    Quên mật khẩu?
+                    {t('auth.forgotPassword')}
                   </button>
                 </div>
               </div>
@@ -324,16 +343,16 @@ const Login = () => {
                 {isLoading ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Đang đăng nhập...
+                    {t('auth.loggingIn')}
                   </div>
-                ) : 'Đăng nhập'}
+                ) : t('auth.login')}
               </button>
             </form>
 
             {/* Social login */}
             <div className="mt-6 flex items-center gap-3">
               <div className="flex-1 h-px bg-slate-100" />
-              <span className="text-slate-300 text-xs font-medium whitespace-nowrap">hoặc tiếp tục với</span>
+              <span className="text-slate-300 text-xs font-medium whitespace-nowrap">{t('auth.orContinueWith')}</span>
               <div className="flex-1 h-px bg-slate-100" />
             </div>
 
@@ -366,9 +385,9 @@ const Login = () => {
 
             {/* Register link */}
             <p className="mt-6 text-center text-slate-400 text-sm">
-              Chưa có tài khoản?{' '}
+              {t('auth.noAccount')}{' '}
               <Link to="/register" className="font-bold text-blue-500 hover:text-blue-600 hover:underline transition-colors">
-                Đăng ký ngay
+                {t('auth.registerNow')}
               </Link>
             </p>
           </div>
@@ -385,8 +404,8 @@ const Login = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-1">Xác thực tài khoản</h3>
-              <p className="text-slate-400 text-sm">Nhập mã 6 số đã được gửi đến email của bạn.</p>
+              <h3 className="text-xl font-bold text-slate-800 mb-1">{t('auth.verify.title')}</h3>
+              <p className="text-slate-400 text-sm">{t('auth.verify.desc')}</p>
             </div>
             <form onSubmit={handleVerifyEmail} className="space-y-5">
               <input
@@ -404,7 +423,7 @@ const Login = () => {
                   onClick={() => setIsVerifyModalOpen(false)}
                   className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-sm rounded-xl transition-all"
                 >
-                  Hủy
+                  {t('auth.verify.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -412,7 +431,7 @@ const Login = () => {
                   className="flex-[2] py-3 rounded-xl font-bold text-white text-sm transition-all disabled:opacity-50"
                   style={{ background: 'linear-gradient(90deg, #4a7cff 0%, #3b6ef8 100%)' }}
                 >
-                  {isVerifying ? 'Đang xử lý...' : 'Xác nhận'}
+                  {isVerifying ? t('auth.verify.processing') : t('auth.verify.confirm')}
                 </button>
               </div>
             </form>
@@ -438,8 +457,8 @@ const Login = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-1">Quên mật khẩu</h3>
-              <p className="text-slate-400 text-sm">Nhập email để nhận mã khôi phục.</p>
+              <h3 className="text-xl font-bold text-slate-800 mb-1">{t('auth.forgot.title')}</h3>
+              <p className="text-slate-400 text-sm">{t('auth.forgot.desc')}</p>
             </div>
 
             {forgotError && (
@@ -458,13 +477,13 @@ const Login = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                     </svg>
                  </div>
-                 <h4 className="font-bold mb-1">Đã gửi email!</h4>
-                 <p className="text-xs opacity-80">Vui lòng chờ giây lát để chuyển sang bước tiếp theo...</p>
+                 <h4 className="font-bold mb-1">{t('auth.forgot.sentTitle')}</h4>
+                 <p className="text-xs opacity-80">{t('auth.forgot.sentDesc')}</p>
               </div>
             ) : (
               <form onSubmit={handleForgotPasswordSubmit} className="space-y-5">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">ĐỊA CHỈ EMAIL</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">{t('auth.forgot.emailLabel')}</label>
                   <input
                     type="email"
                     placeholder="email@example.com"
@@ -482,7 +501,7 @@ const Login = () => {
                     disabled={isForgotLoading}
                     className="flex-1 px-4 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm rounded-xl transition-all active:scale-95"
                   >
-                    Hủy
+                    {t('auth.verify.cancel')}
                   </button>
                   <button
                     type="submit"
@@ -493,9 +512,9 @@ const Login = () => {
                     {isForgotLoading ? (
                       <div className="flex items-center justify-center gap-2">
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Đang gửi...
+                        {t('auth.forgot.sending')}
                       </div>
-                    ) : 'Gửi mã xác nhận'}
+                    ) : t('auth.forgot.submit')}
                   </button>
                 </div>
               </form>

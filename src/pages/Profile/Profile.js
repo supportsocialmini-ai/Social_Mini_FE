@@ -70,13 +70,21 @@ const Profile = () => {
               username: currentUser.username || '',
               fullName: currentUser.fullName || '',
               email: currentUser.email || '',
-              avatarUrl: currentUser.avatarUrl || ''
+              avatarUrl: currentUser.avatarUrl || '',
+              bio: currentUser.bio || ''
             });
           }
         } else {
           // Lấy thông tin người dùng từ DB theo ID
           const foundUser = await userService.getUserById(routeUserId);
           setProfileUser(foundUser);
+          setFormData({
+            username: foundUser?.username || '',
+            fullName: foundUser?.fullName || '',
+            email: foundUser?.email || '',
+            avatarUrl: foundUser?.avatarUrl || '',
+            bio: foundUser?.bio || ''
+          });
 
           // Lấy trạng thái bạn bè thực tế từ DB
           const statusRes = await friendService.getFriendshipStatus(routeUserId);
@@ -348,6 +356,13 @@ const Profile = () => {
           <p className="text-gray-700 text-sm leading-relaxed max-w-lg mb-3">
             {profileUser?.email ? `📧 ${profileUser.email}` : ''}
           </p>
+          {profileUser?.bio && (
+            <div className="bg-slate-50/50 border-l-4 border-indigo-200 px-4 py-2 rounded-r-xl mb-4 max-w-xl">
+              <p className="text-gray-600 text-sm leading-relaxed italic">
+                {profileUser.bio}
+              </p>
+            </div>
+          )}
           <div className="flex items-center gap-4 text-xs text-gray-400">
             <span className="flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

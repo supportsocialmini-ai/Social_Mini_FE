@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import './MentalLetterModal.css';
 
 const MentalLetterModal = ({ isOpen, onClose }) => {
+    const { t } = useTranslation();
     if (!isOpen) return null;
 
     return (
@@ -10,7 +12,7 @@ const MentalLetterModal = ({ isOpen, onClose }) => {
                 <div className="win95-title-bar">
                     <div className="win95-title-text">
                         <span className="win95-icon-small">📄</span> 
-                        Tâm Thư Từ Thằng Dev Thiếu Ngủ - Notebook
+                        {t('mentalLetter.title')}
                     </div>
                     <div className="win95-title-controls">
                         <button className="win95-btn-title">_</button>
@@ -29,70 +31,60 @@ const MentalLetterModal = ({ isOpen, onClose }) => {
                 <div className="win95-content">
                     <div className="win95-body text-area">
                         <p className="typewriter">
-                            Đcm xin giới thiệu kiệt tác công nghệ đến từ một thằng dev thiếu ngủ: 
-                            <strong> Web Version 1.0.0</strong> – nơi mọi thứ có thể sai đều sai.
+                            {t('mentalLetter.intro')}
                         </p>
                         
                         <div className="retro-bug-list">
                             <div className="retro-bug-item">
                                 <span className="retro-icon">🛸</span>
                                 <div>
-                                    <strong>Chat:</strong> Gửi xong như ném tin nhắn vào vũ trụ, 
-                                    không biết nó tới chưa hay đang lạc trôi cùng <em>"Lạc Trôi"</em>.
+                                    <strong>{t('mentalLetter.chatTitle')}</strong> {t('mentalLetter.chatDesc')}
                                 </div>
                             </div>
                             <div className="retro-bug-item">
                                 <span className="retro-icon">👻</span>
                                 <div>
-                                    <strong>Bình luận:</strong> Cmt xong biến mất như chưa từng tồn tại, 
-                                    chắc server nó đọc xong thấy xàm quá nên tự xoá hộ.
+                                    <strong>{t('mentalLetter.commentTitle')}</strong> {t('mentalLetter.commentDesc')}
                                 </div>
                             </div>
                             <div className="retro-bug-item">
                                 <span className="retro-icon">📟</span>
                                 <div>
-                                    <strong>Thông báo:</strong> Lag như mạng thời Yahoo Messenger năm 2005, 
-                                    lúc cần thì mất tích, lúc không cần thì hiện lên như ma hiện hồn.
+                                    <strong>{t('mentalLetter.notifTitle')}</strong> {t('mentalLetter.notifDesc')}
                                 </div>
                             </div>
                             <div className="retro-bug-item">
                                 <span className="retro-icon">⌛</span>
                                 <div>
-                                    <strong>Load trang:</strong> Lúc nhanh lúc chậm, tùy theo tâm trạng server 
-                                    hôm đó có muốn đi làm hay không.
+                                    <strong>{t('mentalLetter.loadTitle')}</strong> {t('mentalLetter.loadDesc')}
                                 </div>
                             </div>
                             <div className="retro-bug-item">
                                 <span className="retro-icon">🖍️</span>
                                 <div>
-                                    <strong>UI:</strong> Nhìn phát biết dev code trong trạng thái <em>“để mai fix”</em>, 
-                                    mà cái “mai” đó chắc rơi vào năm sau.
+                                    <strong>{t('mentalLetter.uiTitle')}</strong> {t('mentalLetter.uiDesc')}
                                 </div>
                             </div>
                         </div>
 
                         <p className="senior-dream retro">
-                            Bug thì nhiều đến mức nếu fix hết chắc tao thành senior luôn... 🤡
+                            {t('mentalLetter.seniorDream')}
                         </p>
 
                         <div className="win95-hr"></div>
 
                         <div className="mental-letter-footer-retro">
                             <p>
-                                Nhưng mà thôi, web lỏ thì cũng là con mình đẻ ra. 
-                                Tao hứa sẽ fix dần, nghe feedback, tối ưu lại cho nó đỡ mang tiếng 
-                                <strong> "phế vật online"</strong>. 
+                                {t('mentalLetter.footer')}
                             </p>
                             <div className="warning-box-retro">
                                 <span className="warning-icon-retro">⚠️</span>
                                 <div>
-                                    Hiện tại thì anh em cứ dùng tạm, gặp lỗi thì report nhẹ nhàng, 
-                                    đừng chửi ác quá tao tự ái rồi tao… 
-                                    <strong> fix chậm lại đó</strong>.
+                                    {t('mentalLetter.warning')}
                                 </div>
                             </div>
                             <p className="no-manual-retro">
-                                [FATAL ERROR]: Không có hướng dẫn sử dụng! Tự mò đi vì nó lỏ vãi ò!
+                                {t('mentalLetter.fatalError')}
                             </p>
                         </div>
                     </div>
@@ -105,7 +97,7 @@ const MentalLetterModal = ({ isOpen, onClose }) => {
 
                 <div className="win95-actions">
                     <button className="win95-btn-ok" onClick={onClose}>
-                        OK (Đừng chửi)
+                        {t('mentalLetter.okBtn')}
                     </button>
                 </div>
             </div>
