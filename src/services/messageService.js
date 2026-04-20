@@ -40,6 +40,16 @@ const messageService = {
   // Lấy danh sách thành viên của nhóm
   getGroupMembers: (groupId) => {
     return axiosClient.get(`api/chat/group/${groupId}/members`);
+  },
+  // Cập nhật ảnh đại diện nhóm
+  updateGroupAvatar: (groupId, imageUrl) => {
+    return axiosClient.put(`api/chat/group/${groupId}/avatar`, JSON.stringify(imageUrl), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  },
+  // Xóa thành viên khỏi nhóm
+  removeMember: (groupId, userId) => {
+    return axiosClient.delete(`api/chat/group/${groupId}/members/${userId}`);
   }
 };
 

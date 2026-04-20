@@ -413,6 +413,8 @@
       "addFriend": "+ Thêm bạn",
       "friendRequestSent": "Đã gửi lời mời cho {{name}}!",
       "sent": "Đã gửi",
+      "posting": "Đang đăng...",
+      "post": "Đăng bài",
       "addFriendError": "Không thể gửi lời mời.",
       "delete": "Xóa",
       "deleting": "Đang xóa...",

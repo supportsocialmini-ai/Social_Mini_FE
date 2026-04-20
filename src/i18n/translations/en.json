@@ -413,6 +413,8 @@
       "addFriend": "+ Add Friend",
       "friendRequestSent": "Friend request sent to {{name}}!",
       "sent": "Sent",
+      "posting": "Posting...",
+      "post": "Post",
       "addFriendError": "Could not send friend request.",
       "delete": "Delete",
       "deleting": "Deleting...",
