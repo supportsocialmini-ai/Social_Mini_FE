@@ -18,6 +18,28 @@ const messageService = {
         'Content-Type': 'multipart/form-data'
       }
     });
+  },
+
+  // ==================== GROUP CHAT ====================
+  // Tạo nhóm chat mới
+  createGroup: (name, memberIds) => {
+    return axiosClient.post('api/chat/group', { name, memberIds });
+  },
+  // Lấy danh sách nhóm của user hiện tại
+  getGroups: () => {
+    return axiosClient.get('api/chat/groups');
+  },
+  // Lấy lịch sử tin nhắn của một nhóm
+  getGroupMessages: (groupId) => {
+    return axiosClient.get(`api/chat/group/${groupId}`);
+  },
+  // Đánh dấu đã đọc tin nhắn nhóm
+  markGroupAsRead: (groupId) => {
+    return axiosClient.post(`api/chat/group/${groupId}/read`);
+  },
+  // Lấy danh sách thành viên của nhóm
+  getGroupMembers: (groupId) => {
+    return axiosClient.get(`api/chat/group/${groupId}/members`);
   }
 };
 
