@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import commentService from '../../services/commentService';
 import { useAuth } from '../../context/AuthContext';
 
-const CommentItem = ({ comment, user, getFullAvatarUrl, onDelete, onReply, depth = 0 }) => {
+const CommentItem = ({ comment, user, getFullAvatarUrl, onDelete, onReply, depth = 0, isReply = false }) => {
   const isOwner = user?.userId === comment.userId;
   const { t } = useTranslation();
 
@@ -21,7 +21,9 @@ const CommentItem = ({ comment, user, getFullAvatarUrl, onDelete, onReply, depth
         <div className="flex-1 min-w-0">
           <div className="bg-slate-50/80 rounded-2xl px-4 py-2.5">
             <p className="font-bold text-[13px] text-slate-900 truncate">{comment.fullName || 'Người dùng'}</p>
-            <p className="text-[13px] text-slate-700 mt-1 leading-relaxed break-words">{comment.commentContent}</p>
+            <p className="text-[13px] text-slate-700 mt-1 leading-relaxed break-words">
+              {isReply ? comment.replyContent : comment.commentContent}
+            </p>
           </div>
           <div className="flex items-center gap-3 mt-1.5 px-1 flex-wrap">
             <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">
@@ -40,7 +42,7 @@ const CommentItem = ({ comment, user, getFullAvatarUrl, onDelete, onReply, depth
             </button>
             {isOwner && (
               <button
-                onClick={() => onDelete(comment.commentId)}
+                onClick={() => onDelete(isReply ? comment.replyId : comment.commentId, isReply)}
                 className="text-[9px] text-red-400 font-bold uppercase tracking-tighter hover:text-red-600 transition-colors"
               >
                 {t('posts.deleteComment')}
@@ -50,18 +52,19 @@ const CommentItem = ({ comment, user, getFullAvatarUrl, onDelete, onReply, depth
         </div>
       </div>
       
-      {/* Recursively render replies */}
+      {/* Render replies - Level 2 (No recursion needed in new architecture) */}
       {comment.replies && comment.replies.length > 0 && (
-        <div className="border-l-2 border-slate-100">
+        <div className="ml-4 pl-4 border-l-2 border-slate-50/50 space-y-1">
           {comment.replies.map(reply => (
             <CommentItem 
-              key={reply.commentId} 
+              key={reply.replyId} 
               comment={reply} 
               user={user} 
               getFullAvatarUrl={getFullAvatarUrl} 
               onDelete={onDelete} 
               onReply={onReply}
               depth={depth + 1}
+              isReply={true}
             />
           ))}
         </div>
@@ -106,15 +109,22 @@ const CommentSection = ({ postId, isOpen, onClose, getFullAvatarUrl }) => {
 
     setIsLoading(true);
     try {
-      await commentService.createComment({
-        postId,
-        Content: newComment,
-        parentCommentId: replyTo?.commentId || null
-      });
+      if (replyTo) {
+        // Tạo Reply (Level 2)
+        await commentService.createReply({
+          commentId: replyTo.commentId,
+          content: newComment
+        });
+      } else {
+        // Tạo Comment (Level 1)
+        await commentService.createComment({
+          postId,
+          content: newComment
+        });
+      }
       setNewComment('');
       setReplyTo(null);
       await fetchComments();
-      // Silencing success toast per user request
     } catch (error) {
       toast.error(t(`api.${error.errorMessage || 'posts.commentError'}`));
     } finally {
@@ -122,9 +132,13 @@ const CommentSection = ({ postId, isOpen, onClose, getFullAvatarUrl }) => {
     }
   };
 
-  const handleDeleteComment = async (commentId) => {
+  const handleDeleteComment = async (id, isReply = false) => {
     try {
-      await commentService.deleteComment(commentId);
+      if (isReply) {
+        await commentService.deleteReply(id);
+      } else {
+        await commentService.deleteComment(id);
+      }
       await fetchComments();
       // Silencing success toast per user request
     } catch (error) {
