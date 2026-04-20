@@ -15,10 +15,13 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [isMaintenance, setIsMaintenance] = useState(false);
+  const [isTogglingMaintenance, setIsTogglingMaintenance] = useState(false);
 
   useEffect(() => {
     if (isAdmin) {
       fetchData();
+      fetchMaintenanceStatus();
     }
   }, [isAdmin]);
 
@@ -36,6 +39,28 @@ const AdminDashboard = () => {
       console.error(error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchMaintenanceStatus = async () => {
+    try {
+      const status = await adminService.getMaintenanceStatus();
+      setIsMaintenance(status);
+    } catch (error) {
+      console.error('Lỗi lấy trạng thái bảo trì', error);
+    }
+  };
+
+  const handleToggleMaintenance = async () => {
+    setIsTogglingMaintenance(true);
+    try {
+      const newStatus = await adminService.toggleMaintenance();
+      setIsMaintenance(newStatus);
+      toast.success(newStatus ? 'Đã BẬT chế độ bảo trì hệ thống' : 'Đã TẮT chế độ bảo trì hệ thống');
+    } catch (error) {
+      toast.error('Không thể thay đổi trạng thái bảo trì');
+    } finally {
+      setIsTogglingMaintenance(false);
     }
   };
 
@@ -198,6 +223,24 @@ const AdminDashboard = () => {
           </div>
 
           <div className="flex items-center gap-2 md:gap-6 shrink-0">
+            {/* Maintenance Toggle */}
+            <button 
+              onClick={handleToggleMaintenance}
+              disabled={isTogglingMaintenance}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all active:scale-95 ${
+                isMaintenance 
+                ? 'bg-rose-50 border-rose-200 text-rose-600 shadow-sm' 
+                : 'bg-emerald-50 border-emerald-200 text-emerald-600'
+              }`}
+              title={isMaintenance ? "Tắt bảo trì" : "Bật bảo trì"}
+            >
+              <div className={`w-2 h-2 rounded-full ${isMaintenance ? 'bg-rose-600 animate-pulse' : 'bg-emerald-600'}`}></div>
+              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">
+                {isMaintenance ? 'Maintain On' : 'Maintain Off'}
+              </span>
+              {isTogglingMaintenance && <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin ml-1"></div>}
+            </button>
+
             <button className="relative p-2 text-slate-400 hover:text-indigo-600 transition-colors">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />

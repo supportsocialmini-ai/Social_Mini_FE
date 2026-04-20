@@ -7,6 +7,12 @@ const adminService = {
   getUsers: () => {
     return axiosClient.get('api/admin/users');
   },
+  getMaintenanceStatus: () => {
+    return axiosClient.get('api/admin/maintenance-status');
+  },
+  toggleMaintenance: () => {
+    return axiosClient.post('api/admin/toggle-maintenance');
+  },
   toggleUserStatus: (userId) => {
     return axiosClient.post(`api/admin/users/${userId}/toggle-status`);
   },

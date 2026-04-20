@@ -20,8 +20,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import MentalLetterModal from './components/Common/MentalLetterModal';
 import { useState, useEffect } from 'react';
 
-const PrivateRoute = ({ children }) => {
-  const { user } = useAuth();
+import Maintenance from './pages/Maintenance/Maintenance';
+import adminService from './services/adminService';
+
+const PrivateRoute = ({ children, isMaintenance }) => {
+  const { user, isAdmin } = useAuth();
+  if (isMaintenance && !isAdmin) return <Navigate to="/maintenance" />;
   return user ? children : <Navigate to="/login" />;
 };
 
@@ -33,8 +37,22 @@ const AdminRoute = ({ children }) => {
 
 function App() {
   const [showMentalLetter, setShowMentalLetter] = useState(false);
+  const [isMaintenance, setIsMaintenance] = useState(false);
 
   useEffect(() => {
+    const checkMaintenance = async () => {
+      try {
+        const status = await adminService.getMaintenanceStatus();
+        setIsMaintenance(status);
+      } catch (error) {
+        // If 503, it means maintenance is active
+        if (error.response?.status === 503) {
+          setIsMaintenance(true);
+        }
+      }
+    };
+    checkMaintenance();
+
     const hasSeenLetter = localStorage.getItem('hasSeenMentalLetterV1');
     if (!hasSeenLetter) {
       setShowMentalLetter(true);
@@ -52,18 +70,19 @@ function App() {
         <Router>
           <GlobalCall />
           <Routes>
+            <Route path="/maintenance" element={<Maintenance />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
-            <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-            <Route path="/profile/:userId" element={<PrivateRoute><Profile /></PrivateRoute>} />
-            <Route path="/messaging" element={<PrivateRoute><Messaging /></PrivateRoute>} />
-            <Route path="/friends" element={<PrivateRoute><Friends /></PrivateRoute>} />
-            <Route path="/search" element={<PrivateRoute><Search /></PrivateRoute>} />
-            <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+            <Route path="/" element={<PrivateRoute isMaintenance={isMaintenance}><Home /></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute isMaintenance={isMaintenance}><Profile /></PrivateRoute>} />
+            <Route path="/profile/:userId" element={<PrivateRoute isMaintenance={isMaintenance}><Profile /></PrivateRoute>} />
+            <Route path="/messaging" element={<PrivateRoute isMaintenance={isMaintenance}><Messaging /></PrivateRoute>} />
+            <Route path="/friends" element={<PrivateRoute isMaintenance={isMaintenance}><Friends /></PrivateRoute>} />
+            <Route path="/search" element={<PrivateRoute isMaintenance={isMaintenance}><Search /></PrivateRoute>} />
+            <Route path="/settings" element={<PrivateRoute isMaintenance={isMaintenance}><Settings /></PrivateRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           </Routes>
           <ToastContainer

@@ -53,6 +53,11 @@ axiosClient.interceptors.response.use(
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+
+    if (error.response && error.response.status === 503 && !window.location.pathname.includes('/maintenance')) {
+      window.location.href = '/maintenance';
+    }
+
     return Promise.reject(error);
   }
 );
