@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
+import reportService from '../../services/reportService';
 import adminService from '../../services/adminService';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
@@ -10,6 +11,7 @@ const AdminDashboard = () => {
   const { isAdmin, getFullAvatarUrl, user } = useAuth();
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
+  const [reports, setReports] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -20,10 +22,14 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (isAdmin) {
-      fetchData();
+      if (activeTab === 'reports') {
+        fetchReports();
+      } else {
+        fetchData();
+      }
       fetchMaintenanceStatus();
     }
-  }, [isAdmin]);
+  }, [isAdmin, activeTab]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -36,9 +42,34 @@ const AdminDashboard = () => {
       setUsers(usersRes);
     } catch (error) {
       toast.error('Lỗi lấy dữ liệu Admin');
-      console.error(error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchReports = async () => {
+    setIsLoading(true);
+    try {
+      const response = await reportService.getAllReports();
+      if (response.success) {
+        setReports(response.data);
+      }
+    } catch (error) {
+      toast.error('Lỗi lấy danh sách báo cáo');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResolveReport = async (reportId, action) => {
+    try {
+      const response = await reportService.resolveReport(reportId, action);
+      if (response.success) {
+        setReports(reports.map(r => r.reportId === reportId ? { ...r, status: action } : r));
+        toast.success(response.message);
+      }
+    } catch (error) {
+      toast.error('Lỗi xử lý báo cáo');
     }
   };
 
@@ -174,6 +205,7 @@ const AdminDashboard = () => {
           <NavItem icon="dashboard" label="Dashboard" active={activeTab === 'dashboard'} onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }} />
           <NavItem icon="messages" label="Messages" count={3} active={activeTab === 'messages'} />
           <NavItem icon="users" label="Users" active={activeTab === 'users'} onClick={() => { setActiveTab('users'); setIsSidebarOpen(false); }} />
+          <NavItem icon="reports" label="Reports" active={activeTab === 'reports'} onClick={() => { setActiveTab('reports'); setIsSidebarOpen(false); }} />
           <NavItem icon="chart" label="Chart" active={activeTab === 'chart'} />
           
           <div className="pt-4 mt-4 border-t border-white/10">
@@ -372,6 +404,96 @@ const AdminDashboard = () => {
                       <Link to="/" className="text-[10px] font-black uppercase tracking-widest hover:underline">View Site &rarr;</Link>
                    </div>
                 </div>
+              </div>
+            </div>
+          ) : activeTab === 'reports' ? (
+            /* --- REPORTS TAB --- */
+            <div className="bg-white/90 backdrop-blur-md rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-slate-200/50 border border-white overflow-hidden pb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="px-6 md:px-10 py-8 md:py-10 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div className="text-center md:text-left">
+                   <h2 className="text-2xl md:text-3xl font-black text-[#1B2559] tracking-tight mb-1">Reported Content</h2>
+                   <p className="text-sm font-bold text-slate-400">Review and moderate community reports.</p>
+                </div>
+                <div className="bg-red-500 text-white px-6 py-2.5 rounded-2xl shadow-xl shadow-red-100 flex items-center gap-2">
+                   <span className="text-lg font-black">{reports.length}</span>
+                   <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Total Flags</span>
+                </div>
+              </div>
+
+              <div className="px-4 overflow-x-auto pb-4">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="text-slate-400 text-[11px] font-black uppercase tracking-[0.2em] border-b border-slate-100">
+                      <th className="px-4 md:px-8 py-6">Reporter</th>
+                      <th className="px-8 py-6">Target Content</th>
+                      <th className="px-8 py-6">Reason & Description</th>
+                      <th className="px-8 py-6 text-center">Status</th>
+                      <th className="px-4 md:px-8 py-6 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {reports.map(report => (
+                      <tr key={report.reportId} className="hover:bg-slate-50/80 transition-all group">
+                        <td className="px-4 md:px-8 py-6">
+                          <p className="font-bold text-[#1B2559] text-sm">{report.reporterName}</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">{new Date(report.createdAt).toLocaleDateString('vi-VN')}</p>
+                        </td>
+                        <td className="px-8 py-6">
+                          <div className="max-w-xs">
+                             <span className="inline-block px-2 py-0.5 rounded bg-slate-100 text-[10px] font-black text-slate-500 uppercase mb-1">{report.targetType}</span>
+                             <p className="text-xs text-slate-600 italic line-clamp-2">"{report.targetContent}"</p>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6">
+                          <p className="text-sm font-bold text-red-600 mb-1">{report.reason}</p>
+                          <p className="text-xs text-slate-400 line-clamp-2">{report.description || 'No additional details.'}</p>
+                        </td>
+                        <td className="px-8 py-6 text-center">
+                          <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                            report.status === 'Pending' ? 'bg-amber-100 text-amber-600' :
+                            report.status === 'Resolved' ? 'bg-emerald-100 text-emerald-600' :
+                            'bg-slate-100 text-slate-500'
+                          }`}>
+                            {report.status}
+                          </span>
+                        </td>
+                        <td className="px-4 md:px-8 py-6 text-right">
+                          {report.status === 'Pending' ? (
+                            <div className="flex justify-end gap-2">
+                               <button 
+                                onClick={() => handleResolveReport(report.reportId, 'Resolved')}
+                                className="p-2 text-emerald-600 bg-emerald-50 rounded-xl hover:bg-emerald-600 hover:text-white transition-all"
+                                title="Approve / Resolve"
+                               >
+                                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                  </svg>
+                               </button>
+                               <button 
+                                onClick={() => handleResolveReport(report.reportId, 'Dismissed')}
+                                className="p-2 text-slate-400 bg-slate-50 rounded-xl hover:bg-slate-200 hover:text-slate-600 transition-all"
+                                title="Dismiss"
+                               >
+                                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                               </button>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-300 italic">Xử lý xong</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {reports.length === 0 && (
+                      <tr>
+                        <td colSpan="5" className="py-20 text-center text-slate-400 font-bold italic">
+                           No reports to display. Everything is clean!
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           ) : (

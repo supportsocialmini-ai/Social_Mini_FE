@@ -116,8 +116,8 @@ export const ChatProvider = ({ children }) => {
           });
         })
         .catch(err => {
-          // Im lặng trước các lỗi dừng kết nối khi đang đàm phán (AbortError) - thường xảy ra khi reload trang
-          if (err.toString().includes('AbortError')) return;
+          // Im lặng trước các lỗi dừng kết nối khi đang đàm phán (AbortError) - thường xảy ra khi reload trang hoặc StrictMode
+          if (err.name === 'AbortError' || err.toString().includes('AbortError')) return;
           console.error("SignalR Connection Error: ", err);
         });
 

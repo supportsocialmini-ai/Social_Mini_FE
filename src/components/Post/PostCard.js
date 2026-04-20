@@ -10,6 +10,8 @@ import likeService from '../../services/likeService';
 import postService from '../../services/postService';
 import friendService from '../../services/friendService';
 import { useAuth } from '../../context/AuthContext';
+import ReportModal from '../Common/ReportModal';
+import { Flag } from 'lucide-react';
 
 /* ── Glassmorphism card style ── */
 const glassCard = {
@@ -59,6 +61,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
   const [isExpanded, setIsExpanded]         = useState(false);
   const [likeAnimating, setLikeAnimating]   = useState(false);
   const [isSentRequest, setIsSentRequest]   = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const isPostOwner = currentUser?.userId === post.userId;
   const privacy = post.privacy || 'Public';
@@ -405,6 +408,12 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
           <ConfirmModal isOpen={isConfirmDeleteOpen} onClose={() => setIsConfirmDeleteOpen(false)} onConfirm={handleDelete}
             title={t('posts.deleteConfirmTitle')} message={t('posts.deleteConfirmMsg')}
             confirmText={t('posts.deleteConfirmBtn')} type="danger" />
+          <ReportModal 
+            isOpen={isReportModalOpen} 
+            onClose={() => setIsReportModalOpen(false)} 
+            targetId={post.postId || post.id} 
+            targetType="Post" 
+          />
         </>,
         document.body
       )}
@@ -460,6 +469,17 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
                 {isDeleting ? 'Đang xóa...' : 'Xóa bài viết'}
               </button>
             </>
+          )}
+          
+          {!isPostOwner && (
+            <button onClick={() => { setIsReportModalOpen(true); setIsMenuOpen(false); }}
+              className="w-full px-4 py-2.5 text-left text-[14px] flex items-center gap-3 transition-all duration-150 text-red-500 font-bold hover:bg-red-50"
+            >
+              <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
+                <Flag size={14} className="text-red-500" />
+              </div>
+              Báo cáo bài viết
+            </button>
           )}
         </div>,
         document.body
