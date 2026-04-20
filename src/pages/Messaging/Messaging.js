@@ -18,7 +18,7 @@ const Messaging = () => {
     unreadCountsPerUser, setUnreadCountsPerUser, fetchUnreadCount,
     startCall
   } = useChat();
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState([]); // Each user: { ...userData, lastMessage, lastMessageTime }
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
@@ -28,6 +28,24 @@ const Messaging = () => {
   const [isOtherTyping, setIsOtherTyping] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState(null);
+  const usersRef = useRef([]);
+
+  // Helper: move a user to top of the list and update their last message preview
+  const bubbleUserToTop = (userId, previewText, messageTime) => {
+    setUsers(prev => {
+      const idx = prev.findIndex(u => u.userId?.toString() === userId?.toString());
+      if (idx === -1) return prev;
+      const updated = {
+        ...prev[idx],
+        lastMessage: previewText,
+        lastMessageTime: messageTime || new Date().toISOString()
+      };
+      const rest = prev.filter((_, i) => i !== idx);
+      const newList = [updated, ...rest];
+      usersRef.current = newList;
+      return newList;
+    });
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -50,8 +68,17 @@ const Messaging = () => {
           .map(u => ({
             ...u,
             displayName: u.fullName || u.FullName || u.userName || u.username || 'Người dùng',
-            displayAvatar: getFullAvatarUrl(u.avatarUrl || u.AvatarUrl) || ''
-          }));
+            displayAvatar: getFullAvatarUrl(u.avatarUrl || u.AvatarUrl) || '',
+            lastMessage: u.lastMessage || '',
+            lastMessageTime: u.lastMessageTime || null
+          }))
+          .sort((a, b) => {
+            // Sort by most recent message first
+            if (!a.lastMessageTime && !b.lastMessageTime) return 0;
+            if (!a.lastMessageTime) return 1;
+            if (!b.lastMessageTime) return -1;
+            return new Date(b.lastMessageTime) - new Date(a.lastMessageTime);
+          });
 
         // Xử lý nếu được điều hướng từ Profile
         if (targetUserId) {
@@ -77,6 +104,7 @@ const Messaging = () => {
           }
         }
 
+        usersRef.current = normalizedData;
         setUsers(normalizedData);
       } catch (error) {
         console.error("Lỗi lấy danh sách người dùng:", error);
@@ -136,19 +164,28 @@ const Messaging = () => {
       const sId = senderId?.toString() || "";
       const currentSelectedId = selectedUserRef.current?.userId?.toString() || "";
       const myId = user?.userId?.toString() || "";
+      const msgTime = createdAt || new Date().toISOString();
 
       const isFromMe = sId === myId;
       const isFromSelectedUser = sId === currentSelectedId;
+
+      // Build preview text for the sidebar
+      const previewText = imageUrl
+        ? `📷 ${t('messaging.image') || 'Image'}`
+        : (content?.substring(0, 35) || '');
 
       if (isFromMe || isFromSelectedUser) {
         const newMsg = { 
             senderId, 
             messageContent: content, 
             imageUrl: imageUrl, 
-            createdAt: createdAt || new Date().toISOString(), 
+            createdAt: msgTime, 
             isRead: false 
         };
         setMessages(prev => [...prev, newMsg]);
+
+        // Đẩy người đang chat lên đầu danh sách
+        bubbleUserToTop(isFromMe ? currentSelectedId : sId, previewText, msgTime);
 
         // Tự động báo Seen
         if (isFromSelectedUser) {
@@ -159,9 +196,15 @@ const Messaging = () => {
           fetchUnreadCount();
         }
       } else {
-        const sender = users.find(u => u.userId?.toString() === sId);
-        const previewText = imageUrl ? `[${t('messaging.image') || 'Image'}]` : (content?.substring(0, 20) || t('messaging.newMessage') || "New message");
-        toast.info(t('messaging.newMessageFrom', { name: sender?.displayName || '...' }) + `: ${previewText}...`);
+        // Tin nhắn từ người khác (không đang mở) -> đẩy lên đầu + toast
+        bubbleUserToTop(sId, previewText, msgTime);
+        const sender = usersRef.current.find(u => u.userId?.toString() === sId);
+        toast.info(t('messaging.newMessageFrom', { name: sender?.displayName || '...' }) + `: ${previewText}...`, {
+          onClick: () => {
+            const targetUser = usersRef.current.find(u => u.userId?.toString() === sId);
+            if (targetUser) setSelectedUser(targetUser);
+          }
+        });
       }
     };
 
@@ -196,10 +239,13 @@ const Messaging = () => {
     }
 
     if (inputText.trim() && selectedUser) {
+      const sentText = inputText.trim();
       try {
-        await connection.invoke("SendPrivateMessage", selectedUser.userId, inputText, null);
+        await connection.invoke("SendPrivateMessage", selectedUser.userId, sentText, null);
         setInputText("");
         connection.invoke("SendTypingStatus", selectedUser.userId, false).catch(() => { });
+        // Đẩy người nhận lên đầu ngay sau khi gửi
+        bubbleUserToTop(selectedUser.userId, sentText, new Date().toISOString());
       } catch (error) {
         console.error("Send error:", error);
         toast.error(t('messaging.sendError'));
@@ -298,15 +344,21 @@ const Messaging = () => {
                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-sm"></div>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0 flex items-center justify-between">
-                    <div className="min-w-0">
+                  <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
                       <div className="font-bold text-slate-800 truncate text-sm lg:text-base">{u.displayName}</div>
-                      <div className="text-[9px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        {onlineUsers.has(u.userId) ? <span className="text-emerald-500">{t('messaging.activeNow')}</span> : <span>{t('messaging.offline')}</span>}
-                      </div>
+                      {u.lastMessage ? (
+                        <div className={`text-[11px] truncate mt-0.5 font-medium ${unreadCountsPerUser[u.userId] > 0 ? 'text-indigo-600 font-bold' : 'text-slate-400'}`}>
+                          {u.lastMessage}
+                        </div>
+                      ) : (
+                        <div className="text-[9px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          {onlineUsers.has(u.userId) ? <span className="text-emerald-500">{t('messaging.activeNow')}</span> : <span>{t('messaging.offline')}</span>}
+                        </div>
+                      )}
                     </div>
                     {unreadCountsPerUser[u.userId] > 0 && (
-                      <div className="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-lg shadow-red-100">
+                      <div className="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-lg shadow-red-100 flex-shrink-0">
                         {unreadCountsPerUser[u.userId] > 9 ? '9+' : unreadCountsPerUser[u.userId]}
                       </div>
                     )}
