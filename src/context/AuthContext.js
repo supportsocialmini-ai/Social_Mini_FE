@@ -95,6 +95,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Helper to extract role from JWT token
+  const getRoleFromToken = (token) => {
+    try {
+      if (!token) return null;
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      
+      const payload = JSON.parse(jsonPayload);
+      // ClaimTypes.Role in C# defaults to "role" in camelCase JSON
+      return payload.role || payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+    } catch (e) {
+      return null;
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('user');
@@ -106,12 +124,26 @@ export const AuthProvider = ({ children }) => {
     setUser(newData);
   };
 
+  const userRoles = user?.userRoles?.map(ur => ur.role?.name) || [];
+  const tokenRole = getRoleFromToken(localStorage.getItem('accessToken'));
+  const isAdmin = userRoles.includes('Admin') || tokenRole === 'Admin' || (Array.isArray(tokenRole) && tokenRole.includes('Admin'));
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loginWithToken, updateUserData, getFullAvatarUrl, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      loginWithToken, 
+      updateUserData, 
+      getFullAvatarUrl, 
+      isAuthenticated: !!user,
+      isAdmin // Thêm cái này
+    }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
 
 export const useAuth = () => useContext(AuthContext);
 

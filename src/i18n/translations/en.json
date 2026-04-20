@@ -257,8 +257,9 @@
         },
         "Login": {
           "Success": "Login successful! Welcome back.",
-          "Fail": "Incorrect username or password.",
-          "UserNotVerified": "Your account is not verified. Please enter the 6-digit code to activate."
+          "Fail": "Invalid username or password.",
+          "UserNotVerified": "Your account is not verified. Please enter the 6-digit code to activate.",
+          "UserBanned": "Your account has been banned for community standards violations. Please contact the administrator."
         },
         "Verify": {
           "Success": "Verification successful! Welcome to Social Mini App.",

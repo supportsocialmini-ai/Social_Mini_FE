@@ -66,6 +66,10 @@ const Login = () => {
         setIsVerifyModalOpen(true);
         toast.info(t('api.Auth.Login.UserNotVerified'));
         setError(t('api.Auth.Login.UserNotVerified'));
+      } else if (rawMsg === 'Auth.Login.UserBanned') {
+        const translatedMsg = t(`api.${rawMsg}`);
+        toast.error(translatedMsg);
+        setError(translatedMsg);
       } else {
         const translatedMsg = t(`api.${rawMsg}`);
         toast.error(translatedMsg);

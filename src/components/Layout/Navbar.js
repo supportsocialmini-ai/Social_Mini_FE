@@ -9,7 +9,7 @@ import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 
 const Navbar = () => {
-  const { user, logout, getFullAvatarUrl } = useAuth();
+  const { user, logout, getFullAvatarUrl, isAdmin } = useAuth();
   const { unreadMessageCount, onlineUsers, unreadCountsPerUser, connection } = useChat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -304,6 +304,12 @@ const Navbar = () => {
                   <Link to="/profile" className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all border-b border-gray-100">
                     <span className="font-semibold">{t('navbar.profile')}</span>
                   </Link>
+
+                  {isAdmin && (
+                    <Link to="/admin" className="flex items-center gap-3 px-4 py-3 text-indigo-600 hover:bg-indigo-50 transition-all border-b border-gray-100">
+                      <span className="font-bold">Dashboard Admin</span>
+                    </Link>
+                  )}
                   <button onClick={logout} className="w-full text-left flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-all font-semibold">
                     {t('navbar.logout')}
                   </button>

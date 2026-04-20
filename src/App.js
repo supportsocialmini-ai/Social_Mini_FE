@@ -14,6 +14,7 @@ import Search from './pages/Search/Search';
 import Settings from './pages/Settings/Settings';
 import ForgotPassword from './pages/ForgotPassword/ForgotPassword';
 import ResetPassword from './pages/ResetPassword/ResetPassword';
+import AdminDashboard from './pages/Admin/AdminDashboard';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import MentalLetterModal from './components/Common/MentalLetterModal';
@@ -22,6 +23,12 @@ import { useState, useEffect } from 'react';
 const PrivateRoute = ({ children }) => {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" />;
+};
+
+const AdminRoute = ({ children }) => {
+  const { user, isAdmin } = useAuth();
+  if (!user) return <Navigate to="/login" />;
+  return isAdmin ? children : <Navigate to="/" />;
 };
 
 function App() {
@@ -57,6 +64,7 @@ function App() {
             <Route path="/friends" element={<PrivateRoute><Friends /></PrivateRoute>} />
             <Route path="/search" element={<PrivateRoute><Search /></PrivateRoute>} />
             <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           </Routes>
           <ToastContainer
             position="top-right"
