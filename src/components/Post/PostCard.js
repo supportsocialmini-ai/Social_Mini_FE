@@ -11,7 +11,8 @@ import postService from '../../services/postService';
 import friendService from '../../services/friendService';
 import { useAuth } from '../../context/AuthContext';
 import ReportModal from '../Common/ReportModal';
-import { Flag } from 'lucide-react';
+import ShareModal from './ShareModal';
+import { Flag, Share2 } from 'lucide-react';
 
 /* ── Glassmorphism card style ── */
 const glassCard = {
@@ -62,6 +63,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
   const [likeAnimating, setLikeAnimating]   = useState(false);
   const [isSentRequest, setIsSentRequest]   = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const isPostOwner = currentUser?.userId === post.userId;
   const privacy = post.privacy || 'Public';
@@ -304,6 +306,45 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
               </button>
             )}
           </p>
+
+          {/* ── Original Post (Shared Content) ────────── */}
+          {post.originalPost && (
+            <div className="mt-3 rounded-2xl border border-slate-200/60 bg-white/40 overflow-hidden post-card-glass hover:bg-white/60 transition-all duration-300">
+              <div className="p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Link 
+                    to={`/profile/${post.originalPost.userId}`}
+                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                  >
+                    <img 
+                      src={getFullAvatarUrl(post.originalPost.avatarUrl, post.originalPost.fullName)} 
+                      alt="Author" 
+                      className="w-7 h-7 rounded-full ring-1 ring-slate-100"
+                    />
+                    <span className="font-bold text-sm text-slate-800">{post.originalPost.fullName}</span>
+                  </Link>
+                  <span className="text-slate-300 text-[10px]">•</span>
+                  <span className="text-[11px] text-slate-400">{getTimeAgo(post.originalPost.createdAt)}</span>
+                </div>
+
+                {post.originalPost.postContent && (
+                  <p className="text-sm text-slate-600 leading-relaxed break-words line-clamp-4">
+                    {post.originalPost.postContent}
+                  </p>
+                )}
+
+                {post.originalPost.imageUrl && (
+                  <div className="relative rounded-xl overflow-hidden border border-slate-100 bg-slate-50">
+                    <img 
+                      src={getFullImageUrl(post.originalPost.imageUrl)} 
+                      alt="Original Post Image" 
+                      className="w-full h-auto max-h-[300px] object-contain"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Image ──────────────────────────────────── */}
@@ -373,14 +414,14 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
           </button>
 
           {/* Share */}
-          <button className="action-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-slate-600 font-semibold text-sm flex-1 justify-center"
+          <button 
+            onClick={() => setIsShareModalOpen(true)}
+            className="action-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-slate-600 font-semibold text-sm flex-1 justify-center"
             style={{ background: 'transparent' }}
             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(16,185,129,0.06)', e.currentTarget.style.color = '#10b981')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent', e.currentTarget.style.color = '#64748b')}
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
+            <Share2 className="h-5 w-5" />
             <span className="hidden sm:inline">Chia sẻ</span>
           </button>
 
@@ -413,6 +454,12 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
             onClose={() => setIsReportModalOpen(false)} 
             targetId={post.postId || post.id} 
             targetType="Post" 
+          />
+          <ShareModal 
+            isOpen={isShareModalOpen} 
+            onClose={() => setIsShareModalOpen(false)} 
+            post={post}
+            onShareSuccess={() => onLikeChange && onLikeChange()} // Re-fetch to show new post
           />
         </>,
         document.body

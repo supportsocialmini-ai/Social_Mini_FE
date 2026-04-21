@@ -29,6 +29,9 @@ const postService = {
   getPostsByUserId: (userId) => {
     return axiosClient.get(`api/post/user/${userId}`);
   },
+  sharePost: (postId, data) => {
+    return axiosClient.post(`api/post/${postId}/share`, data);
+  },
   getPostLikes: (postId) => {
     return axiosClient.get(`api/post/${postId}/likes`);
   }
