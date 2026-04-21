@@ -1,6 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
+import { 
+  LayoutDashboard, 
+  Users, 
+  AlertTriangle, 
+  BarChart3, 
+  Settings, 
+  Search, 
+  Bell, 
+  ArrowUpRight, 
+  TrendingUp, 
+  TrendingDown, 
+  LogOut, 
+  HelpCircle,
+  Sun,
+  Moon,
+  ShieldCheck,
+  ShieldAlert,
+  Wallet,
+  Target,
+  PieChart,
+  UserCheck,
+  UserX,
+  X,
+  RefreshCw,
+  MoreVertical,
+  ChevronRight,
+  Globe
+} from 'lucide-react';
 import reportService from '../../services/reportService';
 import adminService from '../../services/adminService';
 import { useAuth } from '../../context/AuthContext';
@@ -20,11 +48,14 @@ const AdminDashboard = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [isTogglingMaintenance, setIsTogglingMaintenance] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
     if (isAdmin) {
       if (activeTab === 'reports') {
         fetchReports();
+      } else if (activeTab === 'users') {
+        fetchUsers();
       } else {
         fetchData();
       }
@@ -48,11 +79,22 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const usersRes = await adminService.getUsers();
+      setUsers(usersRes);
+    } catch (error) {
+      toast.error('Lỗi lấy danh sách người dùng');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   const fetchReports = async () => {
     setIsLoading(true);
     try {
       const data = await reportService.getAllReports();
-      // data chính là response.data.result (mảng các reports)
       setReports(data || []);
     } catch (error) {
       toast.error('Lỗi lấy danh sách báo cáo');
@@ -64,7 +106,6 @@ const AdminDashboard = () => {
   const handleResolveReport = async (reportId, action) => {
     try {
       const result = await reportService.resolveReport(reportId, action);
-      // result chính là chuỗi thông báo thành công
       setReports(reports.map(r => r.reportId === reportId ? { ...r, status: action } : r));
       toast.success(result || 'Đã xử lý báo cáo');
     } catch (error) {
@@ -75,7 +116,7 @@ const AdminDashboard = () => {
   const fetchMaintenanceStatus = async () => {
     try {
       const response = await adminService.getMaintenanceStatus();
-      setIsMaintenance(response.isMaintenance); // Lấy thuộc tính isMaintenance thay vì cả object
+      setIsMaintenance(response.isMaintenance);
     } catch (error) {
       console.error('Lỗi lấy trạng thái bảo trì', error);
     }
@@ -85,7 +126,7 @@ const AdminDashboard = () => {
     setIsTogglingMaintenance(true);
     try {
       const response = await adminService.toggleMaintenance();
-      const newStatus = response.isMaintenance; // Lấy thuộc tính isMaintenance
+      const newStatus = response.isMaintenance;
       setIsMaintenance(newStatus);
       toast.success(newStatus ? 'Đã BẬT chế độ bảo trì hệ thống' : 'Đã TẮT chế độ bảo trì hệ thống');
     } catch (error) {
@@ -119,664 +160,717 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className="flex min-h-screen bg-[#f4f7fe] font-sans selection:bg-indigo-100 relative">
+    <div className={`flex min-h-screen ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-[#f8f9fe] text-slate-900'} font-sans antialiased overflow-hidden transition-colors duration-500`}>
       
-      {/* --- MODAL CHI TIẾT NGƯỜI DÙNG (MOBILE) --- */}
-      {selectedUser && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:hidden">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedUser(null)}></div>
-          <div className="bg-white rounded-[2.5rem] w-full max-w-sm relative z-10 shadow-2xl overflow-hidden border border-white animate-in zoom-in-95 duration-200">
-            <div className="h-24 bg-gradient-to-r from-[#4318FF] to-[#707EAE]"></div>
-            <div className="px-8 pb-8 -mt-12">
-              <div className="flex flex-col items-center text-center">
-                <div className="w-24 h-24 rounded-3xl overflow-hidden border-4 border-white shadow-xl bg-white mb-4">
-                  <img src={getFullAvatarUrl(selectedUser.avatarUrl, selectedUser.fullName)} alt="" className="w-full h-full object-cover" />
-                </div>
-                <h3 className="text-xl font-black text-[#1B2559]">{selectedUser.fullName}</h3>
-                <p className="text-sm font-bold text-slate-400 mb-6">@{selectedUser.username}</p>
-                
-                <div className="w-full space-y-4 text-left mb-8">
-                  <div className="bg-[#f4f7fe] p-4 rounded-2xl border border-slate-100">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Email Address</p>
-                    <p className="text-sm font-bold text-slate-700 break-all">{selectedUser.email}</p>
-                  </div>
-                  <div className="bg-[#f4f7fe] p-4 rounded-2xl border border-slate-100">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Joined Date</p>
-                    <p className="text-sm font-bold text-slate-700">{new Date(selectedUser.createdAt).toLocaleDateString('vi-VN')}</p>
-                  </div>
-                  <div className="bg-[#f4f7fe] p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</p>
-                    <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${selectedUser.isActive ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                      {selectedUser.isActive ? 'Active' : 'Banned'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col w-full gap-3">
-                  <button 
-                    onClick={() => handleToggleStatus(selectedUser.userId)}
-                    className={`w-full py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg ${
-                      selectedUser.isActive 
-                      ? 'bg-rose-500 text-white shadow-rose-200 hover:bg-rose-600' 
-                      : 'bg-emerald-500 text-white shadow-emerald-200 hover:bg-emerald-600'
-                    }`}
-                  >
-                    {selectedUser.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
-                  </button>
-                  <button 
-                    onClick={() => setSelectedUser(null)}
-                    className="w-full py-4 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-colors"
-                  >
-                    Close Details
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- MODAL CHI TIẾT BÁO CÁO (UNIVERSAL) --- */}
-      {selectedReport && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setSelectedReport(null)}></div>
-          <div className="bg-white rounded-[2.5rem] w-full max-w-lg relative z-10 shadow-2xl overflow-hidden border border-white animate-in zoom-in-95 duration-200">
-            <div className="h-24 bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-between px-10">
-               <h3 className="text-white font-black uppercase tracking-widest text-lg">Chi tiết vi phạm</h3>
-               <button onClick={() => setSelectedReport(null)} className="text-white/60 hover:text-white transition-colors">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-               </button>
-            </div>
-            
-            <div className="p-10 space-y-8">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="bg-[#f4f7fe] p-5 rounded-[1.5rem] border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Người báo cáo</p>
-                  <p className="text-sm font-black text-[#1B2559]">{selectedReport.reporterName}</p>
-                  <p className="text-[10px] font-bold text-slate-400 mt-1">{new Date(selectedReport.createdAt).toLocaleString('vi-VN')}</p>
-                </div>
-                <div className="bg-[#f4f7fe] p-5 rounded-[1.5rem] border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Loại đối tượng</p>
-                  <span className="inline-block px-3 py-1 rounded-lg bg-red-100 text-red-600 text-[10px] font-black uppercase tracking-widest">
-                    {selectedReport.targetType}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-rose-50 p-6 rounded-[2rem] border border-rose-100 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-3 opacity-10">
-                    <svg className="w-12 h-12 text-rose-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.523 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-3">Nội dung bị tố cáo</p>
-                  <p className="text-sm font-bold text-rose-700 leading-relaxed italic">
-                    "{selectedReport.targetContent}"
-                  </p>
-                </div>
-
-                <div className="bg-[#f4f7fe] p-6 rounded-[2rem] border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Lý do vi phạm</p>
-                  <p className="text-base font-black text-red-600 mb-2">{selectedReport.reason}</p>
-                  <p className="text-sm font-medium text-slate-500 leading-relaxed">
-                    {selectedReport.description || 'Không có mô tả bổ sung từ người báo cáo.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-4 pt-4">
-                {selectedReport.status === 'Pending' ? (
-                  <>
-                    <button 
-                      onClick={() => {
-                        handleResolveReport(selectedReport.reportId, 'Resolved');
-                        setSelectedReport(null);
-                      }}
-                      className="flex-1 py-4 rounded-2xl bg-emerald-500 text-white text-xs font-black uppercase tracking-widest shadow-xl shadow-emerald-200 hover:bg-emerald-600 transition-all active:scale-95"
-                    >
-                      Duyệt & Xử lý
-                    </button>
-                    <button 
-                      onClick={() => {
-                        handleResolveReport(selectedReport.reportId, 'Dismissed');
-                        setSelectedReport(null);
-                      }}
-                      className="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-500 text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95"
-                    >
-                      Bỏ qua báo cáo
-                    </button>
-                  </>
-                ) : (
-                  <div className="flex-1 py-5 text-center bg-slate-50 rounded-2xl border border-slate-100">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Trạng thái xử lý</p>
-                    <p className="text-sm font-black text-slate-600 uppercase tracking-widest">{selectedReport.status}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Overlay for mobile sidebar */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[55] md:hidden"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] md:hidden"
           onClick={() => setIsSidebarOpen(false)}
         ></div>
       )}
 
       {/* --- SIDEBAR --- */}
-      <aside className={`w-72 bg-gradient-to-b from-[#4318FF] to-[#707EAE] fixed h-full left-0 top-0 text-white z-[60] flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-        <div className="p-10 flex items-center justify-between">
+      <aside className={`w-72 fixed h-full left-0 top-0 z-[70] flex flex-col shadow-2xl transition-all duration-300 md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${isDarkMode ? 'bg-slate-900 border-r border-slate-800' : 'bg-white border-r border-slate-100'}`}>
+        <div className="p-8 flex items-center gap-3">
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-              <span className="text-[#4318FF] font-black text-xl italic mt-[-2px]">S</span>
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform">
+              <span className="text-white font-black text-xl italic mt-[-2px]">M</span>
             </div>
-            <h2 className="text-xl font-black uppercase tracking-widest">SocialMini</h2>
+            <h2 className="text-xl font-black bg-gradient-to-r from-indigo-600 via-blue-500 to-purple-600 bg-clip-text text-transparent tracking-tighter">
+              MiniSocial
+            </h2>
           </Link>
-          <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-white/50 hover:text-white transition-colors">
-             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-             </svg>
-          </button>
         </div>
 
-        <nav className="flex-1 px-6 space-y-2">
-          <NavItem icon="dashboard" label="Dashboard" active={activeTab === 'dashboard'} onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }} />
-          <NavItem icon="messages" label="Messages" count={3} active={activeTab === 'messages'} />
-          <NavItem icon="users" label="Users" active={activeTab === 'users'} onClick={() => { setActiveTab('users'); setIsSidebarOpen(false); }} />
-          <NavItem icon="reports" label="Reports" active={activeTab === 'reports'} onClick={() => { setActiveTab('reports'); setIsSidebarOpen(false); }} />
-          <NavItem icon="chart" label="Chart" active={activeTab === 'chart'} />
+        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
+          <SidebarItem icon={<LayoutDashboard size={20} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }} isDarkMode={isDarkMode} />
+          <SidebarItem icon={<Users size={20} />} label="Users" active={activeTab === 'users'} onClick={() => { setActiveTab('users'); setIsSidebarOpen(false); }} isDarkMode={isDarkMode} />
+          <SidebarItem icon={<AlertTriangle size={20} />} label="Reports" active={activeTab === 'reports'} activeCount={reports.filter(r => r.status === 'Pending').length} onClick={() => { setActiveTab('reports'); setIsSidebarOpen(false); }} isDarkMode={isDarkMode} />
           
-          <div className="pt-4 mt-4 border-t border-white/10">
-             <Link to="/" className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl hover:bg-white/10 transition-all group">
-                <svg className="h-5 w-5 text-white/70 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                <span className="text-sm font-black uppercase tracking-widest text-white/70 group-hover:text-white">Về trang chủ</span>
-             </Link>
-          </div>
+          <div className={`py-4 px-4 text-[10px] font-bold ${isDarkMode ? 'text-slate-600' : 'text-slate-400'} uppercase tracking-widest mt-4`}>Analysis</div>
+          <SidebarItem icon={<BarChart3 size={20} />} label="Analytics" isDarkMode={isDarkMode} disabled />
+          <SidebarItem icon={<PieChart size={20} />} label="Stats" isDarkMode={isDarkMode} disabled />
+          
+          <div className={`py-4 px-4 text-[10px] font-bold ${isDarkMode ? 'text-slate-600' : 'text-slate-400'} uppercase tracking-widest mt-4`}>System</div>
+          <SidebarItem icon={<Settings size={20} />} label="Settings" isDarkMode={isDarkMode} disabled />
         </nav>
 
-        <div className="p-8">
-          <div className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 mb-2">Pro Version</p>
-            <p className="text-xs font-bold leading-relaxed mb-3">Upgrade to unlock more charts!</p>
-            <button className="w-full bg-white text-[#4318FF] text-[10px] font-black uppercase py-2.5 rounded-xl hover:bg-slate-100 transition-colors">Upgrade Now</button>
+        <div className={`p-6 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-100'} mt-auto`}>
+          <div className="space-y-1">
+             <SidebarItem icon={<HelpCircle size={20} />} label="Help" isDarkMode={isDarkMode} />
+             <SidebarAction icon={<LogOut size={20} />} label="Log out" isDarkMode={isDarkMode} />
+          </div>
+          
+          <div className={`mt-8 flex items-center justify-between ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'} p-2 rounded-2xl border ${isDarkMode ? 'border-slate-700' : 'border-slate-100'}`}>
+             <button 
+              onClick={() => setIsDarkMode(false)} 
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl transition-all ${!isDarkMode ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'}`}
+             >
+                <Sun size={14} />
+                <span className="text-[10px] font-bold uppercase">Light</span>
+             </button>
+             <button 
+              onClick={() => setIsDarkMode(true)} 
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl transition-all ${isDarkMode ? 'bg-indigo-600 shadow-sm text-white' : 'text-slate-400'}`}
+             >
+                <Moon size={14} />
+                <span className="text-[10px] font-bold uppercase">Dark</span>
+             </button>
           </div>
         </div>
       </aside>
 
       {/* --- MAIN CONTENT --- */}
-      <main className="flex-1 md:ml-72 p-4 md:p-10 pt-32 min-h-screen relative overflow-y-auto w-full">
+      <main className="flex-1 md:ml-72 flex flex-col h-screen overflow-hidden">
         
-        {/* TOPBAR */}
-        <header className="fixed top-4 md:top-6 right-4 md:right-10 left-4 md:left-[calc(18rem+2.5rem)] h-16 bg-white/70 backdrop-blur-xl border border-white/50 rounded-2xl flex items-center justify-between px-3 md:px-6 z-40 shadow-xl shadow-slate-200/40 gap-2 md:gap-0">
-          <div className="flex items-center gap-2 md:gap-3 flex-1 md:flex-initial">
-            <button 
-              onClick={() => setIsSidebarOpen(true)}
-              className="md:hidden p-2 text-slate-500 bg-[#f4f7fe] rounded-xl border border-slate-100 active:scale-95 transition-transform"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16m-7 6h7" />
-              </svg>
-            </button>
-            <div className="flex items-center gap-2 md:gap-4 bg-[#f4f7fe] px-3 md:px-4 py-2 rounded-xl border border-slate-100 flex-1 md:flex-none max-w-[150px] sm:max-w-xs md:max-w-none">
-              <svg className="h-4 w-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input 
-                type="text" 
-                placeholder="Search..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none outline-none text-xs md:text-sm font-medium text-slate-600 placeholder:text-slate-400 w-full md:w-64"
-              />
+        {/* HEADER */}
+        <header className="px-6 md:px-10 py-6 flex items-center justify-between shrink-0">
+          <div>
+            <div className="md:hidden mb-4">
+              <button onClick={() => setIsSidebarOpen(true)} className={`p-2 rounded-xl shadow-sm border ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                <LayoutDashboard size={20} className="text-indigo-600" />
+              </button>
             </div>
+            <h1 className={`text-2xl md:text-3xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} tracking-tight`}>Welcome back, {user?.fullName?.split(' ')[0] || 'Admin'}!</h1>
+            <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-400'} mt-0.5 italic`}>It is the best time to manage your community</p>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-6 shrink-0">
-            {/* Maintenance Toggle */}
-            <button 
-              onClick={handleToggleMaintenance}
-              disabled={isTogglingMaintenance}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all active:scale-95 ${
-                isMaintenance 
-                ? 'bg-rose-50 border-rose-200 text-rose-600 shadow-sm' 
-                : 'bg-emerald-50 border-emerald-200 text-emerald-600'
-              }`}
-              title={isMaintenance ? "Tắt bảo trì" : "Bật bảo trì"}
-            >
-              <div className={`w-2 h-2 rounded-full ${isMaintenance ? 'bg-rose-600 animate-pulse' : 'bg-emerald-600'}`}></div>
-              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">
-                {isMaintenance ? 'Maintain On' : 'Maintain Off'}
-              </span>
-              {isTogglingMaintenance && <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin ml-1"></div>}
-            </button>
+          <div className="flex items-center gap-3 md:gap-6">
+            <div className={`hidden lg:flex items-center gap-3 px-4 py-2.5 rounded-2xl border shadow-sm w-72 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+               <Search size={18} className="text-slate-400" />
+               <input 
+                type="text" 
+                placeholder="Search metrics..." 
+                className="bg-transparent border-none outline-none text-sm font-medium placeholder:text-slate-400 w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+               />
+            </div>
 
-            <button className="relative p-2 text-slate-400 hover:text-indigo-600 transition-colors">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
-            </button>
+            <div className="flex items-center gap-2 md:gap-3">
+               <button className={`p-2.5 rounded-2xl border shadow-sm relative transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-500' : 'bg-white border-slate-100 text-slate-400'}`}>
+                  <Bell size={20} />
+                  <span className={`absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 ${isDarkMode ? 'border-slate-900' : 'border-white'}`}></span>
+               </button>
+               
+               <button 
+                  onClick={handleToggleMaintenance}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border transition-all active:scale-95 ${
+                    isMaintenance 
+                    ? (isDarkMode ? 'bg-rose-950/30 border-rose-900 text-rose-500' : 'bg-rose-50 border-rose-200 text-rose-600 shadow-sm shadow-rose-100')
+                    : (isDarkMode ? 'bg-emerald-950/30 border-emerald-900 text-emerald-500' : 'bg-emerald-50 border-emerald-200 text-emerald-600')
+                  }`}
+                >
+                  <div className={`w-2 h-2 rounded-full ${isMaintenance ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`}></div>
+                  <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">
+                    {isMaintenance ? 'Maintain On' : 'Maintain Off'}
+                  </span>
+                  {isTogglingMaintenance && <RefreshCw size={12} className="animate-spin ml-1" />}
+               </button>
 
-            <div className="flex items-center gap-2 md:gap-3 md:pl-6 md:border-l md:border-slate-100">
-              <div className="text-right hidden lg:block">
-                <p className="text-xs font-black text-slate-900 leading-none mb-1">Hi, {user?.fullName || 'Admin'}</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Super Administrator</p>
-              </div>
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl overflow-hidden border-2 border-indigo-100 shadow-md flex-shrink-0">
-                <img src={getFullAvatarUrl(user?.avatarUrl, user?.fullName)} alt="" className="w-full h-full object-cover" />
-              </div>
+               <div className={`h-10 w-px ${isDarkMode ? 'bg-slate-800' : 'bg-slate-200'} hidden md:block mx-1`}></div>
+
+               <div className="flex items-center gap-3 pl-1">
+                  <div className="hidden sm:block text-right">
+                    <p className={`text-sm font-black leading-none ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{user?.fullName || 'Administrator'}</p>
+                    <p className={`text-[10px] font-bold mt-1 uppercase tracking-tighter ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>@{user?.username}</p>
+                  </div>
+                  <div className={`w-10 h-10 rounded-2xl overflow-hidden border-2 shadow-xl cursor-pointer ${isDarkMode ? 'border-slate-800 shadow-indigo-900/20' : 'border-white shadow-indigo-100/40'}`}>
+                    <img src={getFullAvatarUrl(user?.avatarUrl, user?.fullName)} alt="Admin" className="w-full h-full object-cover" />
+                  </div>
+               </div>
             </div>
           </div>
         </header>
 
-        {/* DASHBOARD CONTENT */}
-        <div className="space-y-10">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-black text-[#1B2559] tracking-tight capitalize">{activeTab}</h1>
-            <div className="flex items-center gap-3">
-               <button 
-                onClick={fetchData}
-                className={`bg-white p-3 rounded-xl shadow-sm border border-white hover:bg-slate-50 transition-all ${isLoading ? 'animate-spin-slow' : 'active:scale-90'}`}
-               >
-                 <svg className="h-5 w-5 text-[#4318FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                 </svg>
-               </button>
-               <span className="bg-[#4318FF] text-white text-[10px] md:text-[11px] font-black px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-200 uppercase tracking-widest">Live Updates</span>
-            </div>
+        {/* SCROLLABLE AREA */}
+        <div className="flex-1 overflow-y-auto px-6 md:px-10 pb-10 custom-scrollbar">
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+             <div className={`flex items-center gap-2 p-1 rounded-2xl shadow-sm border self-start ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                <button className={`px-5 py-2 rounded-xl text-[10px] font-black shadow-sm border uppercase tracking-widest ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>Global View</button>
+                <button 
+                  onClick={() => fetchData()}
+                  className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
+                >
+                  <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+                </button>
+             </div>
+             
+             <button className="bg-indigo-600 text-white px-6 py-3 rounded-2xl flex items-center gap-3 shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 transition-all active:scale-95 text-[11px] font-black uppercase tracking-widest">
+                <ShieldCheck size={18} />
+                Security Report
+             </button>
           </div>
 
           {activeTab === 'dashboard' ? (
-            /* --- OVERVIEW TAB --- */
-            /* ... (keep existing overview logic) ... */
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              
-              {/* LEFT COLUMN: CHARTS & MAPS */}
-              <div className="col-span-12 md:col-span-8 space-y-6 md:space-y-8">
-                {/* CHARTS CARD */}
-                <div className="bg-white/90 backdrop-blur-md p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-white relative overflow-hidden">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-                    <div>
-                      <h3 className="text-[10px] md:text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Interactive Data</h3>
-                      <h2 className="text-xl md:text-2xl font-black text-[#1B2559]">Average Charts</h2>
-                    </div>
-                    <div className="flex items-center gap-2 bg-[#f4f7fe] p-1 rounded-xl self-start sm:self-auto">
-                      <button className="px-4 py-1.5 rounded-lg bg-white shadow-sm text-[10px] font-black text-[#4318FF] uppercase">Weekly</button>
-                      <button className="px-4 py-1.5 rounded-lg text-[10px] font-black text-slate-400 uppercase">Monthly</button>
-                    </div>
+            /* --- DASHBOARD TAB --- */
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+               {/* STAT CARDS */}
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <StatCard 
+                    title="Total balance" 
+                    label="Total Registered"
+                    value={stats?.totalUsers?.toLocaleString() || '0'} 
+                    trend="+12.1%" 
+                    isUp={true} 
+                    icon={<Users className="text-indigo-500" />}
+                    isDarkMode={isDarkMode}
+                  />
+                  <StatCard 
+                    title="Income" 
+                    label="Active Members"
+                    value={stats?.activeUsers?.toLocaleString() || '0'} 
+                    trend="+8.3%" 
+                    isUp={true} 
+                    icon={<UserCheck className="text-emerald-500" />}
+                    isDarkMode={isDarkMode}
+                  />
+                  <StatCard 
+                    title="Expense" 
+                    label="Total Posts"
+                    value={stats?.totalPosts?.toLocaleString() || '0'} 
+                    trend="-2.4%" 
+                    isUp={false} 
+                    icon={<TrendingUp className="text-amber-500" />}
+                    isDarkMode={isDarkMode}
+                  />
+                  <StatCard 
+                    title="Total savings" 
+                    label="Active Reports"
+                    value={reports.filter(r => r.status === 'Pending').length || '0'} 
+                    trend="+12.1%" 
+                    isUp={true} 
+                    icon={<AlertTriangle className="text-rose-500" />}
+                    isDarkMode={isDarkMode}
+                  />
+               </div>
+
+               {/* CHARTS ROW */}
+               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  {/* Left Chart */}
+                  <div className={`lg:col-span-8 p-8 rounded-[2.5rem] border shadow-sm shadow-indigo-500/5 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                     <div className="flex items-center justify-between mb-10">
+                        <div>
+                          <h3 className={`text-xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>System Traffic</h3>
+                          <div className="flex items-center gap-6 mt-2">
+                             <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                                <span className={`text-[10px] font-bold uppercase ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Growth</span>
+                             </div>
+                             <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-indigo-300"></span>
+                                <span className={`text-[10px] font-bold uppercase ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Retention</span>
+                             </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                           <select className={`text-[10px] font-black uppercase tracking-widest rounded-xl px-3 py-2 outline-none border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
+                              <option>All accounts</option>
+                           </select>
+                           <select className={`text-[10px] font-black uppercase tracking-widest rounded-xl px-3 py-2 outline-none border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
+                              <option>This year</option>
+                           </select>
+                        </div>
+                     </div>
+
+                     <div className="h-64 flex items-end justify-between gap-4 px-2">
+                        <BarChartGroup value1={40} value2={60} label="Jan" isDarkMode={isDarkMode} />
+                        <BarChartGroup value1={70} value2={50} label="Feb" isDarkMode={isDarkMode} />
+                        <BarChartGroup value1={55} value2={85} label="Mar" isDarkMode={isDarkMode} />
+                        <BarChartGroup value1={90} value2={40} label="Apr" isDarkMode={isDarkMode} />
+                        <BarChartGroup value1={75} value2={70} label="May" isDarkMode={isDarkMode} />
+                        <BarChartGroup value1={45} value2={65} label="Jun" isDarkMode={isDarkMode} />
+                        <BarChartGroup value1={60} value2={80} label="Jul" isDarkMode={isDarkMode} />
+                     </div>
                   </div>
 
-                  <div className="h-60 md:h-72 flex items-end justify-between gap-2 md:gap-4 px-2 relative overflow-x-auto pb-4 sm:pb-0">
-                    <div className="absolute inset-0 flex flex-col justify-between pt-4 pb-0 pointer-events-none opacity-[0.03]">
-                      {[...Array(5)].map((_, i) => <div key={i} className="border-t border-slate-900 w-full" />)}
+                  {/* Right Chart (Donut) */}
+                  <div className={`lg:col-span-4 p-8 rounded-[2.5rem] border shadow-sm shadow-indigo-500/5 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                    <div className="flex items-center justify-between mb-8">
+                       <h3 className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Health</h3>
+                       <button className="text-slate-400 hover:text-indigo-600 transition-colors"><ArrowUpRight size={20} /></button>
                     </div>
-                    <BarChart value={stats?.totalUsers * 10 || 0} maxValue={100} label="01" color="#4318FF" />
-                    <BarChart value={stats?.activeUsers * 10 || 0} maxValue={100} label="02" color="#6AD2FF" />
-                    <BarChart value={stats?.totalPosts || 0} maxValue={100} label="03" color="#4318FF" />
-                    <BarChart value={35} maxValue={100} label="04" color="#6AD2FF" />
-                    <BarChart value={stats?.totalComments || 0} maxValue={100} label="05" color="#4318FF" />
-                    <BarChart value={75} maxValue={100} label="06" color="#6AD2FF" />
-                    <BarChart value={45} maxValue={100} label="07" color="#4318FF" />
-                    <BarChart value={90} maxValue={100} label="08" color="#6AD2FF" />
+                    
+                    <div className="flex flex-col items-center">
+                       <div className="relative w-48 h-48 mb-8">
+                          <svg className="w-full h-full transform -rotate-90">
+                             <circle cx="96" cy="96" r="80" className={isDarkMode ? 'stroke-slate-800' : 'stroke-slate-50'} strokeWidth="16" fill="none" />
+                             <circle 
+                              cx="96" cy="96" r="80" 
+                              className="stroke-indigo-500" strokeWidth="16" fill="none" 
+                              strokeDasharray="502" strokeDashoffset="125"
+                              strokeLinecap="round"
+                             />
+                             <circle 
+                              cx="96" cy="96" r="80" 
+                              className="stroke-indigo-300" strokeWidth="16" fill="none" 
+                              strokeDasharray="502" strokeDashoffset="420"
+                              strokeLinecap="round"
+                             />
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                             <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Engagement</p>
+                             <p className={`text-3xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>75%</p>
+                          </div>
+                       </div>
+                       
+                       <div className="w-full space-y-4">
+                          <BudgetRow color="bg-indigo-500" label="Active Users" value="75%" amount="5,950" isDarkMode={isDarkMode} />
+                          <BudgetRow color="bg-indigo-300" label="Returning" value="15%" amount="400" isDarkMode={isDarkMode} />
+                          <BudgetRow color={isDarkMode ? 'bg-slate-800' : 'bg-slate-100'} label="Others" value="10%" amount="120" isDarkMode={isDarkMode} />
+                       </div>
+                    </div>
                   </div>
-                </div>
+               </div>
 
-                {/* MAPS SECTION */}
-                <div className="bg-white/90 backdrop-blur-md p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-white">
-                   <div className="flex items-center justify-between mb-8">
-                      <h2 className="text-xl md:text-2xl font-black text-[#1B2559]">User Distribution</h2>
-                      <span className="text-[10px] md:text-xs font-bold text-slate-400">Global Reach</span>
-                   </div>
-                   <div className="h-64 md:h-80 bg-slate-50 flex items-center justify-center rounded-[1.5rem] md:rounded-[2rem] border border-dashed border-slate-200 group relative overflow-hidden">
-                      <div className="absolute inset-0 bg-[#f4f7fe] opacity-50 bg-[radial-gradient(#4318FF_0.5px,transparent_0.5px)] [background-size:16px_16px]"></div>
-                      <svg className="w-4/5 h-2/3 text-slate-200" fill="currentColor" viewBox="0 0 800 400">
-                        <path d="M150,150 Q180,100 220,130 T280,150 T350,120 T450,180 T550,140 T650,200 T750,150" fill="none" stroke="#4318FF" strokeWidth="3" strokeDasharray="8 4" className="opacity-40" />
-                        <circle cx="200" cy="180" r="8" className="text-[#4318FF] animate-pulse" />
-                        <circle cx="450" cy="150" r="6" className="text-[#6AD2FF] animate-bounce" />
-                        <circle cx="600" cy="220" r="10" className="text-[#4318FF]" />
-                      </svg>
-                      <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 flex gap-4">
-                         <Legend color="#4318FF" label="New Users" />
-                         <Legend color="#6AD2FF" label="Returns" />
-                      </div>
-                   </div>
-                </div>
-              </div>
+               {/* BOTTOM ROW (Table equivalent) */}
+               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  <div className={`lg:col-span-8 p-8 rounded-[2.5rem] border shadow-sm shadow-indigo-500/5 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                     <div className="flex items-center justify-between mb-8">
+                        <h3 className={`text-xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Recent reports</h3>
+                        <button 
+                          onClick={() => setActiveTab('reports')}
+                          className={`text-[10px] font-black uppercase tracking-widest hover:underline ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`}
+                        >
+                          See all
+                        </button>
+                     </div>
+                     
+                     <div className="overflow-x-auto overflow-y-hidden">
+                        <table className="w-full text-left">
+                           <thead>
+                              <tr className={`text-[10px] font-black uppercase tracking-[0.2em] border-b ${isDarkMode ? 'text-slate-700 border-slate-800' : 'text-slate-300 border-slate-50'}`}>
+                                 <th className="pb-4">Reporter</th>
+                                 <th className="pb-4">Category</th>
+                                 <th className="pb-4">Status</th>
+                                 <th className="pb-4 text-right">Time</th>
+                              </tr>
+                           </thead>
+                           <tbody className={`divide-y ${isDarkMode ? 'divide-slate-800' : 'divide-slate-50'}`}>
+                              {reports.slice(0, 5).map((report, idx) => (
+                                <tr key={report.reportId || idx} className={`group transition-colors ${isDarkMode ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50'}`}>
+                                   <td className="py-4 flex items-center gap-3">
+                                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs uppercase ${isDarkMode ? 'bg-slate-800 text-slate-600' : 'bg-slate-50 text-slate-400'}`}>
+                                        {report.reporterName?.substring(0, 2)}
+                                      </div>
+                                      <div>
+                                         <p className={`text-sm font-black ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>{report.reporterName}</p>
+                                         <p className={`text-[10px] font-bold ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Moderation</p>
+                                      </div>
+                                   </td>
+                                   <td className="py-4">
+                                      <span className={`text-xs font-bold ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>{report.reason}</span>
+                                   </td>
+                                   <td className="py-4">
+                                      <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                                        report.status === 'Pending' ? (isDarkMode ? 'bg-amber-900/20 text-amber-500' : 'bg-amber-50 text-amber-600') :
+                                        report.status === 'Resolved' ? (isDarkMode ? 'bg-emerald-900/20 text-emerald-500' : 'bg-emerald-50 text-emerald-600') :
+                                        (isDarkMode ? 'bg-slate-800 text-slate-600' : 'bg-slate-50 text-slate-400')
+                                      }`}>
+                                        {report.status}
+                                      </span>
+                                   </td>
+                                   <td className="py-4 text-right">
+                                      <p className="text-xs font-bold text-slate-400 tracking-tight">
+                                        {new Date(report.createdAt).toLocaleDateString('vi-VN')}
+                                      </p>
+                                   </td>
+                                </tr>
+                              ))}
+                              {reports.length === 0 && (
+                                <tr>
+                                   <td colSpan="4" className="py-10 text-center text-slate-600 font-bold italic text-sm">No recent reports</td>
+                                </tr>
+                              )}
+                           </tbody>
+                        </table>
+                     </div>
+                  </div>
 
-              {/* RIGHT COLUMN */}
-              <div className="col-span-12 md:col-span-4 space-y-6 md:space-y-8">
-                {/* CALCULATION CARD */}
-                <div className="bg-white/90 backdrop-blur-md p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-white">
-                   <h2 className="text-xl md:text-2xl font-black text-[#1B2559] mb-8">Calculation</h2>
-                   <div className="space-y-6">
-                      <CalcRow icon="dollar" label="System Health" value="Active" color="#4318FF" highlight />
-                      <CalcRow icon="download" label="Total Images" value="1,240" color="#6AD2FF" />
-                      <CalcRow icon="star" label="Engagement" value="98%" color="#4318FF" />
-                   </div>
-                </div>
-
-                {/* ANALYTICAL CARD */}
-                <div className="bg-white/90 backdrop-blur-md p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-white">
-                   <h2 className="text-xl md:text-2xl font-black text-[#1B2559] mb-8">Analytical</h2>
-                   <div className="space-y-8">
-                      <ProgressBar label="Interaction Rate" percent={75} color="#4318FF" />
-                      <ProgressBar label="Member Growth" percent={45} color="#6AD2FF" />
-                      <ProgressBar label="Retention Rate" percent={92} color="#05CD99" />
-                   </div>
-                   
-                   <div className="mt-10 grid grid-cols-2 gap-4">
-                      <RoundChart percent={75} label="Chart 01" color="#4318FF" />
-                      <RoundChart percent={50} label="Chart 02" color="#6AD2FF" />
-                   </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-[#4318FF] to-[#707EAE] p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-xl shadow-indigo-200 text-white relative overflow-hidden group">
-                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-125 transition-transform duration-700"></div>
-                   <h3 className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-2">Notice</h3>
-                   <h2 className="text-xl font-black mb-4">Migration Successful</h2>
-                   <p className="text-xs font-medium leading-relaxed opacity-80">Database provider synced with PostgreSQL Production. Admin account ready.</p>
-                   <div className="mt-6 flex items-center gap-3">
-                      <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1.5 rounded-lg">20.04.2026</span>
-                      <Link to="/" className="text-[10px] font-black uppercase tracking-widest hover:underline">View Site &rarr;</Link>
-                   </div>
-                </div>
-              </div>
+                  <div className={`lg:col-span-4 p-8 rounded-[2.5rem] border shadow-sm shadow-indigo-500/5 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                     <div className="flex items-center justify-between mb-8">
+                        <h3 className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Security goals</h3>
+                        <button className="text-slate-400 hover:text-indigo-600 transition-colors"><ArrowUpRight size={20} /></button>
+                     </div>
+                     
+                     <div className="space-y-8 mt-4">
+                        <GoalProgress label="Community Moderation" value="1,650" target="2,000" percent={82} color="bg-indigo-500" isDarkMode={isDarkMode} />
+                        <GoalProgress label="System Optimization" value="60,000" target="100,000" percent={60} color="bg-indigo-300" isDarkMode={isDarkMode} />
+                        <GoalProgress label="Report Resolution" value="150" target="5,000" percent={3} color="bg-indigo-200" isDarkMode={isDarkMode} />
+                     </div>
+                  </div>
+               </div>
             </div>
-          ) : activeTab === 'reports' ? (
-            /* --- REPORTS TAB --- */
-            <div className="bg-white/90 backdrop-blur-md rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-slate-200/50 border border-white overflow-hidden pb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="px-6 md:px-10 py-8 md:py-10 flex flex-col md:flex-row justify-between items-center gap-6">
-                <div className="text-center md:text-left">
-                   <h2 className="text-2xl md:text-3xl font-black text-[#1B2559] tracking-tight mb-1">Reported Content</h2>
-                   <p className="text-sm font-bold text-slate-400">Review and moderate community reports.</p>
-                </div>
-                <div className="bg-red-500 text-white px-6 py-2.5 rounded-2xl shadow-xl shadow-red-100 flex items-center gap-2">
-                   <span className="text-lg font-black">{reports.length}</span>
-                   <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Total Flags</span>
-                </div>
-              </div>
+          ) : activeTab === 'users' ? (
+            /* --- USERS TAB --- */
+            <div className={`rounded-[2.5rem] border shadow-sm p-8 animate-in fade-in slide-in-from-bottom-4 duration-500 min-h-[600px] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+               <div className="flex items-center justify-between mb-10">
+                  <div>
+                    <h2 className={`text-2xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>User Management</h2>
+                    <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Total {filteredUsers.length} members in community</p>
+                  </div>
+                  <div className="flex gap-2">
+                     <button onClick={fetchUsers} className={`p-3 rounded-2xl border transition-all active:scale-95 ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-500 hover:text-indigo-400' : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-indigo-600'}`}>
+                        <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
+                     </button>
+                  </div>
+               </div>
 
-              <div className="px-4 overflow-x-auto pb-4">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="text-slate-400 text-[11px] font-black uppercase tracking-[0.2em] border-b border-slate-100">
-                      <th className="px-4 md:px-8 py-6">Identity</th>
-                      <th className="px-4 md:px-8 py-6">Report Info</th>
-                      <th className="px-8 py-6 text-center hidden md:table-cell">Status</th>
-                      <th className="px-4 md:px-8 py-6 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {reports.map((report) => (
-                      <tr key={report.reportId} className="hover:bg-slate-50/80 transition-all group">
-                        <td className="px-4 md:px-8 py-6">
-                           <p className="font-black text-[#1B2559] text-sm leading-none mb-1">{report.reporterName}</p>
-                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{new Date(report.createdAt).toLocaleDateString('vi-VN')}</p>
-                        </td>
-                        <td className="px-4 md:px-8 py-6">
-                           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-                              <div className="flex items-center gap-2">
-                                <span className="px-2 py-0.5 rounded bg-red-100 text-[10px] font-black text-red-600 uppercase tracking-widest leading-none">{report.targetType}</span>
-                                <p className="text-sm font-bold text-slate-600 line-clamp-1">{report.reason}</p>
-                              </div>
-                              {/* STATUS TAG - ONLY MOBILE */}
-                              <div className="md:hidden">
-                                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
-                                  report.status === 'Pending' ? 'bg-amber-100 text-amber-600' :
-                                  report.status === 'Resolved' ? 'bg-emerald-100 text-emerald-600' :
-                                  'bg-slate-100 text-slate-500'
+               <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                     <thead>
+                        <tr className={`text-[10px] font-black uppercase tracking-[0.2em] border-b ${isDarkMode ? 'text-slate-700 border-slate-800' : 'text-slate-400 border-slate-50'}`}>
+                           <th className="pb-6 px-4">Profile</th>
+                           <th className="pb-6 px-4">Contact</th>
+                           <th className="pb-6 px-4">Joined</th>
+                           <th className="pb-6 px-4 text-center">Status</th>
+                           <th className="pb-6 px-4 text-right">Actions</th>
+                        </tr>
+                     </thead>
+                     <tbody className={`divide-y ${isDarkMode ? 'divide-slate-800' : 'divide-slate-50'}`}>
+                        {filteredUsers.map(userItem => (
+                          <tr key={userItem.userId} className={`group transition-colors ${isDarkMode ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50/50'}`}>
+                             <td className="py-5 px-4">
+                                <div className="flex items-center gap-4">
+                                   <div className={`w-12 h-12 rounded-2xl overflow-hidden border-2 shadow-lg shrink-0 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-white'}`}>
+                                      <img src={getFullAvatarUrl(userItem.avatarUrl, userItem.fullName)} alt="" className="w-full h-full object-cover" />
+                                   </div>
+                                   <div>
+                                      <p className={`font-black leading-none mb-1.5 ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>{userItem.fullName}</p>
+                                      <p className={`text-xs font-bold uppercase tracking-tight ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>@{userItem.username}</p>
+                                   </div>
+                                </div>
+                             </td>
+                             <td className="py-5 px-4">
+                                <p className={`text-sm font-bold ${isDarkMode ? 'text-slate-500' : 'text-slate-600'}`}>{userItem.email}</p>
+                             </td>
+                             <td className="py-5 px-4">
+                                <p className={`text-xs font-black ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>{new Date(userItem.createdAt).toLocaleDateString('vi-VN')}</p>
+                             </td>
+                             <td className="py-5 px-4 text-center">
+                                <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest inline-flex items-center gap-2 ${
+                                  userItem.isActive 
+                                  ? (isDarkMode ? 'bg-emerald-900/20 text-emerald-500' : 'bg-emerald-50 text-emerald-600') 
+                                  : (isDarkMode ? 'bg-rose-900/20 text-rose-500' : 'bg-rose-50 text-rose-600')
                                 }`}>
-                                  {report.status}
+                                  <div className={`w-1.5 h-1.5 rounded-full ${userItem.isActive ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                                  {userItem.isActive ? 'Active' : 'Banned'}
                                 </span>
-                              </div>
-                           </div>
-                        </td>
-                        <td className="px-8 py-6 text-center hidden md:table-cell">
-                          <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${
-                            report.status === 'Pending' ? 'bg-amber-100 text-amber-600' :
-                            report.status === 'Resolved' ? 'bg-emerald-100 text-emerald-600' :
-                            'bg-slate-100 text-slate-500'
-                          }`}>
-                            {report.status}
-                          </span>
-                        </td>
-                        <td className="px-4 md:px-8 py-6 text-right">
-                          <button 
-                            onClick={() => setSelectedReport(report)}
-                            className="bg-[#4318FF] text-white text-[10px] font-black uppercase tracking-widest px-4 md:px-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all outline-none"
-                          >
-                            <span className="hidden md:inline">Chi tiết</span>
-                            <span className="md:hidden">Xem</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {reports.length === 0 && (
-                      <tr>
-                        <td colSpan="4" className="py-20 text-center text-slate-400 font-bold italic">
-                           No reports to display. Everything is clean!
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                             </td>
+                             <td className="py-5 px-4 text-right">
+                                <div className="flex justify-end gap-2">
+                                   <button 
+                                      onClick={() => setSelectedUser(userItem)}
+                                      className={`p-2.5 rounded-xl border shadow-sm transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-500 hover:text-indigo-400' : 'bg-white border-slate-100 text-slate-400 hover:text-indigo-600'}`}
+                                   >
+                                      <ArrowUpRight size={18} />
+                                   </button>
+                                   <button 
+                                      onClick={() => handleToggleStatus(userItem.userId)}
+                                      className={`p-2.5 rounded-xl border transition-all active:scale-95 ${
+                                        userItem.isActive 
+                                        ? (isDarkMode ? 'bg-slate-800 border-slate-700 text-rose-500 hover:bg-rose-950/30' : 'bg-white border-slate-100 text-rose-500 hover:bg-rose-50') 
+                                        : (isDarkMode ? 'bg-slate-800 border-slate-700 text-emerald-500 hover:bg-emerald-950/30' : 'bg-white border-slate-100 text-emerald-500 hover:bg-emerald-50')
+                                      }`}
+                                      title={userItem.isActive ? "Restrict Account" : "Access Restore"}
+                                   >
+                                      {userItem.isActive ? <UserX size={18} /> : <UserCheck size={18} />}
+                                   </button>
+                                </div>
+                             </td>
+                          </tr>
+                        ))}
+                     </tbody>
+                  </table>
+               </div>
             </div>
           ) : (
-            /* --- USERS TAB --- */
-            <div className="bg-white/90 backdrop-blur-md rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-slate-200/50 border border-white overflow-hidden pb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="px-6 md:px-10 py-8 md:py-10 flex flex-col md:flex-row justify-between items-center gap-6">
-                <div className="text-center md:text-left">
-                   <h2 className="text-2xl md:text-3xl font-black text-[#1B2559] tracking-tight mb-1">User Management</h2>
-                   <p className="text-sm font-bold text-slate-400">Manage community standards and account status.</p>
-                </div>
-                <div className="bg-[#4318FF] text-white px-6 py-2.5 rounded-2xl shadow-xl shadow-indigo-100 flex items-center gap-2">
-                   <span className="text-lg font-black">{filteredUsers.length}</span>
-                   <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Total Users</span>
-                </div>
-              </div>
+            /* --- REPORTS TAB --- */
+            <div className={`rounded-[2.5rem] border shadow-sm p-8 animate-in fade-in slide-in-from-bottom-4 duration-500 min-h-[600px] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+               <div className="flex items-center justify-between mb-10">
+                  <div>
+                    <h2 className={`text-2xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Security Moderation</h2>
+                    <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Total {reports.length} reports flagged by community</p>
+                  </div>
+                  <button onClick={fetchReports} className={`p-3 rounded-2xl border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-500 hover:text-indigo-400' : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-indigo-600'}`}>
+                     <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
+                  </button>
+               </div>
 
-              <div className="px-4 overflow-hidden pb-4">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="text-slate-400 text-[11px] font-black uppercase tracking-[0.2em] border-b border-slate-100">
-                      <th className="px-4 md:px-8 py-6">Member Identity</th>
-                      <th className="px-8 py-6 hidden md:table-cell">Contact Info</th>
-                      <th className="px-8 py-6 hidden md:table-cell">Joined Date</th>
-                      <th className="px-8 py-6 text-center hidden md:table-cell">Security Status</th>
-                      <th className="px-4 md:px-8 py-6 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {filteredUsers.map(userItem => (
-                      <tr key={userItem.userId} className="hover:bg-[#f4f7fe]/50 transition-all group">
-                        <td className="px-4 md:px-8 py-6">
-                          <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-2xl overflow-hidden border-4 border-white shadow-lg group-hover:scale-105 transition-transform bg-[#f4f7fe] shrink-0">
-                              <img src={getFullAvatarUrl(userItem.avatarUrl, userItem.fullName)} alt="" className="w-full h-full object-cover" />
-                            </div>
-                            <div>
-                              <p className="font-black text-[#1B2559] text-base leading-none mb-1.5">{userItem.fullName}</p>
-                              <p className="text-xs text-slate-400 font-bold tracking-tight">@{userItem.username}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6 hidden md:table-cell">
-                          <p className="text-sm text-slate-600 font-bold">{userItem.email}</p>
-                        </td>
-                        <td className="px-8 py-6 hidden md:table-cell">
-                          <p className="text-xs text-slate-500 font-black">
-                            {new Date(userItem.createdAt).toLocaleDateString('vi-VN')}
-                          </p>
-                        </td>
-                        <td className="px-8 py-6 text-center hidden md:table-cell">
-                          <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-2 ${
-                            userItem.isActive 
-                            ? 'bg-emerald-50 text-emerald-600 shadow-sm shadow-emerald-100' 
-                            : 'bg-rose-50 text-rose-600 shadow-sm shadow-rose-100'
-                          }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${userItem.isActive ? 'bg-emerald-600' : 'bg-rose-600'}`}></span>
-                            {userItem.isActive ? 'Active' : 'Banned'}
-                          </span>
-                        </td>
-                        <td className="px-4 md:px-8 py-6 text-right">
-                          <div className="flex justify-end gap-2 text-right">
-                            <button 
-                              onClick={() => setSelectedUser(userItem)}
-                              className="md:hidden p-2 text-indigo-600 bg-indigo-50 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
-                            >
-                               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                               </svg>
-                            </button>
-                            <button 
-                              onClick={() => handleToggleStatus(userItem.userId)}
-                              className={`hidden md:block text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-2xl transition-all hover:-translate-y-0.5 active:scale-95 shadow-md ${
-                                userItem.isActive 
-                                ? 'bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white hover:shadow-rose-200' 
-                                : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white hover:shadow-emerald-200'
-                              }`}
-                            >
-                              {userItem.isActive ? 'Restrict Access' : 'Restore Access'}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+               <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                     <thead>
+                        <tr className={`text-[10px] font-black uppercase tracking-[0.2em] border-b ${isDarkMode ? 'text-slate-700 border-slate-800' : 'text-slate-400 border-slate-50'}`}>
+                           <th className="pb-6 px-4">Flagged Content</th>
+                           <th className="pb-6 px-4 text-center">Identity</th>
+                           <th className="pb-6 px-4">Status</th>
+                           <th className="pb-6 px-4 text-right">Actions</th>
+                        </tr>
+                     </thead>
+                     <tbody className={`divide-y ${isDarkMode ? 'divide-slate-800' : 'divide-slate-50'}`}>
+                        {reports.map(report => (
+                          <tr key={report.reportId} className={`group transition-colors ${isDarkMode ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50/50'}`}>
+                             <td className="py-6 px-4 max-w-md">
+                                <div className="flex items-start gap-4">
+                                   <div className={`p-3 rounded-2xl shrink-0 ${isDarkMode ? 'bg-rose-950/30 text-rose-500' : 'bg-rose-50 text-rose-500'}`}>
+                                      <AlertTriangle size={20} />
+                                   </div>
+                                   <div>
+                                      <p className={`text-sm font-black mb-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>{report.reason}</p>
+                                      <p className={`text-xs font-medium line-clamp-1 italic ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>"{report.targetContent}"</p>
+                                      <div className="flex items-center gap-2 mt-2">
+                                         <span className={`px-2 py-0.5 text-[8px] font-black uppercase rounded ${isDarkMode ? 'bg-slate-800 text-slate-600' : 'bg-slate-100 text-slate-500'}`}>{report.targetType}</span>
+                                         <span className={`text-[10px] font-bold tracking-tighter ${isDarkMode ? 'text-slate-700' : 'text-slate-300'}`}>ID: {report.reportId.split('-')[0]}</span>
+                                      </div>
+                                   </div>
+                                </div>
+                             </td>
+                             <td className="py-6 px-4 text-center">
+                                <p className={`text-sm font-black leading-none mb-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>{report.reporterName}</p>
+                                <p className={`text-[10px] font-bold tracking-tighter ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>{new Date(report.createdAt).toLocaleString('vi-VN')}</p>
+                             </td>
+                             <td className="py-6 px-4">
+                                <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest inline-flex items-center gap-2 ${
+                                  report.status === 'Pending' ? (isDarkMode ? 'bg-amber-900/20 text-amber-500' : 'bg-amber-50 text-amber-600') :
+                                  report.status === 'Resolved' ? (isDarkMode ? 'bg-emerald-900/20 text-emerald-500' : 'bg-emerald-50 text-emerald-600') :
+                                  (isDarkMode ? 'bg-slate-800 text-slate-600' : 'bg-slate-50 text-slate-400')
+                                }`}>
+                                  <div className={`w-1.5 h-1.5 rounded-full ${report.status === 'Pending' ? 'bg-amber-500 animate-pulse' : report.status === 'Resolved' ? 'bg-emerald-500' : 'bg-slate-500'}`}></div>
+                                  {report.status}
+                                </span>
+                             </td>
+                             <td className="py-6 px-4 text-right">
+                                <button 
+                                  onClick={() => setSelectedReport(report)}
+                                  className={`bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-2xl shadow-lg transition-all active:scale-95 ${isDarkMode ? 'shadow-indigo-900/20 hover:bg-indigo-500' : 'shadow-indigo-100 hover:bg-indigo-700'}`}
+                                >
+                                  Details
+                                </button>
+                             </td>
+                          </tr>
+                        ))}
+                     </tbody>
+                  </table>
+               </div>
             </div>
           )}
         </div>
       </main>
-    </div>
-  );
-};
 
-/* --- SUBCOMPONENTS --- */
+      {/* --- MODALS --- */}
+      
+      {/* User Details Modal */}
+      {selectedUser && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setSelectedUser(null)}></div>
+          <div className={`rounded-[2.5rem] w-full max-w-sm relative z-10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-white'}`}>
+             <div className="h-24 bg-gradient-to-r from-indigo-500 to-indigo-300"></div>
+             <div className="px-8 pb-8 -mt-12">
+               <div className="flex flex-col items-center text-center">
+                  <div className={`w-24 h-24 rounded-3xl overflow-hidden border-4 shadow-xl mb-4 ${isDarkMode ? 'bg-slate-900 border-slate-900' : 'bg-white border-white'}`}>
+                    <img src={getFullAvatarUrl(selectedUser.avatarUrl, selectedUser.fullName)} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <h3 className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{selectedUser.fullName}</h3>
+                  <p className={`text-sm font-bold mb-6 uppercase tracking-tighter ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>@{selectedUser.username}</p>
+                  
+                  <div className="w-full space-y-4 text-left mb-8">
+                    <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                      <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isDarkMode ? 'text-slate-600' : 'text-slate-300'}`}>Email</p>
+                      <p className={`text-sm font-black break-all ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>{selectedUser.email}</p>
+                    </div>
+                    <div className={`p-4 rounded-2xl border flex items-center justify-between ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-600' : 'text-slate-300'}`}>Global Status</p>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${selectedUser.isActive ? 'text-emerald-500' : 'text-rose-500'}`}>
+                        {selectedUser.isActive ? 'Active' : 'Restricted'}
+                      </span>
+                    </div>
+                  </div>
 
-const NavItem = ({ icon, label, count, active, onClick }) => {
-  const icons = {
-    dashboard: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
-    messages: "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z",
-    users: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z",
-    chart: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
-    calendar: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
-    reports: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-  };
-
-  return (
-    <button 
-      onClick={onClick}
-      className={`w-full flex items-center justify-between px-6 py-4 rounded-2xl transition-all duration-300 ${active ? 'bg-white text-[#4318FF] shadow-lg scale-105' : 'hover:bg-white/10'}`}
-    >
-      <div className="flex items-center gap-4">
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={active ? 2.5 : 2} d={icons[icon]} />
-        </svg>
-        <span className={`text-sm font-black uppercase tracking-widest ${active ? '' : 'opacity-80'}`}>{label}</span>
-      </div>
-      {count && (
-        <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{count}</span>
+                  <button 
+                    onClick={() => handleToggleStatus(selectedUser.userId)}
+                    className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg mb-3 ${
+                      selectedUser.isActive 
+                      ? 'bg-rose-500 text-white shadow-rose-900/20' 
+                      : 'bg-emerald-500 text-white shadow-emerald-900/20'
+                    }`}
+                  >
+                    {selectedUser.isActive ? 'Restrict Access' : 'Restore Access'}
+                  </button>
+                  <button onClick={() => setSelectedUser(null)} className={`text-[10px] font-black uppercase tracking-widest transition-colors ${isDarkMode ? 'text-slate-600 hover:text-slate-400' : 'text-slate-400 hover:text-slate-600'}`}>Close Profile</button>
+               </div>
+             </div>
+          </div>
+        </div>
       )}
-      {active && (
-        <div className="absolute right-0 w-1 h-6 bg-[#4318FF] rounded-l-full"></div>
+
+      {/* Report Resolution Modal */}
+      {selectedReport && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setSelectedReport(null)}></div>
+           <div className={`rounded-[2.5rem] w-full max-w-lg relative z-10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-white'}`}>
+              <div className={`p-8 border-b flex items-center justify-between ${isDarkMode ? 'border-slate-800' : 'border-slate-50'}`}>
+                 <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-xl ${isDarkMode ? 'bg-rose-950/30 text-rose-500' : 'bg-rose-50 text-rose-500'}`}>
+                       <ShieldAlert size={24} />
+                    </div>
+                    <h3 className={`text-xl font-black uppercase tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Security Case Details</h3>
+                 </div>
+                 <button onClick={() => setSelectedReport(null)} className="text-slate-400 hover:text-slate-600 p-1"><X size={20} /></button>
+              </div>
+              
+              <div className="p-8 space-y-6">
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                       <p className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1 ${isDarkMode ? 'text-slate-600' : 'text-slate-300'}`}>Source identity</p>
+                       <p className={`text-sm font-black ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>{selectedReport.reporterName}</p>
+                    </div>
+                    <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                       <p className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1 ${isDarkMode ? 'text-slate-600' : 'text-slate-300'}`}>Platform Type</p>
+                       <span className="px-2 py-0.5 bg-rose-100 text-rose-600 text-[9px] font-black rounded uppercase">{selectedReport.targetType}</span>
+                    </div>
+                 </div>
+
+                 <div className={`p-6 rounded-2xl border italic relative overflow-hidden ${isDarkMode ? 'bg-rose-950/10 border-rose-900/30' : 'bg-rose-50 border-rose-100'}`}>
+                    <div className="absolute top-2 right-2 opacity-5"><TrendingDown size={60} /></div>
+                    <p className={`text-[9px] font-black uppercase tracking-widest mb-2 ${isDarkMode ? 'text-rose-900' : 'text-rose-300'}`}>Original Content</p>
+                    <p className={`text-sm font-bold leading-relaxed italic ${isDarkMode ? 'text-rose-400' : 'text-rose-700'}`}>"{selectedReport.targetContent}"</p>
+                 </div>
+
+                 <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-100'}`}>
+                    <p className={`text-[9px] font-black uppercase tracking-widest mb-2 ${isDarkMode ? 'text-slate-600' : 'text-slate-300'}`}>Violated Standard</p>
+                    <p className="text-base font-black text-rose-600 mb-1">{selectedReport.reason}</p>
+                    <p className={`text-xs font-medium leading-relaxed ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>{selectedReport.description || 'No additional technical description provided.'}</p>
+                 </div>
+
+                 <div className="flex gap-4 pt-4">
+                    {selectedReport.status === 'Pending' ? (
+                      <>
+                        <button 
+                          onClick={() => { handleResolveReport(selectedReport.reportId, 'Resolved'); setSelectedReport(null); }}
+                          className={`flex-1 py-4 rounded-2xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95 ${isDarkMode ? 'shadow-indigo-900/20 hover:bg-indigo-500' : 'shadow-indigo-100 hover:bg-indigo-700'}`}
+                        >
+                           Resolve Case
+                        </button>
+                        <button 
+                          onClick={() => { handleResolveReport(selectedReport.reportId, 'Dismissed'); setSelectedReport(null); }}
+                          className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 ${isDarkMode ? 'bg-slate-800 text-slate-500 hover:bg-slate-700' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+                        >
+                           Dismiss
+                        </button>
+                      </>
+                    ) : (
+                      <div className={`flex-1 py-4 text-center rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                        <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isDarkMode ? 'text-slate-600' : 'text-slate-300'}`}>Status Report</p>
+                        <p className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>{selectedReport.status}</p>
+                      </div>
+                    )}
+                 </div>
+              </div>
+           </div>
+        </div>
       )}
-    </button>
-  );
-};
 
-const BarChart = ({ value, maxValue, label, color }) => {
-  const height = (value / maxValue) * 100;
-  return (
-    <div className="flex flex-col items-center gap-4 h-full flex-1">
-      <div className="w-full bg-[#f4f7fe] rounded-full flex-1 flex items-end relative overflow-hidden group">
-        <div 
-          className="w-full rounded-full transition-all duration-1000 ease-out" 
-          style={{ height: `${height}%`, backgroundColor: color }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
-        </div>
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-black px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-           {value}%
-        </div>
-      </div>
-      <span className="text-[10px] font-black text-slate-400">{label}</span>
+      {/* Styles for scrollbar */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: ${isDarkMode ? '#334155' : '#e2e8f0'}; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: ${isDarkMode ? '#475569' : '#cbd5e1'}; }
+      `}} />
     </div>
   );
 };
 
-const CalcRow = ({ icon, label, value, color, highlight }) => {
-  const iconD = {
-    dollar: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-    download: "M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4",
-    star: "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.175 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-  };
+/* --- MINI SUBCOMPONENTS --- */
 
-  return (
-    <div className="flex items-center justify-between group">
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: color }}>
-           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={iconD[icon]} />
-           </svg>
-        </div>
-        <div>
-          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
-          <p className={`text-lg font-black ${highlight ? 'text-[#4318FF]' : 'text-[#1B2559]'}`}>{value}</p>
-        </div>
-      </div>
-      <button className="text-slate-200 group-hover:text-slate-400 transition-colors">
-         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
-         </svg>
-      </button>
+const SidebarItem = ({ icon, label, active, onClick, activeCount, disabled, isDarkMode }) => (
+  <button 
+    onClick={!disabled ? onClick : null}
+    disabled={disabled}
+    className={`w-full flex items-center justify-between px-6 py-4 rounded-2xl transition-all duration-300 relative group ${
+      disabled ? 'opacity-40 cursor-not-allowed' :
+      active 
+      ? (isDarkMode ? 'bg-indigo-950/40 text-indigo-400 shadow-sm shadow-indigo-900/20' : 'bg-indigo-50 text-indigo-600 shadow-sm') 
+      : (isDarkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-400 hover:bg-slate-50')
+    }`}
+  >
+    <div className="flex items-center gap-4">
+      <div className={active ? (isDarkMode ? 'text-indigo-400' : 'text-indigo-600') : 'group-hover:text-indigo-600 transition-colors'}>{icon}</div>
+      <span className={`text-sm font-black uppercase tracking-widest ${active ? (isDarkMode ? 'text-indigo-400' : 'text-indigo-600') : 'opacity-80'}`}>{label}</span>
     </div>
-  );
-};
-
-const ProgressBar = ({ label, percent, color }) => (
-  <div className="space-y-3">
-    <div className="flex justify-between items-end">
-       <span className="text-xs font-black text-slate-500 uppercase tracking-widest">{label}</span>
-       <span className="text-lg font-black text-[#1B2559] leading-none">{percent}%</span>
-    </div>
-    <div className="h-3 w-full bg-[#f4f7fe] rounded-full overflow-hidden">
-       <div 
-        className="h-full rounded-full transition-all duration-1000" 
-        style={{ width: `${percent}%`, backgroundColor: color }}
-       ></div>
-    </div>
-  </div>
+    {activeCount > 0 && (
+      <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">{activeCount}</span>
+    )}
+    {active && (
+      <div className={`absolute right-0 w-1.5 h-6 rounded-l-full ${isDarkMode ? 'bg-indigo-400' : 'bg-indigo-600'}`}></div>
+    )}
+  </button>
 );
 
-const RoundChart = ({ percent, label, color }) => (
-  <div className="flex flex-col items-center gap-3">
-     <div className="relative w-20 h-20">
-        <svg className="w-full h-full" viewBox="0 0 36 36">
-           <path className="text-slate-100" strokeDasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
-           <path style={{ color }} strokeDasharray={`${percent}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-           <text x="18" y="20.5" className="text-[8px] font-black fill-slate-900" textAnchor="middle">{percent}%</text>
-        </svg>
+const SidebarAction = ({ icon, label, isDarkMode }) => (
+  <button className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group ${isDarkMode ? 'text-slate-500 hover:text-rose-400 hover:bg-slate-800' : 'text-slate-400 hover:text-rose-500 hover:bg-slate-50'}`}>
+    <div className="group-hover:scale-110 transition-transform">{icon}</div>
+    <span className="text-sm font-black uppercase tracking-widest opacity-80">{label}</span>
+  </button>
+);
+
+const StatCard = ({ title, label, value, trend, isUp, icon, isDarkMode }) => (
+  <div className={`p-6 rounded-[2rem] border shadow-sm relative group hover:translate-y-[-2px] transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800 shadow-indigo-950/10' : 'bg-white border-slate-100 shadow-indigo-50/20'}`}>
+     <div className="flex items-center justify-between mb-6">
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'}`}>
+           {icon}
+        </div>
+        <button className="text-slate-500 hover:text-indigo-600 transition-colors"><ChevronRight size={18} /></button>
      </div>
-     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
+     <p className={`text-[10px] font-black uppercase tracking-[0.15em] mb-1 ${isDarkMode ? 'text-slate-600' : 'text-slate-300'}`}>{title}</p>
+     <div className="flex items-center justify-between gap-2 overflow-hidden">
+        <h4 className={`text-2xl font-black tracking-tight truncate ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{value}</h4>
+        <div className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black shrink-0 ${isUp ? (isDarkMode ? 'bg-emerald-900/20 text-emerald-500' : 'bg-emerald-50 text-emerald-600') : (isDarkMode ? 'bg-rose-900/20 text-rose-500' : 'bg-rose-50 text-rose-600')}`}>
+           {isUp ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+           {trend}
+        </div>
+     </div>
+     <p className={`text-[11px] font-medium mt-4 border-t pt-3 ${isDarkMode ? 'border-slate-800 text-slate-500' : 'border-slate-50 text-slate-400'}`}>{label}</p>
   </div>
 );
 
-const Legend = ({ color, label }) => (
-  <div className="flex items-center gap-2">
-    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }}></div>
-    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
+const BarChartGroup = ({ value1, value2, label, isDarkMode }) => (
+  <div className="flex flex-col items-center gap-3 h-full flex-1 min-w-[20px]">
+     <div className="flex-1 flex items-end gap-1.5 h-full">
+        <div className="w-2.5 bg-indigo-500 rounded-full transition-all duration-1000 ease-out hover:brightness-110" style={{ height: `${value1}%` }}></div>
+        <div className={`w-2.5 rounded-full transition-all duration-1000 ease-out hover:brightness-110 shadow-inner ${isDarkMode ? 'bg-indigo-900/40' : 'bg-indigo-100'}`} style={{ height: `${value2}%` }}></div>
+     </div>
+     <span className={`text-[9px] font-black uppercase tracking-tighter ${isDarkMode ? 'text-slate-700' : 'text-slate-300'}`}>{label}</span>
+  </div>
+);
+
+const BudgetRow = ({ color, label, value, amount, isDarkMode }) => (
+  <div className="flex items-center justify-between group">
+     <div className="flex items-center gap-3">
+        <div className={`w-3 h-3 rounded-full ${color}`}></div>
+        <span className={`text-xs font-bold lowercase italic ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>{label}</span>
+     </div>
+     <div className="flex items-center gap-2">
+        <span className={`text-sm font-black ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>{value}</span>
+        <span className={`text-[10px] font-bold tracking-tighter ${isDarkMode ? 'text-slate-700' : 'text-slate-300'}`}>(${amount})</span>
+     </div>
+  </div>
+);
+
+const GoalProgress = ({ label, value, target, percent, color, isDarkMode }) => (
+  <div className="space-y-4">
+     <div className="flex items-center justify-between">
+        <div>
+           <p className={`text-xs font-black tracking-tight ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>{label}</p>
+           <p className={`text-[10px] font-bold mt-0.5 tracking-tighter ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>{value} / {target}</p>
+        </div>
+        <span className="text-sm font-black text-indigo-600">{percent}%</span>
+     </div>
+     <div className={`h-3 w-full rounded-full border p-0.5 overflow-hidden ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+        <div className={`h-full rounded-full transition-all duration-1000 shadow-sm ${color}`} style={{ width: `${percent}%` }}></div>
+     </div>
   </div>
 );
 
