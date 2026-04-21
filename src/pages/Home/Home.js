@@ -424,10 +424,10 @@ const Home = () => {
                   { key: 'home.privacy', label: t('home.privacy') },
                   { key: 'home.terms', label: t('home.terms') }
                 ].map(item => (
-                  <button key={item.key} className="text-[10px] text-slate-400 hover:text-slate-600 hover:underline transition-colors">{item.label}</button>
+                  <button key={item.key} className="text-[10px] font-bold text-slate-500 hover:text-indigo-600 hover:underline transition-colors">{item.label}</button>
                 ))}
               </div>
-              <p className="text-[10px] text-slate-300 tracking-wider">© 2026 MINISOCIAL · v1.0.0</p>
+              <p className="text-[10px] font-semibold text-slate-400 tracking-wider">© 2026 MINISOCIAL · v2.0.0</p>
             </div>
           </div>
         </aside>
