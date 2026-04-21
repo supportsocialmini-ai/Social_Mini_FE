@@ -17,6 +17,19 @@ export const ChatProvider = ({ children }) => {
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [unreadCountsPerUser, setUnreadCountsPerUser] = useState({}); // { userId: count }
   const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [randomChatState, setRandomChatState] = useState({ 
+    status: 'idle', // idle, searching, chatting
+    conversationId: null, 
+    partner: null,
+    partnerLikedMe: false
+  });
+
+  const [queueStats, setQueueStats] = useState({
+    total: 0,
+    matching: 0,
+    global: 0
+  });
+
   const peerConnection = useRef(null);
   const pendingCandidates = useRef([]);
 
@@ -113,6 +126,46 @@ export const ChatProvider = ({ children }) => {
               next.delete(userId); // Không cần Number()
               return next;
             });
+          });
+
+          // --- RANDOM CHAT LISTENERS ---
+          newConnection.on("WaitingInQueue", (total, matching) => {
+            setQueueStats(prev => ({ ...prev, total, matching }));
+          });
+
+          newConnection.on("GlobalQueueUpdate", (global) => {
+            setQueueStats(prev => ({ ...prev, global }));
+          });
+
+          newConnection.on("RandomMatchFound", (conversationId, name, partnerId) => {
+            setRandomChatState({
+              status: 'chatting',
+              conversationId,
+              partner: { userId: partnerId, fullName: name, avatarUrl: null, isAnonymous: true }
+            });
+            toast.success("Đã tìm thấy một người bạn mới!");
+          });
+
+          newConnection.on("IdentityRevealed", (user) => {
+            setRandomChatState(prev => ({
+              ...prev,
+              partner: { ...user, isAnonymous: false }
+            }));
+            toast.success("Chà! Hai bạn thật hợp nhau. Danh tính đã được tiết lộ!");
+          });
+
+          newConnection.on("PartnerLeft", () => {
+             setRandomChatState({ status: 'idle', conversationId: null, partner: null });
+             toast.info("Đối phương đã rời cuộc trò chuyện.");
+          });
+
+          newConnection.on("PartnerLiked", () => {
+             setRandomChatState(prev => ({ ...prev, partnerLikedMe: true }));
+             toast.info("Đối phương đã thả tim cho bạn!");
+          });
+
+          newConnection.on("WaitingInQueue", () => {
+             setRandomChatState(prev => ({ ...prev, status: 'searching' }));
           });
         })
         .catch(err => {
@@ -285,6 +338,13 @@ export const ChatProvider = ({ children }) => {
       setUnreadCountsPerUser,
       fetchUnreadCount,
       onlineUsers,
+      randomChatState,
+      setRandomChatState,
+      queueStats,
+      joinRandomQueue: (targetGender, minAge = 18, maxAge = 99) => connection?.invoke("JoinRandomQueue", targetGender, parseInt(minAge), parseInt(maxAge)),
+      leaveRandomQueue: () => connection?.invoke("LeaveRandomQueue"),
+      sendRandomHeart: (conversationId) => connection?.invoke("SendRandomHeart", conversationId),
+      leaveRandomChat: (conversationId) => connection?.invoke("LeaveRandomChat", conversationId),
       call, startCall, acceptCall, declineCall, endCall, localStream, remoteStream
     }}>
       {children}

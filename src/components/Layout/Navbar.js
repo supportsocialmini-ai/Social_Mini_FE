@@ -277,9 +277,19 @@ const Navbar = () => {
               </div>
             </div>
 
-            {/* Desktop: Messenger Dropdown */}
+            {/* Desktop: Messenger & Random Chat */}
             <div className="hidden sm:flex items-center gap-4">
-              {/* Messenger Dropdown — click opens bubble, "Xem tất cả" goes to /messaging */}
+              <Link 
+                to="/chat-random" 
+                className="p-2 rounded-full hover:bg-indigo-50 text-gray-700 hover:text-indigo-600 transition-all group relative"
+                title="Chat Random ẩn danh"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-indigo-500 rounded-full animate-ping"></span>
+              </Link>
+              
               <MessengerDropdown
                 onOpenChat={handleOpenChat}
                 getFullAvatarUrl={getFullAvatarUrl}
@@ -377,6 +387,7 @@ const Navbar = () => {
         {[
           { to: '/', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', label: t('navbar.feed') },
           { to: '/friends', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', label: t('navbar.friends') },
+          { to: '/chat-random', icon: 'M13 10V3L4 14h7v7l9-11h-7z', label: 'Random' },
           { to: '/messaging', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', label: t('navbar.chat'), count: unreadMessageCount },
           { to: '/settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z', label: t('navbar.settings') },
         ].map(item => (

@@ -22,7 +22,15 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [posts, setPosts] = useState([]);
   const [activeTab, setActiveTab] = useState('posts');
-  const [formData, setFormData] = useState({ username: '', fullName: '', email: '', avatarUrl: '', bio: '' });
+  const [formData, setFormData] = useState({ 
+    username: '', 
+    fullName: '', 
+    email: '', 
+    avatarUrl: '', 
+    bio: '',
+    gender: '',
+    dateOfBirth: ''
+  });
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef(null);
@@ -71,7 +79,9 @@ const Profile = () => {
               fullName: currentUser.fullName || '',
               email: currentUser.email || '',
               avatarUrl: currentUser.avatarUrl || '',
-              bio: currentUser.bio || ''
+              bio: currentUser.bio || '',
+              gender: currentUser.gender || '',
+              dateOfBirth: currentUser.dateOfBirth ? currentUser.dateOfBirth.split('T')[0] : ''
             });
           }
         } else {
@@ -83,7 +93,9 @@ const Profile = () => {
             fullName: foundUser?.fullName || '',
             email: foundUser?.email || '',
             avatarUrl: foundUser?.avatarUrl || '',
-            bio: foundUser?.bio || ''
+            bio: foundUser?.bio || '',
+            gender: foundUser?.gender || '',
+            dateOfBirth: foundUser?.dateOfBirth ? foundUser?.dateOfBirth.split('T')[0] : ''
           });
 
           // Lấy trạng thái bạn bè thực tế từ DB
@@ -530,6 +542,23 @@ const Profile = () => {
                   <textarea name="bio" value={formData.bio} onChange={handleChange} maxLength={255} rows="3"
                     placeholder={t('profile.bioPlaceholder')}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Giới tính</label>
+                    <select name="gender" value={formData.gender} onChange={handleChange}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer">
+                      <option value="">Chọn giới tính</option>
+                      <option value="Male">Nam</option>
+                      <option value="Female">Nữ</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ngày sinh</label>
+                    <input name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleChange}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
+                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-4 pb-8">
