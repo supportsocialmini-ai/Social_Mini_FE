@@ -49,6 +49,10 @@ const AdminDashboard = () => {
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [isTogglingMaintenance, setIsTogglingMaintenance] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [packages, setPackages] = useState([]);
+  const [isUpdatingPackage, setIsUpdatingPackage] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newPackage, setNewPackage] = useState({ name: '', price: 0, description: '', features: '', isActive: true });
 
   useEffect(() => {
     if (isAdmin) {
@@ -56,6 +60,8 @@ const AdminDashboard = () => {
         fetchReports();
       } else if (activeTab === 'users') {
         fetchUsers();
+      } else if (activeTab === 'premium') {
+        fetchPackages();
       } else {
         fetchData();
       }
@@ -100,6 +106,46 @@ const AdminDashboard = () => {
       toast.error('Lỗi lấy danh sách báo cáo');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchPackages = async () => {
+    setIsLoading(true);
+    try {
+      const res = await adminService.getPackages();
+      setPackages(res || []);
+    } catch (error) {
+      toast.error('Lỗi lấy danh sách gói dịch vụ');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdatePackage = async (id, data) => {
+    setIsUpdatingPackage(true);
+    try {
+      await adminService.updatePackage(id, data);
+      toast.success('Đã cập nhật gói dịch vụ');
+      fetchPackages();
+    } catch (error) {
+      toast.error('Lỗi cập nhật gói dịch vụ');
+    } finally {
+      setIsUpdatingPackage(false);
+    }
+  };
+
+  const handleCreatePackage = async () => {
+    setIsUpdatingPackage(true);
+    try {
+      await adminService.createPackage(newPackage);
+      toast.success('Đã tạo gói dịch vụ mới');
+      setIsCreateModalOpen(false);
+      setNewPackage({ name: '', price: 0, description: '', features: '', isActive: true });
+      fetchPackages();
+    } catch (error) {
+      toast.error('Lỗi tạo gói dịch vụ');
+    } finally {
+      setIsUpdatingPackage(false);
     }
   };
 
@@ -187,6 +233,7 @@ const AdminDashboard = () => {
           <SidebarItem icon={<LayoutDashboard size={20} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }} isDarkMode={isDarkMode} />
           <SidebarItem icon={<Users size={20} />} label="Users" active={activeTab === 'users'} onClick={() => { setActiveTab('users'); setIsSidebarOpen(false); }} isDarkMode={isDarkMode} />
           <SidebarItem icon={<AlertTriangle size={20} />} label="Reports" active={activeTab === 'reports'} activeCount={reports.filter(r => r.status === 'Pending').length} onClick={() => { setActiveTab('reports'); setIsSidebarOpen(false); }} isDarkMode={isDarkMode} />
+          <SidebarItem icon={<Wallet size={20} />} label="Premium" active={activeTab === 'premium'} onClick={() => { setActiveTab('premium'); setIsSidebarOpen(false); }} isDarkMode={isDarkMode} />
           
           <div className={`py-4 px-4 text-[10px] font-bold ${isDarkMode ? 'text-slate-600' : 'text-slate-400'} uppercase tracking-widest mt-4`}>Analysis</div>
           <SidebarItem icon={<BarChart3 size={20} />} label="Analytics" isDarkMode={isDarkMode} disabled />
@@ -586,6 +633,157 @@ const AdminDashboard = () => {
                   </table>
                </div>
             </div>
+          ) : activeTab === 'premium' ? (
+            /* --- PREMIUM TAB --- */
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <div className={`rounded-[2.5rem] border shadow-sm p-8 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                  <div className="flex items-center justify-between mb-8">
+                     <div>
+                        <h2 className={`text-2xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Premium Packages</h2>
+                        <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Manage pricing and status of your subscription tiers</p>
+                     </div>
+                     <div className="flex gap-3">
+                        <button 
+                           onClick={() => setIsCreateModalOpen(true)}
+                           className="bg-indigo-600 text-white px-6 py-3 rounded-2xl flex items-center gap-2 shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 transition-all active:scale-95 text-[11px] font-black uppercase tracking-widest"
+                        >
+                           <ShieldCheck size={18} />
+                           Tạo gói mới
+                        </button>
+                        <button onClick={fetchPackages} className={`p-3 rounded-2xl border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-500 hover:text-indigo-400' : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-indigo-600'}`}>
+                           <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
+                        </button>
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     {packages.map(pkg => (
+                        <div key={pkg.id} className={`p-8 rounded-[2rem] border relative overflow-hidden transition-all hover:shadow-xl ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                           <div className="flex items-center justify-between mb-6">
+                              <div className="flex items-center gap-4">
+                                 <div className={`p-4 rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20`}>
+                                    <Wallet size={24} />
+                                 </div>
+                                 <div>
+                                    <input 
+                                       type="text" 
+                                       defaultValue={pkg.name}
+                                       onBlur={(e) => {
+                                          if (e.target.value !== pkg.name && e.target.value.trim() !== "") {
+                                             handleUpdatePackage(pkg.id, { ...pkg, name: e.target.value });
+                                          }
+                                       }}
+                                       className={`bg-transparent border-none font-black text-lg outline-none w-full focus:ring-0 p-0 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}
+                                    />
+                                    <p className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Subscription Plan</p>
+                                 </div>
+                              </div>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                 <input 
+                                    type="checkbox" 
+                                    className="sr-only peer" 
+                                    checked={pkg.isActive}
+                                    onChange={(e) => handleUpdatePackage(pkg.id, { ...pkg, isActive: e.target.checked })}
+                                 />
+                                 <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                              </label>
+                           </div>
+
+                           <div className="space-y-6">
+                              <div>
+                                 <label className={`text-[10px] font-black uppercase tracking-widest mb-2 block ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Price (VND)</label>
+                                 <div className="relative">
+                                    <input 
+                                       type="text" 
+                                       defaultValue={pkg.price?.toLocaleString('vi-VN')}
+                                       onBlur={(e) => {
+                                          const rawVal = e.target.value.replace(/\./g, '').replace(/,/g, '.');
+                                          const val = parseFloat(rawVal);
+                                          if (!isNaN(val) && val !== pkg.price) {
+                                             handleUpdatePackage(pkg.id, { ...pkg, price: val });
+                                          }
+                                       }}
+                                       className={`w-full px-5 py-4 rounded-2xl border font-black text-xl outline-none transition-all focus:ring-2 focus:ring-indigo-500/20 ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-100 text-slate-900'}`}
+                                    />
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                                       <Globe size={20} />
+                                    </div>
+                                 </div>
+                              </div>
+
+                              <div>
+                                 <label className={`text-[10px] font-black uppercase tracking-widest mb-2 block ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Description</label>
+                                 <textarea 
+                                    defaultValue={pkg.description}
+                                    onBlur={(e) => {
+                                       if (e.target.value !== pkg.description) {
+                                          handleUpdatePackage(pkg.id, { ...pkg, description: e.target.value });
+                                       }
+                                    }}
+                                    rows="3"
+                                    className={`w-full px-5 py-4 rounded-2xl border font-bold text-sm outline-none transition-all focus:ring-2 focus:ring-indigo-500/20 resize-none ${isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-400' : 'bg-white border-slate-100 text-slate-600'}`}
+                                 ></textarea>
+                              </div>
+
+                              <div>
+                                 <label className={`text-[10px] font-black uppercase tracking-widest mb-3 block ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Features (Chọn tính năng)</label>
+                                 <div className="grid grid-cols-2 gap-3">
+                                    {[
+                                      { id: 'Filter Age', label: 'Lọc độ tuổi' },
+                                      { id: 'No Ads', label: 'Ẩn quảng cáo' },
+                                      { id: 'See Identity', label: 'Xem danh tính' },
+                                      { id: 'Radar Premium', label: 'Radar cao cấp' }
+                                    ].map(feat => {
+                                       const currentFeatures = pkg.features ? pkg.features.split(',').map(f => f.trim()) : [];
+                                       const isChecked = currentFeatures.includes(feat.id);
+                                       
+                                       return (
+                                          <label key={feat.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                                             isChecked 
+                                             ? (isDarkMode ? 'bg-indigo-900/20 border-indigo-500 text-indigo-400' : 'bg-indigo-50 border-indigo-200 text-indigo-600')
+                                             : (isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-500' : 'bg-white border-slate-100 text-slate-400')
+                                          }`}>
+                                             <input 
+                                                type="checkbox"
+                                                className="sr-only"
+                                                checked={isChecked}
+                                                onChange={(e) => {
+                                                   let newFeatures;
+                                                   if (e.target.checked) {
+                                                      newFeatures = [...currentFeatures, feat.id];
+                                                   } else {
+                                                      newFeatures = currentFeatures.filter(f => f !== feat.id);
+                                                   }
+                                                   handleUpdatePackage(pkg.id, { ...pkg, features: newFeatures.join(', ') });
+                                                }}
+                                             />
+                                             <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${isChecked ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'}`}>
+                                                {isChecked && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                                             </div>
+                                             <span className="text-[11px] font-bold">{feat.label}</span>
+                                          </label>
+                                       );
+                                    })}
+                                 </div>
+                              </div>
+                           </div>
+
+                           {isUpdatingPackage && (
+                              <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px] flex items-center justify-center z-10">
+                                 <RefreshCw size={24} className="animate-spin text-indigo-600" />
+                              </div>
+                           )}
+                        </div>
+                     ))}
+                     
+                     {packages.length === 0 && !isLoading && (
+                        <div className="col-span-full py-20 text-center">
+                           <p className="text-slate-400 font-bold italic">No packages found. Check your database seeding.</p>
+                        </div>
+                     )}
+                  </div>
+               </div>
+            </div>
           ) : (
             /* --- REPORTS TAB --- */
             <div className={`rounded-[2.5rem] border shadow-sm p-8 animate-in fade-in slide-in-from-bottom-4 duration-500 min-h-[600px] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
@@ -769,6 +967,97 @@ const AdminDashboard = () => {
                  </div>
               </div>
            </div>
+        </div>
+      )}
+
+      {/* Create Package Modal */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsCreateModalOpen(false)}></div>
+          <div className={`rounded-[2.5rem] w-full max-w-md relative z-10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-white'}`}>
+             <div className="p-8 border-b flex items-center justify-between">
+                <h3 className={`text-xl font-black uppercase tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Tạo Gói Dịch Vụ Mới</h3>
+                <button onClick={() => setIsCreateModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+             </div>
+             <div className="p-8 space-y-6">
+                <div>
+                   <label className={`text-[10px] font-black uppercase tracking-widest mb-2 block ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Tên gói</label>
+                   <input 
+                      type="text" 
+                      placeholder="Ví dụ: Chat Random, Ads..."
+                      value={newPackage.name}
+                      onChange={(e) => setNewPackage({ ...newPackage, name: e.target.value })}
+                      className={`w-full px-5 py-4 rounded-2xl border font-bold outline-none transition-all focus:ring-2 focus:ring-indigo-500/20 ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-100 text-slate-900'}`}
+                   />
+                </div>
+                <div>
+                   <label className={`text-[10px] font-black uppercase tracking-widest mb-2 block ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Giá tiền (VND)</label>
+                   <input 
+                      type="number" 
+                      value={newPackage.price}
+                      onChange={(e) => setNewPackage({ ...newPackage, price: parseFloat(e.target.value) })}
+                      className={`w-full px-5 py-4 rounded-2xl border font-black text-xl outline-none transition-all focus:ring-2 focus:ring-indigo-500/20 ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-100 text-slate-900'}`}
+                   />
+                </div>
+                <div>
+                   <label className={`text-[10px] font-black uppercase tracking-widest mb-2 block ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Mô tả</label>
+                   <textarea 
+                      rows="3"
+                      value={newPackage.description}
+                      onChange={(e) => setNewPackage({ ...newPackage, description: e.target.value })}
+                      className={`w-full px-5 py-4 rounded-2xl border font-bold text-sm outline-none transition-all focus:ring-2 focus:ring-indigo-500/20 resize-none ${isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-100 text-slate-600'}`}
+                   ></textarea>
+                </div>
+                <div>
+                   <label className={`text-[10px] font-black uppercase tracking-widest mb-3 block ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Tính năng (Chọn sẵn)</label>
+                   <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { id: 'Filter Age', label: 'Lọc độ tuổi' },
+                        { id: 'No Ads', label: 'Ẩn quảng cáo' },
+                        { id: 'See Identity', label: 'Xem danh tính' },
+                        { id: 'Radar Premium', label: 'Radar cao cấp' }
+                      ].map(feat => {
+                         const currentFeatures = newPackage.features ? newPackage.features.split(',').map(f => f.trim()) : [];
+                         const isChecked = currentFeatures.includes(feat.id);
+                         
+                         return (
+                            <label key={feat.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                               isChecked 
+                               ? (isDarkMode ? 'bg-indigo-900/20 border-indigo-500 text-indigo-400' : 'bg-indigo-50 border-indigo-200 text-indigo-600')
+                               : (isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-500' : 'bg-white border-slate-100 text-slate-400')
+                            }`}>
+                               <input 
+                                  type="checkbox"
+                                  className="sr-only"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                     let newFeatures;
+                                     if (e.target.checked) {
+                                        newFeatures = [...currentFeatures, feat.id];
+                                     } else {
+                                        newFeatures = currentFeatures.filter(f => f !== feat.id);
+                                     }
+                                     setNewPackage({ ...newPackage, features: newFeatures.join(', ') });
+                                  }}
+                               />
+                               <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${isChecked ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'}`}>
+                                  {isChecked && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                               </div>
+                               <span className="text-[11px] font-bold">{feat.label}</span>
+                            </label>
+                         );
+                      })}
+                   </div>
+                </div>
+                <button 
+                  onClick={handleCreatePackage}
+                  disabled={isUpdatingPackage || !newPackage.name}
+                  className={`w-full py-4 rounded-2xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95 disabled:opacity-50`}
+                >
+                  {isUpdatingPackage ? 'Đang tạo...' : 'Xác nhận tạo gói'}
+                </button>
+             </div>
+          </div>
         </div>
       )}
 

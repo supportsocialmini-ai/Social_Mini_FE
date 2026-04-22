@@ -18,6 +18,15 @@ const adminService = {
   },
   deletePost: (postId) => {
     return axiosClient.delete(`api/admin/posts/${postId}`);
+  },
+  getPackages: () => {
+    return axiosClient.get('api/admin/packages');
+  },
+  updatePackage: (id, data) => {
+    return axiosClient.put(`api/admin/packages/${id}`, data);
+  },
+  createPackage: (data) => {
+    return axiosClient.post('api/admin/packages', data);
   }
 };
 

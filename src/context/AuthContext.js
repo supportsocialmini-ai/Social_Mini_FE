@@ -38,10 +38,9 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem('accessToken');
-      if (token && (!user || !user.userId)) {
+      if (token) {
         try {
           const userData = await userService.getProfile();
-          localStorage.setItem('user', JSON.stringify(userData));
           setUser(userData);
         } catch (error) {
           console.error("Lỗi lấy thông tin profile:", error);
@@ -127,6 +126,18 @@ export const AuthProvider = ({ children }) => {
   const userRoles = user?.userRoles?.map(ur => ur.role?.name) || [];
   const tokenRole = getRoleFromToken(localStorage.getItem('accessToken'));
   const isAdmin = userRoles.includes('Admin') || tokenRole === 'Admin' || (Array.isArray(tokenRole) && tokenRole.includes('Admin'));
+  
+  // Kiểm tra trạng thái Premium: Chỉ cần có ÍT NHẤT MỘT subscription đang active là được
+  const isPremium = user?.subscriptions?.some(s => s.isActive) || false;
+  
+  // Kiểm tra xem user có tính năng cụ thể nào không (Dựa trên Feature của các gói đang active)
+  const hasFeature = (featureName) => {
+    if (isAdmin) return true; // Admin có mọi quyền
+    if (!user?.subscriptions) return false;
+    
+    const featureList = user.activeFeatures || [];
+    return featureList.some(f => f.toLowerCase() === featureName.toLowerCase());
+  };
 
   return (
     <AuthContext.Provider value={{ 
@@ -137,7 +148,9 @@ export const AuthProvider = ({ children }) => {
       updateUserData, 
       getFullAvatarUrl, 
       isAuthenticated: !!user,
-      isAdmin // Thêm cái này
+      isAdmin,
+      isPremium,
+      hasFeature
     }}>
       {children}
     </AuthContext.Provider>

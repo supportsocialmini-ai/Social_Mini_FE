@@ -16,6 +16,7 @@ import ForgotPassword from './pages/ForgotPassword/ForgotPassword';
 import ResetPassword from './pages/ResetPassword/ResetPassword';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import RandomChat from './pages/Chat/RandomChat';
+import PaymentResult from './pages/Payment/PaymentResult';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import MentalLetterModal from './components/Common/MentalLetterModal';
@@ -86,6 +87,7 @@ function App() {
             <Route path="/settings" element={<PrivateRoute isMaintenance={isMaintenance}><Settings /></PrivateRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/chat-random" element={<PrivateRoute isMaintenance={isMaintenance}><RandomChat /></PrivateRoute>} />
+            <Route path="/payment-result" element={<PaymentResult />} />
           </Routes>
           <ToastContainer
             position="top-right"
