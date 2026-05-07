@@ -24,6 +24,7 @@ const Register = () => {
     fullName: '',
     username: '',
     email: '',
+    phoneNumber: '',
     password: '',
     confirmPassword: ''
   });
@@ -67,6 +68,12 @@ const Register = () => {
       const msg = !formData.email ? t('api.EmailRequired') : t('api.EmailInvalid');
       return toast.warn(msg);
     }
+    const phoneRegex = /^(0[3|5|7|8|9])([0-9]{8})$/;
+    if (!formData.phoneNumber || !phoneRegex.test(formData.phoneNumber)) {
+      setIsLoading(false);
+      const msg = !formData.phoneNumber ? t('api.PhoneNumberRequired') : t('api.PhoneNumberInvalid');
+      return toast.warn(msg);
+    }
     if (!formData.password || !passwordRegex.test(formData.password)) {
       setIsLoading(false);
       const msg = !formData.password ? t('api.PasswordRequired') : (formData.password.length < 6 || formData.password.length > 50 ? t('api.PasswordLength') : t('api.PasswordInvalid'));
@@ -92,6 +99,7 @@ const Register = () => {
         password: formData.password,
         fullName: formData.fullName,
         email: formData.email,
+        phoneNumber: formData.phoneNumber,
         avatarUrl: "default_avatar.png",
         isVerified: false,
         isActive: true
@@ -328,6 +336,20 @@ const Register = () => {
                     required
                   />
                 </div>
+              </div>
+
+              {/* Phone Number */}
+              <div>
+                <label className="block text-base font-semibold text-slate-700 mb-2">{t('auth.phoneNumber')}</label>
+                <input
+                  name="phoneNumber"
+                  type="text"
+                  placeholder="0912345678"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  className="w-full px-5 py-4 rounded-xl border border-slate-200 bg-white text-slate-700 placeholder:text-slate-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-400 transition-all"
+                  required
+                />
               </div>
 
               {/* Password & Confirm */}

@@ -8,15 +8,18 @@ const postService = {
     return axiosClient.get('api/post/mypost');
   },
   createPost: (postData) => {
-    // postData bao gồm { content, privacy }
+    // postData bao gồm { content, privacy, groupId }
     return axiosClient.post('api/post', postData);
   },
-  createPostWithImage: (content, privacy, imageFile) => {
+  createPostWithImage: (content, privacy, imageFile, groupId) => {
     const formData = new FormData();
     formData.append('Content', content);
     formData.append('Privacy', privacy);
     if (imageFile) {
       formData.append('ImageFile', imageFile);
+    }
+    if (groupId) {
+      formData.append('GroupId', groupId);
     }
     return axiosClient.post('api/image-upload', formData);
   },

@@ -68,6 +68,7 @@
       "registerSubtitle": "Starts in just 1 minute!",
       "fullName": "Full Name",
       "email": "Email",
+      "phoneNumber": "Phone Number",
       "creatingAccount": "Creating account...",
       "hasAccount": "Already have an account?",
       "passwordHint": "Password must have at least 6 characters, including uppercase, lowercase, and numbers.",
@@ -253,7 +254,8 @@
         "Register": {
           "Success": "Registration successful! Please check your email for the 6-digit code.",
           "UserExists": "Username already exists!",
-          "EmailExists": "Email already in use!"
+          "EmailExists": "Email already in use!",
+          "PhoneExists": "Phone number already in use!"
         },
         "Login": {
           "Success": "Login successful! Welcome back.",
@@ -361,6 +363,8 @@
       "PasswordRequired": "Password is required",
       "PasswordInvalid": "Password must have at least 1 uppercase, 1 lowercase, and 1 digit",
       "PasswordLength": "Password must be between 6 and 50 characters",
+      "PhoneNumberRequired": "Phone Number is required",
+      "PhoneNumberInvalid": "Invalid Phone Number (e.g., 0912345678)",
       "ContentRequired": "Content is required",
       "PostTooLong": "Post is too long (max 1000 characters)",
       "CommentTooLong": "Comment is too long (max 200 characters)",

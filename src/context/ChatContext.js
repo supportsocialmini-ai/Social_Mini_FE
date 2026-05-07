@@ -9,6 +9,7 @@ const ChatContext = createContext();
 export const ChatProvider = ({ children }) => {
   const { user } = useAuth();
   const [connection, setConnection] = useState(null);
+  const [openChats, setOpenChats] = useState([]);
 
   // WebRTC States
   const [call, setCall] = useState(null); // { targetUser, type, isIncoming, status: 'ringing'|'connected' }
@@ -35,11 +36,9 @@ export const ChatProvider = ({ children }) => {
 
   const fetchUnreadCount = async () => {
     try {
-      // Lấy tổng số tin nhắn chưa đọc
       const countRes = await axiosClient.get('api/chat/unread-count');
       setUnreadMessageCount(countRes?.result || countRes || 0);
 
-      // Lấy chi tiết số tin nhắn theo từng người gửi
       const countsRes = await axiosClient.get('api/chat/unread-counts');
       const countsData = countsRes?.result || countsRes?.$values || countsRes || [];
       const countsMap = {};
@@ -57,12 +56,23 @@ export const ChatProvider = ({ children }) => {
   const fetchOnlineUsers = async () => {
     try {
       const ids = await axiosClient.get('api/chat/online-users');
-      // axiosClient trả về result, là mảng id
       const data = ids?.$values || ids || [];
       setOnlineUsers(new Set(data));
     } catch (error) {
       console.error("Lỗi fetch online users:", error);
     }
+  };
+
+  const handleOpenChat = (chatUser) => {
+    setOpenChats(prev => {
+      const chatId = chatUser.isGroup ? `group_${chatUser.conversationId}` : chatUser.userId;
+      if (prev.find(c => (c.isGroup ? `group_${c.conversationId}` : c.userId) === chatId)) return prev;
+      return [...prev, chatUser];
+    });
+  };
+
+  const handleCloseChat = (chatId) => {
+    setOpenChats(prev => prev.filter(c => (c.isGroup ? `group_${c.conversationId}` : c.userId) !== chatId));
   };
 
   useEffect(() => {
@@ -85,50 +95,44 @@ export const ChatProvider = ({ children }) => {
           fetchUnreadCount();
           fetchOnlineUsers();
 
-          // Lắng nghe tin nhắn mới
           newConnection.on("ReceiveMessage", (senderId, content, imageUrl, createdAt) => {
             fetchUnreadCount();
-
-            // Cập nhật local counts nhanh hơn 
             setUnreadMessageCount(prev => prev + 1);
             setUnreadCountsPerUser(prev => ({
               ...prev,
               [senderId]: (prev[senderId] || 0) + 1
             }));
 
-            // Nếu không phải đang ở trang Messaging thì hiện Toast
             if (window.location.pathname !== '/messaging' && senderId !== user?.userId) {
-              toast.info(`${t('messaging.title')}: ${content?.substring(0, 30)}${content?.length > 30 ? '...' : ''}`, {
-                onClick: () => window.location.href = '/messaging'
-              });
+              toast.info(`Tin nhắn mới: ${content?.substring(0, 30)}${content?.length > 30 ? '...' : ''}`);
             }
 
-            // Xử lý Signaling WebRTC
             if (content?.startsWith('[RTC_SIGNAL]')) {
-              console.log("Đã nhận tín hiệu WebRTC từ:", senderId);
               try {
                 const signalData = JSON.parse(content.replace('[RTC_SIGNAL]', ''));
                 handleIncomingSignal(senderId, signalData);
-              } catch (e) {
-                console.error("Lỗi parse signal:", e);
-              }
+              } catch (e) { console.error("Lỗi parse signal:", e); }
             }
           });
 
-          // Lắng nghe trạng thái online/offline realtime
+          newConnection.on("ReceiveGroupMessage", (messageId, groupId, senderId, senderName, senderAvatar, content, imageUrl, createdAt) => {
+            if (senderId !== user?.userId) {
+              toast.info(`Nhóm: ${content?.substring(0, 30)}${content?.length > 30 ? '...' : ''}`);
+            }
+          });
+
           newConnection.on("UserOnline", (userId) => {
-            setOnlineUsers(prev => new Set([...prev, userId])); // Không cần Number()
+            setOnlineUsers(prev => new Set([...prev, userId]));
           });
 
           newConnection.on("UserOffline", (userId) => {
             setOnlineUsers(prev => {
               const next = new Set(prev);
-              next.delete(userId); // Không cần Number()
+              next.delete(userId);
               return next;
             });
           });
 
-          // --- RANDOM CHAT LISTENERS ---
           newConnection.on("WaitingInQueue", (total, matching) => {
             setQueueStats(prev => ({ ...prev, total, matching }));
           });
@@ -151,7 +155,7 @@ export const ChatProvider = ({ children }) => {
               ...prev,
               partner: { ...user, isAnonymous: false }
             }));
-            toast.success("Chà! Hai bạn thật hợp nhau. Danh tính đã được tiết lộ!");
+            toast.success("Danh tính đã được tiết lộ!");
           });
 
           newConnection.on("PartnerLeft", () => {
@@ -163,13 +167,8 @@ export const ChatProvider = ({ children }) => {
              setRandomChatState(prev => ({ ...prev, partnerLikedMe: true }));
              toast.info("Đối phương đã thả tim cho bạn!");
           });
-
-          newConnection.on("WaitingInQueue", () => {
-             setRandomChatState(prev => ({ ...prev, status: 'searching' }));
-          });
         })
         .catch(err => {
-          // Im lặng trước các lỗi dừng kết nối khi đang đàm phán (AbortError) - thường xảy ra khi reload trang hoặc StrictMode
           if (err.name === 'AbortError' || err.toString().includes('AbortError')) return;
           console.error("SignalR Connection Error: ", err);
         });
@@ -184,10 +183,9 @@ export const ChatProvider = ({ children }) => {
   const handleIncomingSignal = async (senderId, signal) => {
     if (signal.type === 'offer') {
       try {
-        // Lấy danh sách user để tìm thông tin người gọi
         const usersRes = await axiosClient.get('api/user/all');
         const allUsers = usersRes?.$values || usersRes || [];
-        const callerData = Array.isArray(allUsers) ? allUsers.find(u => u.userId === parseInt(senderId)) : null;
+        const callerData = Array.isArray(allUsers) ? allUsers.find(u => u.userId === senderId) : null;
 
         setCall({
           targetUser: {
@@ -201,7 +199,6 @@ export const ChatProvider = ({ children }) => {
           signal
         });
       } catch (e) {
-        console.error("Lỗi lấy thông tin người gọi:", e);
         setCall({ targetUser: { userId: senderId }, type: signal.callType, isIncoming: true, status: 'ringing', signal });
       }
     } else if (signal.type === 'answer') {
@@ -209,17 +206,13 @@ export const ChatProvider = ({ children }) => {
         try {
           await peerConnection.current.setRemoteDescription(new RTCSessionDescription(signal.sdp));
           processPendingCandidates();
-        } catch (e) {
-          console.error("Lỗi setRemoteDescription (answer):", e);
-        }
+        } catch (e) { console.error(e); }
       }
     } else if (signal.type === 'candidate') {
       if (peerConnection.current && peerConnection.current.remoteDescription) {
         try {
           await peerConnection.current.addIceCandidate(new RTCIceCandidate(signal.candidate));
-        } catch (e) {
-          console.error("Lỗi addIceCandidate:", e);
-        }
+        } catch (e) { console.error(e); }
       } else {
         pendingCandidates.current.push(signal.candidate);
       }
@@ -234,9 +227,7 @@ export const ChatProvider = ({ children }) => {
         const candidate = pendingCandidates.current.shift();
         try {
           await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch (e) {
-          console.error("Lỗi add pending candidate:", e);
-        }
+        } catch (e) { console.error(e); }
       }
     }
   };
@@ -252,9 +243,7 @@ export const ChatProvider = ({ children }) => {
       await pc.setLocalDescription(offer);
 
       sendSignal(targetUser.userId, { type: 'offer', sdp: offer, callType: type });
-    } catch (err) {
-      console.error("Lỗi bắt đầu cuộc gọi:", err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const acceptCall = async () => {
@@ -268,17 +257,13 @@ export const ChatProvider = ({ children }) => {
       try {
         await pc.setRemoteDescription(new RTCSessionDescription(call.signal.sdp));
         processPendingCandidates();
-      } catch (e) {
-        console.error("Lỗi setRemoteDescription (offer):", e);
-      }
+      } catch (e) { console.error(e); }
 
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 
       sendSignal(call.targetUser.userId, { type: 'answer', sdp: answer });
-    } catch (err) {
-      console.error("Lỗi chấp nhận cuộc gọi:", err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const declineCall = () => {
@@ -288,9 +273,7 @@ export const ChatProvider = ({ children }) => {
 
   const endCall = (notify = true) => {
     if (notify && call) sendSignal(call.targetUser.userId, { type: 'hangup' });
-    if (localStream) {
-      localStream.getTracks().forEach(t => t.stop());
-    }
+    if (localStream) localStream.getTracks().forEach(t => t.stop());
     if (peerConnection.current) {
       peerConnection.current.close();
       peerConnection.current = null;
@@ -305,19 +288,11 @@ export const ChatProvider = ({ children }) => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
     });
-
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
     pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        sendSignal(targetUserId, { type: 'candidate', candidate: event.candidate });
-      }
+      if (event.candidate) sendSignal(targetUserId, { type: 'candidate', candidate: event.candidate });
     };
-
-    pc.ontrack = (event) => {
-      setRemoteStream(event.streams[0]);
-    };
-
+    pc.ontrack = (event) => setRemoteStream(event.streams[0]);
     peerConnection.current = pc;
     return pc;
   };
@@ -332,6 +307,9 @@ export const ChatProvider = ({ children }) => {
   return (
     <ChatContext.Provider value={{
       connection,
+      openChats,
+      handleOpenChat,
+      handleCloseChat,
       unreadMessageCount,
       setUnreadMessageCount,
       unreadCountsPerUser,

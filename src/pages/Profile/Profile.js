@@ -29,11 +29,15 @@ const Profile = () => {
     avatarUrl: '', 
     bio: '',
     gender: '',
-    dateOfBirth: ''
+    dateOfBirth: '',
+    phoneNumber: '',
+    interests: ''
   });
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef(null);
+
+  const SUGGESTED_INTERESTS = ["Công nghệ", "Đánh cầu", "Du lịch", "Ẩm thực", "Âm nhạc", "Phim ảnh", "Kinh doanh", "Thể thao", "Nghệ thuật"];
 
   const isOwnProfile = !routeUserId || routeUserId === String(currentUser?.userId);
 
@@ -81,7 +85,9 @@ const Profile = () => {
               avatarUrl: currentUser.avatarUrl || '',
               bio: currentUser.bio || '',
               gender: currentUser.gender || '',
-              dateOfBirth: currentUser.dateOfBirth ? currentUser.dateOfBirth.split('T')[0] : ''
+              dateOfBirth: currentUser.dateOfBirth ? currentUser.dateOfBirth.split('T')[0] : '',
+              phoneNumber: currentUser.phoneNumber || '',
+              interests: currentUser.interests || ''
             });
           }
         } else {
@@ -95,7 +101,9 @@ const Profile = () => {
             avatarUrl: foundUser?.avatarUrl || '',
             bio: foundUser?.bio || '',
             gender: foundUser?.gender || '',
-            dateOfBirth: foundUser?.dateOfBirth ? foundUser?.dateOfBirth.split('T')[0] : ''
+            dateOfBirth: foundUser?.dateOfBirth ? foundUser?.dateOfBirth.split('T')[0] : '',
+            phoneNumber: foundUser?.phoneNumber || '',
+            interests: foundUser?.interests || ''
           });
 
           // Lấy trạng thái bạn bè thực tế từ DB
@@ -166,9 +174,17 @@ const Profile = () => {
       return toast.warn(!emailRegex.test(formData.email) ? t('api.EmailInvalid') : t('api.EmailLength') || 'Email too long');
     }
 
+    const phoneRegex = /^(0[3|5|7|8|9])([0-9]{8})$/;
+    if (formData.phoneNumber && !phoneRegex.test(formData.phoneNumber)) {
+      return toast.warn(t('api.PhoneNumberInvalid'));
+    }
+
     setLoading(true);
     try {
-      const response = await userService.updateUser(formData);
+      const payload = { ...formData };
+      if (payload.dateOfBirth === '') payload.dateOfBirth = null;
+      
+      const response = await userService.updateUser(payload);
       updateUserData(response || formData);
       setIsEditing(false); 
       toast.success(t('api.User.Profile.UpdateSuccess'));
@@ -365,14 +381,24 @@ const Profile = () => {
             )}
           </div>
           <p className="text-gray-500 text-sm mb-3">@{profileUser?.username || 'username'}</p>
-          <p className="text-gray-700 text-sm leading-relaxed max-w-lg mb-3">
-            {profileUser?.email ? `📧 ${profileUser.email}` : ''}
+          <p className="text-gray-700 text-sm leading-relaxed max-w-lg mb-3 flex flex-col gap-1">
+            {profileUser?.email && <span>📧 {profileUser.email}</span>}
+            {profileUser?.phoneNumber && <span>📱 {profileUser.phoneNumber}</span>}
           </p>
           {profileUser?.bio && (
             <div className="bg-slate-50/50 border-l-4 border-indigo-200 px-4 py-2 rounded-r-xl mb-4 max-w-xl">
               <p className="text-gray-600 text-sm leading-relaxed italic">
                 {profileUser.bio}
               </p>
+            </div>
+          )}
+          {profileUser?.interests && (
+            <div className="flex flex-wrap gap-2 mt-2 mb-4">
+              {profileUser.interests.split(',').map((interest, idx) => (
+                <span key={idx} className="px-2.5 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-lg border border-indigo-100/50">
+                  #{interest.trim()}
+                </span>
+              ))}
             </div>
           )}
           <div className="flex items-center gap-4 text-xs text-gray-400">
@@ -542,6 +568,44 @@ const Profile = () => {
                   <textarea name="bio" value={formData.bio} onChange={handleChange} maxLength={255} rows="3"
                     placeholder={t('profile.bioPlaceholder')}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none" />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('auth.phoneNumber')}</label>
+                  <input name="phoneNumber" type="text" value={formData.phoneNumber} onChange={handleChange} placeholder="0912345678"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sở thích</label>
+                  <div className="flex flex-wrap gap-2">
+                    {SUGGESTED_INTERESTS.map(interest => {
+                      const isSelected = formData.interests?.split(',').map(i => i.trim()).includes(interest);
+                      return (
+                        <button
+                          key={interest}
+                          type="button"
+                          onClick={() => {
+                            const currentInterests = formData.interests ? formData.interests.split(',').map(i => i.trim()) : [];
+                            let newInterests;
+                            if (isSelected) {
+                              newInterests = currentInterests.filter(i => i !== interest);
+                            } else {
+                              newInterests = [...currentInterests, interest];
+                            }
+                            setFormData({ ...formData, interests: newInterests.join(', ') });
+                          }}
+                          className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                            isSelected 
+                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100' 
+                              : 'bg-white text-slate-500 border-slate-100 hover:border-indigo-300'
+                          }`}
+                        >
+                          {interest}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 
 const Navbar = () => {
   const { user, logout, getFullAvatarUrl, isAdmin } = useAuth();
-  const { unreadMessageCount, onlineUsers, unreadCountsPerUser, connection } = useChat();
+  const { unreadMessageCount, onlineUsers, unreadCountsPerUser, connection, openChats, handleOpenChat, handleCloseChat } = useChat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,7 +24,6 @@ const Navbar = () => {
   const [isSuggestOpen, setIsSuggestOpen] = useState(false);
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const [openChats, setOpenChats] = useState([]);
 
   const searchRef = useRef(null);
   const notifRef = useRef(null);
@@ -117,17 +116,6 @@ const Navbar = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleOpenChat = (chatUser) => {
-    setOpenChats(prev => {
-      if (prev.find(c => c.userId === chatUser.userId)) return prev;
-      return [...prev, chatUser];
-    });
-  };
-
-  const handleCloseChat = (userId) => {
-    setOpenChats(prev => prev.filter(c => c.userId !== userId));
   };
 
   return (
@@ -230,13 +218,11 @@ const Navbar = () => {
                   </span>
                 )}
               </button>
-              {/* Notification Dropdown — always rendered to prevent jitter */}
+              {/* Notification Dropdown */}
               <div
                 className="absolute right-0 top-full mt-3 bg-white rounded-[1.5rem] shadow-[0_20px_60px_-15px_rgba(99,102,241,0.3),0_10px_20px_-5px_rgba(0,0,0,0.1)] border border-slate-100 z-50 w-80 max-h-96 overflow-hidden flex flex-col"
                 style={{
                   backgroundColor: '#ffffff',
-                  backdropFilter: 'none',
-                  WebkitBackdropFilter: 'none',
                   opacity: isNotifOpen ? 1 : 0,
                   transform: isNotifOpen ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.95)',
                   pointerEvents: isNotifOpen ? 'auto' : 'none',
@@ -360,24 +346,6 @@ const Navbar = () => {
                 </svg>
               </button>
             </div>
-            {searchInput.trim().length >= 2 && suggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden max-h-60 overflow-y-auto">
-                {suggestions.map((u) => (
-                  <button
-                    key={u.userId}
-                    onClick={() => { setIsMobileSearchOpen(false); handleSuggestionClick(u.userId); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-indigo-50 transition-colors group text-left"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-blue-500 overflow-hidden flex-shrink-0">
-                      <img src={getFullAvatarUrl(u.avatarUrl, u.fullName || u.username)} alt="" className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate">@{u.username}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -388,7 +356,7 @@ const Navbar = () => {
           { to: '/', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', label: t('navbar.feed') },
           { to: '/friends', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', label: t('navbar.friends') },
           { to: '/chat-random', icon: 'M13 10V3L4 14h7v7l9-11h-7z', label: 'Random' },
-          { to: '/messaging', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', label: t('navbar.chat'), count: unreadMessageCount },
+          { to: '/messaging', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', label: t('navbar.chat'), count: unreadMessageCount },
           { to: '/settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z', label: t('navbar.settings') },
         ].map(item => (
           <Link key={item.to} to={item.to} className="relative p-3 rounded-2xl transition-all text-gray-400 hover:bg-gray-50">
@@ -404,7 +372,6 @@ const Navbar = () => {
         ))}
       </div>
 
-      {/* Floating Chat Bubbles */}
       <ChatBubbleManager
         openChats={openChats}
         onClose={handleCloseChat}

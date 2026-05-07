@@ -11,7 +11,7 @@ const Settings = () => {
   const { user, logout, getFullAvatarUrl, updateUserData } = useAuth();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('security');
+  const [activeTab, setActiveTab] = useState('edit-profile');
   const [loading, setLoading] = useState(false);
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -20,7 +20,8 @@ const Settings = () => {
   const [formData, setFormData] = useState({
     fullName: user?.fullName || '',
     username: user?.username || '',
-    bio: user?.bio || ''
+    bio: user?.bio || '',
+    phoneNumber: user?.phoneNumber || ''
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -30,6 +31,11 @@ const Settings = () => {
   });
 
   const sidebarItems = [
+    { id: 'edit-profile', label: t('settings.editProfile'), icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+    )},
     { id: 'security', label: t('settings.security'), icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -73,6 +79,11 @@ const Settings = () => {
 
     if (formData.bio && formData.bio.length > 255) {
         return toast.warn(t('api.BioTooLong'));
+    }
+
+    const phoneRegex = /^(0[3|5|7|8|9])([0-9]{8})$/;
+    if (formData.phoneNumber && !phoneRegex.test(formData.phoneNumber)) {
+        return toast.warn(t('api.PhoneNumberInvalid'));
     }
 
     setLoading(true);
@@ -263,6 +274,17 @@ const Settings = () => {
                       className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none transition-all"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2 mb-6">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('auth.phoneNumber')}</label>
+                  <input 
+                    type="text" 
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                    placeholder="0912345678"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none transition-all"
+                  />
                 </div>
 
                 <div className="space-y-2 mb-8">

@@ -16,6 +16,8 @@ import ForgotPassword from './pages/ForgotPassword/ForgotPassword';
 import ResetPassword from './pages/ResetPassword/ResetPassword';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import RandomChat from './pages/Chat/RandomChat';
+import Groups from './pages/Groups/Groups';
+import GroupDetail from './pages/Groups/GroupDetail';
 import PaymentResult from './pages/Payment/PaymentResult';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -87,6 +89,8 @@ function App() {
             <Route path="/settings" element={<PrivateRoute isMaintenance={isMaintenance}><Settings /></PrivateRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/chat-random" element={<PrivateRoute isMaintenance={isMaintenance}><RandomChat /></PrivateRoute>} />
+            <Route path="/groups" element={<PrivateRoute isMaintenance={isMaintenance}><Groups /></PrivateRoute>} />
+            <Route path="/groups/:groupId" element={<PrivateRoute isMaintenance={isMaintenance}><GroupDetail /></PrivateRoute>} />
             <Route path="/payment-result" element={<PaymentResult />} />
           </Routes>
           <ToastContainer

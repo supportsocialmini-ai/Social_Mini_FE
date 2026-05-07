@@ -26,7 +26,7 @@ const PrivacyIcon = ({ privacy, className = "h-3.5 w-3.5" }) => {
  * PostCreator — isolated component so that typing only re-renders THIS component,
  * not the entire Home page (which would trigger re-render of all PostCards, sidebars, etc.)
  */
-const PostCreator = ({ user, getFullAvatarUrl, onPostSuccess }) => {
+const PostCreator = ({ user, getFullAvatarUrl, onPostSuccess, groupId }) => {
   const { t } = useTranslation();
   const [postContent, setPostContent] = useState('');
   const [isPosting, setIsPosting]     = useState(false);
@@ -52,9 +52,9 @@ const PostCreator = ({ user, getFullAvatarUrl, onPostSuccess }) => {
     setIsPosting(true);
     try {
       if (imageFile) {
-        await postService.createPostWithImage(postContent, privacy, imageFile);
+        await postService.createPostWithImage(postContent, privacy, imageFile, groupId);
       } else {
-        await postService.createPost({ Content: postContent, privacy });
+        await postService.createPost({ Content: postContent, privacy, groupId });
       }
       setPostContent('');
       setImagePreview(null);

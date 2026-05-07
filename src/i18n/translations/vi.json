@@ -68,6 +68,7 @@
       "registerSubtitle": "Chỉ mất 1 phút để bắt đầu!",
       "fullName": "Họ và tên",
       "email": "Email",
+      "phoneNumber": "Số điện thoại",
       "creatingAccount": "Đang tạo tài khoản...",
       "hasAccount": "Đã có tài khoản?",
       "passwordHint": "Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ hoa, chữ thường và số.",
@@ -186,7 +187,8 @@
         "Register": {
           "Success": "Đăng ký thành công! Vui lòng kiểm tra email để lấy mã xác nhận 6 chữ số.",
           "UserExists": "Tên đăng nhập đã tồn tại!",
-          "EmailExists": "Email đã được sử dụng!"
+          "EmailExists": "Email đã được sử dụng!",
+          "PhoneExists": "Số điện thoại đã được sử dụng!"
         },
         "Login": {
           "Success": "Đăng nhập thành công! Chào mừng bạn quay trở lại.",
@@ -294,6 +296,8 @@
       "PasswordRequired": "Mật khẩu không được để trống",
       "PasswordInvalid": "Mật khẩu phải có nhất 1 chữ hoa, 1 chữ thường và 1 số",
       "PasswordLength": "Mật khẩu phải từ 6 đến 50 ký tự",
+      "PhoneNumberRequired": "Số điện thoại không được để trống",
+      "PhoneNumberInvalid": "Số điện thoại không đúng định dạng (VD: 0912345678)",
       "ContentRequired": "Nội dung không được để trống",
       "PostTooLong": "Bài viết quá dài (tối đa 1000 ký tự)",
       "CommentTooLong": "Bình luận quá dài (tối đa 200 ký tự)",

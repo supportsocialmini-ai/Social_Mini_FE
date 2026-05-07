@@ -15,14 +15,25 @@ const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUs
   const typingRef = useRef(null);
   const selectedUserRef = useRef(chatUser);
 
+  const isGroup = chatUser.isGroup || false;
+  const conversationId = chatUser.conversationId || chatUser.userId;
+
   useEffect(() => { selectedUserRef.current = chatUser; }, [chatUser]);
 
   // Fetch message history
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await messageService.getMessages(chatUser.userId);
-        const history = res.data || res?.$values || res || [];
+        let history = [];
+        if (isGroup) {
+          const res = await messageService.getGroupMessages(conversationId);
+          history = res.data || res?.$values || res || [];
+        } else {
+          const res = await messageService.getMessages(chatUser.userId);
+          history = res.data || res?.$values || res || [];
+          await messageService.markAsRead(chatUser.userId);
+        }
+        
         setMessages(
           history
             .filter(m => {
@@ -30,28 +41,38 @@ const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUs
               return !c.startsWith('[RTC_SIGNAL]');
             })
             .map(m => ({
+              messageId: m.messageId || m.MessageId,
               senderId: m.senderId || m.SenderId,
+              senderName: m.senderName || m.SenderName || (m.sender?.fullName),
+              senderAvatar: m.senderAvatar || m.SenderAvatar || (m.sender?.avatarUrl),
               messageContent: m.messageContent || m.MessageContent,
               imageUrl: m.imageUrl || m.ImageUrl,
               createdAt: m.createdAt || m.CreatedAt,
               isRead: m.isRead || m.IsRead,
             }))
         );
-        await messageService.markAsRead(chatUser.userId);
       } catch (e) { console.error(e); }
     };
     load();
-  }, [chatUser.userId]);
+  }, [conversationId, isGroup]);
 
   // SignalR listeners
   useEffect(() => {
     if (!connection) return;
-    const handleMsg = (senderId, content, imageUrl, createdAt) => {
+
+    if (isGroup && connection?.state === 'Connected') {
+      connection.invoke('JoinGroup', conversationId).catch(err => console.error("Error joining SignalR group:", err));
+    }
+
+    const handlePrivateMsg = (senderId, content, imageUrl, createdAt) => {
+      if (isGroup) return; // Ignore private messages in group window
       if (content?.startsWith('[RTC_SIGNAL]')) return;
+      
       const sId = senderId?.toString();
       const myId = currentUser?.userId?.toString();
-      const targetId = selectedUserRef.current?.userId?.toString();
-      if (sId === myId || sId === targetId) {
+      const targetId = isGroup ? null : selectedUserRef.current?.userId?.toString();
+      
+      if (sId === myId || (targetId && sId === targetId)) {
         setMessages(prev => [...prev, {
           senderId, messageContent: content, imageUrl,
           createdAt: createdAt || new Date().toISOString(), isRead: false,
@@ -59,16 +80,46 @@ const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUs
         if (sId === targetId) messageService.markAsRead(targetId).catch(() => {});
       }
     };
-    const handleTyping = (sid, isTyping) => {
-      if (sid?.toString() === selectedUserRef.current?.userId?.toString()) setIsOtherTyping(isTyping);
+
+    const handleGroupMsg = (messageId, groupId, senderId, senderName, senderAvatar, content, imageUrl, createdAt) => {
+      if (!isGroup || groupId !== conversationId) return;
+
+      setMessages(prev => {
+        // Tránh tin nhắn trùng lặp (vì SignalR gửi cho cả Caller và Group)
+        if (prev.some(m => m.messageId === messageId)) return prev;
+        
+        return [...prev, {
+          messageId,
+          senderId,
+          senderName,
+          senderAvatar,
+          messageContent: content,
+          imageUrl,
+          createdAt: createdAt || new Date().toISOString(),
+          isRead: true
+        }];
+      });
     };
-    connection.on('ReceiveMessage', handleMsg);
+
+    const chatId = isGroup ? `group_${conversationId}` : chatUser.userId?.toString();
+
+    const handleTyping = (sid, isTyping) => {
+      const currentTargetId = isGroup ? null : selectedUserRef.current?.userId?.toString();
+      if (!isGroup && sid?.toString() === currentTargetId) {
+        setIsOtherTyping(isTyping);
+      }
+    };
+
+    connection.on('ReceiveMessage', handlePrivateMsg);
+    connection.on('ReceiveGroupMessage', handleGroupMsg);
     connection.on('UserTyping', handleTyping);
+
     return () => {
-      connection.off('ReceiveMessage', handleMsg);
+      connection.off('ReceiveMessage', handlePrivateMsg);
+      connection.off('ReceiveGroupMessage', handleGroupMsg);
       connection.off('UserTyping', handleTyping);
     };
-  }, [connection, currentUser]);
+  }, [connection, currentUser, isGroup, conversationId]);
 
   useEffect(() => {
     if (!isMinimized) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -78,15 +129,19 @@ const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUs
     e?.preventDefault();
     if (!inputText.trim() || !connection || connection.state !== 'Connected') return;
     try {
-      await connection.invoke('SendPrivateMessage', chatUser.userId, inputText.trim(), null);
+      if (isGroup) {
+        await connection.invoke('SendGroupMessage', conversationId, inputText.trim(), null);
+      } else {
+        await connection.invoke('SendPrivateMessage', chatUser.userId, inputText.trim(), null);
+        connection.invoke('SendTypingStatus', chatUser.userId, false).catch(() => {});
+      }
       setInputText('');
-      connection.invoke('SendTypingStatus', chatUser.userId, false).catch(() => {});
     } catch (err) { console.error(err); }
   };
 
   const handleInputChange = (e) => {
     setInputText(e.target.value);
-    if (connection?.state === 'Connected') {
+    if (!isGroup && connection?.state === 'Connected') {
       connection.invoke('SendTypingStatus', chatUser.userId, true).catch(() => {});
       clearTimeout(typingRef.current);
       typingRef.current = setTimeout(() => {
@@ -95,7 +150,7 @@ const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUs
     }
   };
 
-  const isOnline = onlineUsers?.has(chatUser.userId);
+  const isOnline = !isGroup && onlineUsers?.has(chatUser.userId);
 
   return (
     <div
@@ -110,7 +165,7 @@ const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUs
       {/* Header */}
       <div
         className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer select-none"
-        style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+        style={{ background: isGroup ? 'linear-gradient(135deg, #4f46e5, #7c3aed)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
         onClick={() => setIsMinimized(!isMinimized)}
       >
         <div className="relative w-8 h-8 flex-shrink-0">
@@ -118,14 +173,14 @@ const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUs
             src={chatUser.displayAvatar}
             alt=""
             className="w-8 h-8 rounded-full object-cover border-2 border-white/30"
-            onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(chatUser.displayName)}&background=6366f1&color=fff`; }}
+            onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(chatUser.displayName)}&background=${isGroup ? '4f46e5' : '6366f1'}&color=fff`; }}
           />
           {isOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-white font-bold text-sm truncate">{chatUser.displayName}</p>
           <p className="text-white/60 text-[10px] font-medium">
-            {isOtherTyping ? 'đang gõ...' : isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}
+            {isGroup ? 'Thảo luận nhóm' : isOtherTyping ? 'đang gõ...' : isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}
           </p>
         </div>
         <div className="flex items-center gap-1">
@@ -173,9 +228,13 @@ const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUs
               const imgUrl = m.imageUrl
                 ? getFullAvatarUrl(m.imageUrl)
                 : m.messageContent?.startsWith('[IMAGE]') ? m.messageContent.replace('[IMAGE]', '') : null;
+              
               return (
-                <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-[12px] font-medium shadow-sm ${
+                <div key={i} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                  {isGroup && !isMe && (
+                    <span className="text-[9px] font-bold text-slate-400 mb-0.5 ml-1">{m.senderName}</span>
+                  )}
+                  <div className={`max-w-[85%] px-3 py-2 rounded-2xl text-[12px] font-medium shadow-sm ${
                     isMe
                       ? 'bg-indigo-600 text-white rounded-tr-sm'
                       : 'bg-white text-slate-800 border border-slate-100 rounded-tl-sm'
@@ -239,9 +298,9 @@ const ChatBubbleManager = ({ openChats, onClose, connection, getFullAvatarUrl, c
     <div className="fixed bottom-4 right-4 z-[3000] flex flex-row-reverse items-start gap-3 flex-wrap-reverse max-w-[calc(100vw-2rem)]">
       {openChats.map((chatUser) => (
         <ChatWindow
-          key={chatUser.userId}
+          key={chatUser.isGroup ? `group_${chatUser.conversationId}` : chatUser.userId}
           chatUser={chatUser}
-          onClose={() => onClose(chatUser.userId)}
+          onClose={() => onClose(chatUser.isGroup ? `group_${chatUser.conversationId}` : chatUser.userId)}
           connection={connection}
           getFullAvatarUrl={getFullAvatarUrl}
           currentUser={currentUser}
@@ -258,6 +317,7 @@ const MessengerDropdown = ({ onOpenChat, getFullAvatarUrl, onlineUsers, unreadCo
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [users, setUsers] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
   const { unreadMessageCount } = useChat();
@@ -271,19 +331,37 @@ const MessengerDropdown = ({ onOpenChat, getFullAvatarUrl, onlineUsers, unreadCo
   }, []);
 
   useEffect(() => {
-    if (!isOpen || users.length > 0) return;
-    setLoading(true);
+    if (!isOpen) return;
     const load = async () => {
+      setLoading(true);
       try {
-        const res = await userService.getUsersToChat();
-        const raw = res?.data || res;
-        let data = raw?.result || raw?.Result || raw?.$values || (Array.isArray(raw) ? raw : []);
-        data = data.filter(u => u && u.userId !== user?.userId).map(u => ({
+        const [usersRes, groupsRes] = await Promise.all([
+          userService.getUsersToChat(),
+          import('../../services/groupService').then(m => m.default.getMyGroups())
+        ]);
+        
+        const rawUsers = usersRes?.data || usersRes;
+        let userData = rawUsers?.result || rawUsers?.Result || rawUsers?.$values || (Array.isArray(rawUsers) ? rawUsers : []);
+        userData = userData.filter(u => u && u.userId !== user?.userId).map(u => ({
           ...u,
           displayName: u.fullName || u.FullName || u.username || 'Người dùng',
           displayAvatar: getFullAvatarUrl(u.avatarUrl || u.AvatarUrl) || '',
+          isGroup: false
         }));
-        setUsers(data);
+
+        const rawGroups = groupsRes?.data || groupsRes;
+        let groupData = rawGroups?.$values || (Array.isArray(rawGroups) ? rawGroups : []);
+        groupData = groupData.map(g => ({
+          ...g,
+          userId: g.groupId, 
+          displayName: g.name,
+          displayAvatar: getFullAvatarUrl(g.avatarUrl, g.name),
+          isGroup: true,
+          conversationId: g.conversation?.conversationId || g.groupId 
+        }));
+
+        setUsers(userData);
+        setGroups(groupData);
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
     };
@@ -349,7 +427,7 @@ const MessengerDropdown = ({ onOpenChat, getFullAvatarUrl, onlineUsers, unreadCo
                 </div>
               ))}
             </div>
-          ) : users.length === 0 ? (
+          ) : (users.length === 0 && groups.length === 0) ? (
             <div className="py-16 text-center">
               <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
                 <svg className="w-8 h-8 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
@@ -358,6 +436,38 @@ const MessengerDropdown = ({ onOpenChat, getFullAvatarUrl, onlineUsers, unreadCo
             </div>
           ) : (
             <div className="p-1.5 space-y-0.5">
+              {/* Render Groups First */}
+              {groups.map(g => (
+                <button
+                  key={`group_${g.groupId}`}
+                  onClick={() => { onOpenChat(g); setIsOpen(false); }}
+                  className="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl hover:bg-indigo-50/50 transition-all text-left group relative"
+                >
+                  <div className="relative flex-shrink-0">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white overflow-hidden shadow-md ring-2 ring-white">
+                      <img
+                        src={g.displayAvatar}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(g.displayName)}&background=4f46e5&color=fff`; }}
+                      />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100">
+                      <svg className="w-3 h-3 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">
+                      {g.displayName}
+                    </p>
+                    <p className="text-[10px] font-bold text-indigo-500/70 uppercase tracking-wider">Thảo luận nhóm</p>
+                  </div>
+                </button>
+              ))}
+
+              {/* Render Users */}
               {users.map(u => {
                 const isOnline = onlineUsers?.has(u.userId);
                 const unread = unreadCountsPerUser?.[u.userId] || 0;
@@ -379,7 +489,7 @@ const MessengerDropdown = ({ onOpenChat, getFullAvatarUrl, onlineUsers, unreadCo
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[15px] font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">
+                      <p className="text-[14px] font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">
                         {u.displayName}
                       </p>
                       <p className={`text-xs font-medium truncate ${isOnline ? 'text-indigo-500/80' : 'text-slate-400'}`}>

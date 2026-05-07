@@ -240,11 +240,25 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
             </Link>
 
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <Link to={isPostOwner ? '/profile' : `/profile/${post.userId}`}
                   className="font-bold text-slate-900 text-sm hover:text-indigo-600 transition-colors duration-200">
                   {post.author || 'Người dùng'}
                 </Link>
+                
+                {post.groupName && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-300 font-medium">›</span>
+                    <Link to={`/groups/${post.groupId}`} 
+                      className="font-extrabold text-indigo-600 text-[13px] hover:underline transition-all flex items-center gap-1">
+                      <div className="w-4 h-4 rounded bg-indigo-100 flex items-center justify-center">
+                        <svg className="w-2.5 h-2.5 text-indigo-600" fill="currentColor" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      </div>
+                      {post.groupName}
+                    </Link>
+                  </div>
+                )}
+
                 {isPostOwner ? (
                   <span className="text-[10px] font-bold text-indigo-600 px-2 py-0.5 rounded-full"
                     style={{ background: 'rgba(99,102,241,0.1)' }}>{t('posts.you')}</span>

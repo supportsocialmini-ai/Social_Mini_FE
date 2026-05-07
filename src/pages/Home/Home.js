@@ -20,6 +20,7 @@ const NAV_ITEMS = (t) => [
   { to: '/', label: t('home.nav.home'), grad: 'from-indigo-500 to-blue-500', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
   { to: '/friends', label: t('home.nav.friends'), grad: 'from-violet-500 to-purple-500', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
   { to: '/messaging', label: t('home.nav.messages'), grad: 'from-purple-500 to-pink-500', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
+  { to: '/groups', label: 'Cộng đồng', grad: 'from-orange-500 to-red-500', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
   { to: '/settings', label: t('home.nav.settings'), grad: 'from-slate-500 to-slate-400', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z' },
 ];
 
@@ -38,13 +39,103 @@ const glass = {
 };
 
 const Home = () => {
-  const { user, getFullAvatarUrl } = useAuth();
+  const { user, getFullAvatarUrl, updateUserData } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [suggestions, setSuggestions] = useState([]);
   const [posts, setPosts] = useState([]);
   const [sentIds, setSentIds] = useState(new Set());
+  const [suggestedGroups, setSuggestedGroups] = useState([]);
+  const [showInterestsModal, setShowInterestsModal] = useState(false);
+  const [selectedInterests, setSelectedInterests] = useState([]);
   const [isFeedLoading, setIsFeedLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  const SUGGESTED_INTERESTS = ["Công nghệ", "Đánh cầu", "Du lịch", "Ẩm thực", "Âm nhạc", "Phim ảnh", "Kinh doanh", "Thể thao", "Nghệ thuật"];
+
+  const fetchSuggestions = async () => {
+    try {
+      const response = await userService.getUsers();
+      let data = response?.$values || response || [];
+      if (!Array.isArray(data)) data = [data];
+      
+      const potentialSuggestions = data.filter(u => u && u.userId !== user?.userId).slice(0, 15);
+      
+      const suggestionsWithStatus = await Promise.all(
+        potentialSuggestions.map(async (u) => {
+          try {
+            const statusRes = await friendService.getFriendshipStatus(u.userId);
+            return { ...u, friendshipStatus: statusRes?.status || 'None' };
+          } catch {
+            return { ...u, friendshipStatus: 'None' };
+          }
+        })
+      );
+
+      const finalFiltered = suggestionsWithStatus
+        .filter(u => u.friendshipStatus !== 'Accepted')
+        .slice(0, 5);
+
+      const initiallySent = new Set(
+        finalFiltered
+          .filter(u => u.friendshipStatus === 'Sent')
+          .map(u => u.userId)
+      );
+
+      setSentIds(initiallySent);
+      setSuggestions(finalFiltered);
+    } catch (err) { 
+      console.error('Lỗi lấy suggestions:', err); 
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchPosts();
+      fetchSuggestions();
+      fetchSuggestedGroups();
+      
+      // Check if user has no interests and show modal
+      if (!user.interests) {
+        setShowInterestsModal(true);
+      }
+    }
+  }, [user]);
+
+  const toggleInterest = (interest) => {
+    setSelectedInterests(prev => 
+      prev.includes(interest) 
+        ? prev.filter(i => i !== interest) 
+        : [...prev, interest]
+    );
+  };
+
+  const handleSaveInterests = async () => {
+    if (selectedInterests.length === 0) {
+      toast.info("Vui lòng chọn ít nhất một sở thích để chúng mình gợi ý tốt hơn nhé!");
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const interestsString = selectedInterests.join(', ');
+      const response = await userService.updateUser({
+        fullName: user.fullName,
+        username: user.username,
+        email: user.email,
+        interests: interestsString
+      });
+      
+      updateUserData(response || { ...user, interests: interestsString });
+      setShowInterestsModal(false);
+      toast.success("Tuyệt vời! Đang chuẩn bị không gian riêng cho bạn...");
+      fetchSuggestedGroups();
+    } catch (error) {
+      toast.error("Có lỗi khi lưu sở thích, hãy thử lại sau nhé!");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchPosts = async () => {
     try {
@@ -67,51 +158,15 @@ const Home = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchSuggestions = async () => {
-      try {
-        const response = await userService.getUsers();
-        let data = response?.$values || response || [];
-        if (!Array.isArray(data)) data = [data];
-        
-        // Filter out self and take a few more than needed to account for existing friends
-        const potentialSuggestions = data.filter(u => u && u.userId !== user?.userId).slice(0, 15);
-        
-        // Fetch statuses in parallel
-        const suggestionsWithStatus = await Promise.all(
-          potentialSuggestions.map(async (u) => {
-            try {
-              const statusRes = await friendService.getFriendshipStatus(u.userId);
-              return { ...u, friendshipStatus: statusRes?.status || 'None' };
-            } catch {
-              return { ...u, friendshipStatus: 'None' };
-            }
-          })
-        );
-
-        // Filter out those who are already friends (Accepted)
-        const finalFiltered = suggestionsWithStatus
-          .filter(u => u.friendshipStatus !== 'Accepted')
-          .slice(0, 5);
-
-        // Initialize sentIds state for those already 'Sent'
-        const initiallySent = new Set(
-          finalFiltered
-            .filter(u => u.friendshipStatus === 'Sent')
-            .map(u => u.userId)
-        );
-
-        setSentIds(initiallySent);
-        setSuggestions(finalFiltered);
-      } catch (err) { 
-        console.error('Lỗi lấy suggestions:', err); 
-      }
-    };
-    if (user) { 
-      fetchSuggestions(); 
-      fetchPosts(); 
+  const fetchSuggestedGroups = async () => {
+    try {
+      const { default: groupService } = await import('../../services/groupService');
+      const response = await groupService.getSuggestedGroups();
+      setSuggestedGroups(response?.$values || response || []);
+    } catch (err) {
+      console.error('Lỗi lấy nhóm gợi ý:', err);
     }
-  }, [user]);
+  };
 
   const handlePostSubmit = async () => {
     if (!postContent.trim()) return;
@@ -233,22 +288,19 @@ const Home = () => {
             ))}
 
             <div className="h-px mx-3" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.15), transparent)' }} />
-
-            <p className="text-[10px] font-black text-slate-400/80 uppercase tracking-widest px-3 pt-1">{t('home.friends')}</p>
-            {suggestions.slice(0, 4).map(u => (
-              <Link key={u.userId} to={`/profile/${u.userId}`}
+            
+            <p className="text-[10px] font-black text-slate-400/80 uppercase tracking-widest px-3 pt-1">Cộng đồng gợi ý</p>
+            {suggestedGroups.slice(0, 5).map(g => (
+              <Link key={g.groupId} to={`/groups/${g.groupId}`}
                 className="glass-hover flex items-center gap-3 px-3 py-2 rounded-2xl transition-all duration-300 group"
                 style={glass.card}
               >
-                <div className="relative flex-shrink-0">
-                  <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 ring-2 ring-white/80">
-                    <img src={getFullAvatarUrl(u.avatarUrl, u.fullName || u.username)} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />
+                <div className="w-9 h-9 rounded-xl overflow-hidden bg-indigo-100 flex-shrink-0 border border-indigo-50">
+                  <img src={getFullAvatarUrl(g.avatarUrl, g.name)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-700 truncate group-hover:text-slate-900">{u.fullName}</p>
-                  <p className="text-[10px] text-slate-400 truncate">@{u.username}</p>
+                  <p className="text-sm font-semibold text-slate-700 truncate group-hover:text-indigo-600 transition-colors">{g.name}</p>
+                  <p className="text-[10px] text-slate-400 truncate">{g.category || 'Cộng đồng'}</p>
                 </div>
               </Link>
             ))}
@@ -432,6 +484,62 @@ const Home = () => {
           </div>
         </aside>
       </div>
+      {/* Interests Selection Modal (for new users) */}
+      {showInterestsModal && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity" />
+          <div className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="p-8 md:p-12">
+              <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mb-8 mx-auto rotate-3">
+                <svg className="w-10 h-10 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" />
+                </svg>
+              </div>
+              
+              <div className="text-center mb-10">
+                <h2 className="text-3xl font-black text-slate-800 mb-3 tracking-tight">Chào mừng bạn! 👋</h2>
+                <p className="text-slate-500 text-sm leading-relaxed">
+                  Để trải nghiệm của bạn tuyệt vời hơn, hãy chọn những lĩnh vực bạn quan tâm nhé. Chúng mình sẽ gợi ý những cộng đồng phù hợp nhất!
+                </p>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-3 mb-10">
+                {SUGGESTED_INTERESTS.map(interest => {
+                  const isSelected = selectedInterests.includes(interest);
+                  return (
+                    <button
+                      key={interest}
+                      onClick={() => toggleInterest(interest)}
+                      className={`px-5 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300 border-2 ${
+                        isSelected 
+                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-200 scale-105' 
+                          : 'bg-white border-slate-100 text-slate-500 hover:border-indigo-200 hover:text-indigo-600'
+                      }`}
+                    >
+                      {interest}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={handleSaveInterests}
+                disabled={loading || selectedInterests.length === 0}
+                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 disabled:shadow-none"
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang chuẩn bị...</span>
+                  </div>
+                ) : "Bắt đầu khám phá ngay"}
+              </button>
+              
+              <p className="text-center mt-6 text-[10px] font-bold text-slate-300 uppercase tracking-widest">Bạn có thể thay đổi trong phần cài đặt sau</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
