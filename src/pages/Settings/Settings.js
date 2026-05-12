@@ -57,6 +57,11 @@ const Settings = () => {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     )},
+    { id: 'danger-zone', label: t('settings.dangerZone') || "Xóa tài khoản", icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+      </svg>
+    )},
   ];
 
   const handleSaveProfile = async () => {
@@ -133,6 +138,26 @@ const Settings = () => {
       setIsPasswordVerified(false);
     } catch (error) {
       toast.error(t(`api.${error.errorMessage || 'Auth.ChangePassword.Fail'}`));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+
+  const handleDeactivateAccount = async () => {
+    if (!deletePassword) return toast.warn("Vui lòng nhập mật khẩu xác nhận");
+    if (deleteConfirmText !== "CONFIRM") return toast.warn("Vui lòng nhập đúng chữ CONFIRM");
+
+    setLoading(true);
+    try {
+      await userService.deactivateAccount(deletePassword);
+      toast.success("Tài khoản của bạn đã được vô hiệu hóa.");
+      logout();
+      navigate('/login');
+    } catch (error) {
+      toast.error(t(`api.${error.errorMessage || 'Auth.VerifyFail'}`) || "Xác nhận mật khẩu không chính xác");
     } finally {
       setLoading(false);
     }
@@ -479,7 +504,62 @@ const Settings = () => {
               </div>
             )}
 
-            {['privacy', 'notifications', 'help'].includes(activeTab) && (
+            {activeTab === 'danger-zone' && (
+              <div className="max-w-2xl">
+                <h2 className="text-2xl font-bold text-red-600 mb-1">{t('settings.dangerZone') || "Vùng nguy hiểm"}</h2>
+                <p className="text-gray-400 text-sm mb-8">Các hành động tại đây có thể không thể hoàn tác.</p>
+
+                <div className="bg-red-50 border border-red-100 rounded-3xl p-8">
+                  <div className="flex items-start gap-6 mb-8">
+                    <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center text-red-600 shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-red-900 mb-2">Vô hiệu hóa tài khoản</h3>
+                      <p className="text-red-700 text-sm leading-relaxed">
+                        Tài khoản của bạn sẽ bị vô hiệu hóa ngay lập tức. Bạn sẽ bị đăng xuất và không ai có thể thấy hồ sơ của bạn nữa.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-red-400 uppercase tracking-widest">Xác nhận mật khẩu</label>
+                      <input 
+                        type="password" 
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-white border border-red-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-red-400 focus:border-transparent outline-none transition-all"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-red-400 uppercase tracking-widest">Nhập chữ <span className="text-red-600">CONFIRM</span> để xác nhận</label>
+                      <input 
+                        type="text" 
+                        value={deleteConfirmText}
+                        onChange={(e) => setDeleteConfirmText(e.target.value)}
+                        placeholder="CONFIRM"
+                        className="w-full bg-white border border-red-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-red-400 focus:border-transparent outline-none transition-all"
+                      />
+                    </div>
+
+                    <button 
+                      onClick={handleDeactivateAccount}
+                      disabled={loading || !deletePassword || deleteConfirmText !== "CONFIRM"}
+                      className="w-full bg-red-600 text-white py-4 rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:grayscale"
+                    >
+                      {loading ? t('common.loading') : "Vô hiệu hóa tài khoản vĩnh viễn"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {['privacy', 'help'].includes(activeTab) && (
               <div className="h-full flex flex-col items-center justify-center text-center py-20">
                 <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
                   {sidebarItems.find(i => i.id === activeTab)?.icon}

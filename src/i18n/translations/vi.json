@@ -194,7 +194,8 @@
           "Success": "Đăng nhập thành công! Chào mừng bạn quay trở lại.",
           "Fail": "Tài khoản hoặc mật khẩu chưa đúng.",
           "UserNotVerified": "Tài khoản của bạn chưa được xác nhận. Vui lòng nhập mã 6 số để kích hoạt.",
-          "UserBanned": "Tài khoản của bạn đã bị khóa do vi phạm tiêu chuẩn cộng đồng. Vui lòng liên hệ Admin."
+          "UserBanned": "Tài khoản của bạn đã bị khóa do vi phạm tiêu chuẩn cộng đồng. Vui lòng liên hệ Admin.",
+          "UserDeleted": "Tài khoản của bạn đã bị vô hiệu hóa bởi chính bạn. Vui lòng liên hệ Admin nếu muốn khôi phục."
         },
         "Verify": {
           "Success": "Xác nhận thành công! Chào mừng bạn đến với mạng xã hội mini.",

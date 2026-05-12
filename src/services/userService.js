@@ -11,5 +11,7 @@ const uploadAvatar = (file) => {
   return axiosClient.post('api/user/avatar', form);
 };
 
-const userService = { getProfile, getUsers, getUserById, getUsersToChat, updateUser, uploadAvatar };
+const deactivateAccount = (password) => axiosClient.delete('api/user/me', { data: { password } });
+
+const userService = { getProfile, getUsers, getUserById, getUsersToChat, updateUser, uploadAvatar, deactivateAccount };
 export default userService;

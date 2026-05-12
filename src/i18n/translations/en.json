@@ -261,7 +261,8 @@
           "Success": "Login successful! Welcome back.",
           "Fail": "Invalid username or password.",
           "UserNotVerified": "Your account is not verified. Please enter the 6-digit code to activate.",
-          "UserBanned": "Your account has been banned for community standards violations. Please contact the administrator."
+          "UserBanned": "Your account has been banned for community standards violations. Please contact the administrator.",
+          "UserDeleted": "Your account has been deactivated by you. Please contact the administrator if you want to restore it."
         },
         "Verify": {
           "Success": "Verification successful! Welcome to Social Mini App.",
