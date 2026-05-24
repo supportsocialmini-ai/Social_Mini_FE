@@ -4,8 +4,8 @@ const adminService = {
   getStats: () => {
     return axiosClient.get('api/admin/stats');
   },
-  getUsers: (page = 1, pageSize = 10) => {
-    return axiosClient.get(`api/admin/users?page=${page}&pageSize=${pageSize}`);
+  getUsers: (page = 1, pageSize = 10, searchTerm = '') => {
+    return axiosClient.get(`api/admin/users?page=${page}&pageSize=${pageSize}&searchTerm=${encodeURIComponent(searchTerm)}`);
   },
   getMaintenanceStatus: () => {
     return axiosClient.get('api/admin/maintenance-status');
@@ -33,6 +33,9 @@ const adminService = {
   },
   deleteGroup: (groupId) => {
     return axiosClient.delete(`api/admin/groups/${groupId}`);
+  },
+  getDetailedStats: (startDate = '', endDate = '') => {
+    return axiosClient.get(`api/admin/detailed-stats?startDate=${startDate}&endDate=${endDate}`);
   }
 };
 

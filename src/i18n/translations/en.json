@@ -593,6 +593,10 @@
         "noGroups": "No groups found",
         "unclassified": "Unclassified",
         "deleteConfirm": "Are you sure you want to delete this group? This action will delete all posts, messages, and members of the group.",
+        "deleteConfirmTitle": "Delete community group?",
+        "deleteConfirmMessage": "Are you sure you want to delete the group \"{{name}}\"? This action cannot be undone.",
+        "deleteBtn": "Confirm delete",
+        "cancelBtn": "Cancel",
         "table": {
           "name": "Group Name",
           "privacy": "Privacy",
@@ -675,7 +679,27 @@
         "successLockUser": "Account locked successfully",
         "errorToggleStatus": "Failed to update account status",
         "successDeleteGroup": "Group deleted successfully",
-        "errorDeleteGroup": "Failed to delete group"
+        "errorDeleteGroup": "Failed to delete group",
+        "errorDetailedStats": "Failed to load detailed statistics"
+      },
+      "analyticsPanel": {
+        "title": "System Detailed Statistics",
+        "subtitle": "View charts and detailed metrics for users, posts, packages, and reports",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "joinedUsers": "Joined Users",
+        "posts": "New Posts",
+        "premiumSubs": "Premium Upgrades",
+        "reportedPosts": "Reported Posts",
+        "exportBtn": "Export PDF Report",
+        "filterType": "Event Type",
+        "allEvents": "All Events",
+        "table": {
+          "user": "User",
+          "eventType": "Action",
+          "time": "Date Time",
+          "details": "Details"
+        }
       }
     }
   }

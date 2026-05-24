@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { 
@@ -28,16 +28,57 @@ import {
   MoreVertical,
   ChevronRight,
   Globe,
-  Layers
+  Layers,
+  Trash2,
+  Calendar,
+  Download,
+  FileText,
+  Filter
 } from 'lucide-react';
 import reportService from '../../services/reportService';
 import adminService from '../../services/adminService';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+const removeVietnameseTones = (str) => {
+  if (!str) return '';
+  str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+  str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+  str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+  str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+  str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+  str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+  str = str.replace(/đ/g, "d");
+  str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+  str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+  str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+  str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+  str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+  str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+  str = str.replace(/Đ/g, "D");
+  str = str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return str;
+};
 
 const AdminDashboard = () => {
   const { t, i18n } = useTranslation();
-  const { isAdmin, getFullAvatarUrl, user } = useAuth();
+  const { isAdmin, getFullAvatarUrl, user, logout } = useAuth();
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const userDropdownRef = useRef(null);
+  const [deleteGroupTarget, setDeleteGroupTarget] = useState(null); // { groupId, name }
+
+  // Đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target)) {
+        setIsUserDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -59,6 +100,15 @@ const AdminDashboard = () => {
   const [usersCurrentPage, setUsersCurrentPage] = useState(1);
   const [usersTotalCount, setUsersTotalCount] = useState(0);
   const PAGE_SIZE = 10;
+  // Detailed Analytics
+  const [detailedStats, setDetailedStats] = useState(null);
+  const [statsFilterType, setStatsFilterType] = useState('all');
+  const [isStatsLoading, setIsStatsLoading] = useState(false);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const thirtyDaysAgoStr = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const [statsStartDate, setStatsStartDate] = useState(thirtyDaysAgoStr);
+  const [statsEndDate, setStatsEndDate] = useState(todayStr);
+  const [statsSearchQuery, setStatsSearchQuery] = useState('');
 
   useEffect(() => {
     if (isAdmin) {
@@ -70,12 +120,27 @@ const AdminDashboard = () => {
         fetchGroups();
       } else if (activeTab === 'premium') {
         fetchPackages();
+      } else if (activeTab === 'analytics') {
+        fetchDetailedStats();
       } else {
         fetchData();
       }
       fetchMaintenanceStatus();
     }
   }, [isAdmin, activeTab]);
+
+  useEffect(() => {
+    setSearchQuery('');
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (isAdmin && activeTab === 'users') {
+      const delayDebounceFn = setTimeout(() => {
+        fetchUsers(1, searchQuery);
+      }, 400);
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [searchQuery]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -96,10 +161,10 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchUsers = async (page = 1) => {
+  const fetchUsers = async (page = 1, search = searchQuery) => {
     setIsLoading(true);
     try {
-      const res = await adminService.getUsers(page, PAGE_SIZE);
+      const res = await adminService.getUsers(page, PAGE_SIZE, search);
       // API returns { totalCount, page, pageSize, users }
       const usersData = res?.users?.$values || res?.users || (Array.isArray(res) ? res : []);
       setUsers(usersData);
@@ -126,15 +191,183 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteGroup = async (groupId) => {
-    if (!window.confirm(t('admin.groups.deleteConfirm'))) return;
     try {
       await adminService.deleteGroup(groupId);
       toast.success(t('admin.toasts.successDeleteGroup'));
       setGroups(prev => prev.filter(g => g.groupId !== groupId));
+      setDeleteGroupTarget(null);
     } catch (error) {
       toast.error(t('admin.toasts.errorDeleteGroup'));
     }
   };
+
+  const fetchDetailedStats = async (start = statsStartDate, end = statsEndDate) => {
+    setIsStatsLoading(true);
+    try {
+      const res = await adminService.getDetailedStats(start, end);
+      const data = res?.result || res;
+      setDetailedStats(data);
+    } catch (error) {
+      toast.error(t('admin.toasts.errorDetailedStats') || 'Lỗi lấy dữ liệu thống kê chi tiết');
+    } finally {
+      setIsStatsLoading(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (!detailedStats) return;
+    setIsStatsLoading(true);
+
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const now = new Date().toLocaleString('en-US');
+
+    const cleanStr = (str) => {
+      if (!str) return '';
+      return removeVietnameseTones(str);
+    };
+
+    const mapEventTypeToEnglish = (type) => {
+      switch (type) {
+        case 'Register':
+        case 'Đăng ký tài khoản':
+          return 'Register';
+        case 'Post':
+        case 'Đăng bài viết':
+          return 'Post';
+        case 'Premium':
+        case 'Đăng ký Premium':
+          return 'Premium';
+        case 'Report':
+        case 'Bài viết bị báo cáo':
+          return 'Report';
+        default:
+          return type;
+      }
+    };
+
+    const mapDetailsToEnglish = (details) => {
+      if (!details) return '';
+      if (details.includes('Đăng ký tài khoản mới')) return 'New account registered';
+      if (details.includes('Đăng ký gói')) return details.replace('Đăng ký gói', 'Subscribed to package');
+      return details;
+    };
+
+    const fontName = 'helvetica';
+    doc.setFont(fontName, 'normal');
+
+    // Header
+    doc.setFillColor(79, 70, 229);
+    doc.rect(0, 0, pageW, 20, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont(fontName, 'bold');
+    const title = 'SYSTEM DETAILED STATISTICS REPORT - MiniSocial';
+    doc.text(title, pageW / 2, 13, { align: 'center' });
+
+    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(8);
+    doc.setFont(fontName, 'normal');
+    const dateRange = `Period: ${statsStartDate} to ${statsEndDate}   |   Exported: ${now}`;
+    doc.text(dateRange, pageW / 2, 26, { align: 'center' });
+
+    // Summary boxes
+    const summaryData = [
+      { label: 'Joined Users', value: detailedStats.totalJoined ?? 0, color: [99, 102, 241] },
+      { label: 'New Posts', value: detailedStats.totalPosts ?? 0, color: [16, 185, 129] },
+      { label: 'Premium Subs', value: detailedStats.totalPremiums ?? 0, color: [245, 158, 11] },
+      { label: 'Reported Posts', value: detailedStats.totalReports ?? 0, color: [239, 68, 68] }
+    ];
+
+    let sx = 14;
+    summaryData.forEach(s => {
+      doc.setFillColor(...s.color);
+      doc.roundedRect(sx, 30, 60, 18, 3, 3, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7);
+      doc.setFont(fontName, 'bold');
+      doc.text(s.label.toUpperCase(), sx + 30, 37, { align: 'center' });
+      doc.setFontSize(14);
+      doc.text(String(s.value), sx + 30, 44, { align: 'center' });
+      sx += 65;
+    });
+
+    // Daily stats table
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(10);
+    doc.setFont(fontName, 'bold');
+    doc.text('Daily Statistics', 14, 56);
+
+    const dailyArr = detailedStats.dailyStats?.$values || detailedStats.dailyStats || [];
+    const filteredDaily = dailyArr.filter(d =>
+      (d.joinedUsers > 0 || d.createdPosts > 0 || d.premiumRegistrations > 0 || d.reportedPosts > 0)
+    );
+
+    autoTable(doc, {
+      startY: 59,
+      head: [['Date', 'Joined', 'Posts', 'Premium', 'Reports']],
+      body: filteredDaily.map(d => [d.date, d.joinedUsers, d.createdPosts, d.premiumRegistrations, d.reportedPosts]),
+      styles: { font: fontName, fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245, 247, 255] },
+      margin: { left: 14, right: 14 },
+      tableWidth: 'auto'
+    });
+
+    // Events detail table
+    doc.addPage();
+    doc.setFillColor(79, 70, 229);
+    doc.rect(0, 0, pageW, 14, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
+    doc.setFont(fontName, 'bold');
+    doc.text('DETAILED EVENT LOG', pageW / 2, 10, { align: 'center' });
+
+    const eventsArr = detailedStats.events?.$values || detailedStats.events || [];
+    const filteredEvents = statsFilterType === 'all'
+      ? eventsArr
+      : eventsArr.filter(e => e.type === statsFilterType);
+
+    autoTable(doc, {
+      startY: 18,
+      head: [['Action', 'Name', 'Username', 'Email', 'Date/Time', 'Details']],
+      body: filteredEvents.map(e => [
+        cleanStr(mapEventTypeToEnglish(e.typeName)),
+        cleanStr(e.fullName),
+        '@' + e.username,
+        e.email,
+        e.time,
+        cleanStr(mapDetailsToEnglish(e.details || '').substring(0, 80))
+      ]),
+      styles: { font: fontName, fontSize: 6, cellPadding: 1.5, overflow: 'linebreak' },
+      headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245, 247, 255] },
+      columnStyles: {
+        0: { cellWidth: 28 },
+        1: { cellWidth: 32 },
+        2: { cellWidth: 24 },
+        3: { cellWidth: 44 },
+        4: { cellWidth: 30 },
+        5: { cellWidth: 'auto' }
+      },
+      margin: { left: 10, right: 10 }
+    });
+
+    // Footer on all pages
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(6);
+      doc.setTextColor(160, 160, 160);
+      doc.setFont(fontName, 'normal');
+      doc.text(`MiniSocial Admin Report  |  ${now}  |  Page ${i}/${pageCount}`, pageW / 2, doc.internal.pageSize.getHeight() - 5, { align: 'center' });
+    }
+
+    doc.save(`MiniSocial_Report_${statsStartDate}_${statsEndDate}.pdf`);
+    toast.success('PDF report exported successfully!');
+    setIsStatsLoading(false);
+  };
+
 
   const fetchReports = async () => {
     setIsLoading(true);
@@ -238,18 +471,14 @@ const AdminDashboard = () => {
 
   const handleUserPageChange = (newPage) => {
     if (newPage < 1 || newPage > usersTotalPages || isLoading) return;
-    fetchUsers(newPage);
+    fetchUsers(newPage, searchQuery);
   };
 
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
 
-  const filteredUsers = users.filter(u => 
-    u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users;
 
   const filteredGroups = groups.filter(g => 
     g.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -289,7 +518,7 @@ const AdminDashboard = () => {
           <SidebarItem icon={<Wallet size={20} />} label={t('admin.sidebar.premium')} active={activeTab === 'premium'} onClick={() => { setActiveTab('premium'); setIsSidebarOpen(false); }} isDarkMode={isDarkMode} />
           
           <div className={`py-4 px-4 text-[10px] font-bold ${isDarkMode ? 'text-slate-600' : 'text-slate-400'} uppercase tracking-widest mt-4`}>{t('admin.sidebar.analysis')}</div>
-          <SidebarItem icon={<BarChart3 size={20} />} label={t('admin.sidebar.analytics')} isDarkMode={isDarkMode} disabled />
+          <SidebarItem icon={<BarChart3 size={20} />} label={t('admin.sidebar.analytics')} active={activeTab === 'analytics'} onClick={() => { setActiveTab('analytics'); setIsSidebarOpen(false); }} isDarkMode={isDarkMode} />
           <SidebarItem icon={<PieChart size={20} />} label={t('admin.sidebar.stats')} isDarkMode={isDarkMode} disabled />
           
           <div className={`py-4 px-4 text-[10px] font-bold ${isDarkMode ? 'text-slate-600' : 'text-slate-400'} uppercase tracking-widest mt-4`}>{t('admin.sidebar.system')}</div>
@@ -299,7 +528,6 @@ const AdminDashboard = () => {
         <div className={`p-6 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-100'} mt-auto`}>
           <div className="space-y-1">
              <SidebarItem icon={<HelpCircle size={20} />} label={t('admin.sidebar.help')} isDarkMode={isDarkMode} />
-             <SidebarAction icon={<LogOut size={20} />} label={t('admin.sidebar.logout')} isDarkMode={isDarkMode} />
           </div>
           
           <div className={`mt-8 flex items-center justify-between ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'} p-2 rounded-2xl border ${isDarkMode ? 'border-slate-700' : 'border-slate-100'}`}>
@@ -341,7 +569,12 @@ const AdminDashboard = () => {
                <Search size={18} className="text-slate-400" />
                <input 
                 type="text" 
-                placeholder={t('admin.header.search') || "Search metrics..."} 
+                placeholder={
+                  activeTab === 'users' ? "Tìm kiếm người dùng..." :
+                  activeTab === 'groups' ? "Tìm kiếm nhóm..." :
+                  activeTab === 'reports' ? "Tìm kiếm báo cáo..." :
+                  "Tìm kiếm..."
+                } 
                 className="bg-transparent border-none outline-none text-sm font-medium placeholder:text-slate-400 w-full"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -382,14 +615,44 @@ const AdminDashboard = () => {
 
                <div className={`h-10 w-px ${isDarkMode ? 'bg-slate-800' : 'bg-slate-200'} hidden md:block mx-1`}></div>
 
-               <div className="flex items-center gap-3 pl-1">
-                  <div className="hidden sm:block text-right">
-                    <p className={`text-sm font-black leading-none ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{user?.fullName || 'Administrator'}</p>
-                    <p className={`text-[10px] font-bold mt-1 uppercase tracking-tighter ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>@{user?.username}</p>
-                  </div>
-                  <div className={`w-10 h-10 rounded-2xl overflow-hidden border-2 shadow-xl cursor-pointer ${isDarkMode ? 'border-slate-800 shadow-indigo-900/20' : 'border-white shadow-indigo-100/40'}`}>
-                    <img src={getFullAvatarUrl(user?.avatarUrl, user?.fullName)} alt="Admin" className="w-full h-full object-cover" />
-                  </div>
+               <div className="flex items-center gap-3 pl-1 relative" ref={userDropdownRef}>
+                  <button
+                    onClick={() => setIsUserDropdownOpen(prev => !prev)}
+                    className="flex items-center gap-3 cursor-pointer focus:outline-none group"
+                  >
+                    <div className="hidden sm:block text-right">
+                      <p className={`text-sm font-black leading-none ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{user?.fullName || 'Administrator'}</p>
+                      <p className={`text-[10px] font-bold mt-1 uppercase tracking-tighter ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>@{user?.username}</p>
+                    </div>
+                    <div className={`w-10 h-10 rounded-2xl overflow-hidden border-2 shadow-xl transition-transform group-hover:scale-105 ${isDarkMode ? 'border-slate-800 shadow-indigo-900/20' : 'border-white shadow-indigo-100/40'}`}>
+                      <img src={getFullAvatarUrl(user?.avatarUrl, user?.fullName)} alt="Admin" className="w-full h-full object-cover" />
+                    </div>
+                  </button>
+
+                  {/* Dropdown */}
+                  {isUserDropdownOpen && (
+                    <div className={`absolute right-0 top-14 w-52 rounded-2xl border shadow-2xl z-[200] overflow-hidden transition-all animate-in fade-in slide-in-from-top-2 duration-200 ${
+                      isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'
+                    }`}>
+                      <div className={`px-4 py-3 border-b ${isDarkMode ? 'border-slate-800' : 'border-slate-100'}`}>
+                        <p className={`text-sm font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{user?.fullName || 'Administrator'}</p>
+                        <p className={`text-[10px] font-bold uppercase tracking-tight mt-0.5 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>@{user?.username}</p>
+                      </div>
+                      <div className="p-2">
+                        <button
+                          onClick={() => { setIsUserDropdownOpen(false); logout(); }}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                            isDarkMode
+                              ? 'text-rose-400 hover:bg-rose-950/40'
+                              : 'text-rose-600 hover:bg-rose-50'
+                          }`}
+                        >
+                          <LogOut size={16} />
+                          {t('admin.sidebar.logout')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                </div>
             </div>
           </div>
@@ -398,23 +661,6 @@ const AdminDashboard = () => {
         {/* SCROLLABLE AREA */}
         <div className="flex-1 overflow-y-auto px-6 md:px-10 pb-10 custom-scrollbar">
           
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-             <div className={`flex items-center gap-2 p-1 rounded-2xl shadow-sm border self-start ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
-                <button className={`px-5 py-2 rounded-xl text-[10px] font-black shadow-sm border uppercase tracking-widest ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>{t('admin.dashboard.globalView')}</button>
-                <button 
-                  onClick={() => fetchData()}
-                  className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
-                >
-                  <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-                </button>
-             </div>
-             
-             <button className="bg-indigo-600 text-white px-6 py-3 rounded-2xl flex items-center gap-3 shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 transition-all active:scale-95 text-[11px] font-black uppercase tracking-widest">
-                <ShieldCheck size={18} />
-                {t('admin.dashboard.securityReport')}
-             </button>
-          </div>
-
           {activeTab === 'dashboard' ? (
             /* --- DASHBOARD TAB --- */
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -475,14 +721,6 @@ const AdminDashboard = () => {
                                 <span className={`text-[10px] font-bold uppercase ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>{t('admin.dashboard.retention')}</span>
                              </div>
                           </div>
-                        </div>
-                        <div className="flex gap-2">
-                           <select className={`text-[10px] font-black uppercase tracking-widest rounded-xl px-3 py-2 outline-none border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
-                              <option>{t('admin.dashboard.allAccounts')}</option>
-                           </select>
-                           <select className={`text-[10px] font-black uppercase tracking-widest rounded-xl px-3 py-2 outline-none border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
-                              <option>{t('admin.dashboard.thisYear')}</option>
-                           </select>
                         </div>
                      </div>
 
@@ -831,11 +1069,11 @@ const AdminDashboard = () => {
                              <td className="py-5 px-4 text-right">
                                 <div className="flex justify-end gap-2">
                                    <button 
-                                      onClick={() => handleDeleteGroup(g.groupId)}
+                                      onClick={() => setDeleteGroupTarget(g)}
                                       className={`p-2.5 rounded-xl border transition-all active:scale-95 ${isDarkMode ? 'bg-slate-800 border-slate-700 text-rose-500 hover:bg-rose-950/30' : 'bg-white border-slate-100 text-rose-500 hover:bg-rose-50'}`}
                                       title={t('admin.groups.actions.delete')}
                                    >
-                                      <UserX size={18} />
+                                      <Trash2 size={18} />
                                    </button>
                                 </div>
                              </td>
@@ -1001,6 +1239,187 @@ const AdminDashboard = () => {
                   </div>
                </div>
             </div>
+          ) : activeTab === 'analytics' ? (
+            /* --- ANALYTICS TAB --- */
+            (() => {
+              const eventsArr = detailedStats?.events?.$values || detailedStats?.events || [];
+              const dailyArr = detailedStats?.dailyStats?.$values || detailedStats?.dailyStats || [];
+              const filteredEvents = eventsArr.filter(e => {
+                const typeOk = statsFilterType === 'all' || e.type === statsFilterType;
+                const q = statsSearchQuery.toLowerCase();
+                const queryOk = !q || e.fullName?.toLowerCase().includes(q) || e.username?.toLowerCase().includes(q) || e.email?.toLowerCase().includes(q) || e.details?.toLowerCase().includes(q);
+                return typeOk && queryOk;
+              });
+
+              const maxVal = dailyArr.length > 0 ? Math.max(1, ...dailyArr.map(d => Math.max(d.joinedUsers || 0, d.createdPosts || 0, d.premiumRegistrations || 0, d.reportedPosts || 0))) : 1;
+              const eventColors = { Register: '#6366f1', Post: '#10b981', Premium: '#f59e0b', Report: '#ef4444' };
+              const typeOptions = [
+                { value: 'all', label: t('admin.analyticsPanel.allEvents') },
+                { value: 'Register', label: 'Đăng ký tài khoản' },
+                { value: 'Post', label: 'Đăng bài viết' },
+                { value: 'Premium', label: 'Đăng ký Premium' },
+                { value: 'Report', label: 'Bài viết bị báo cáo' }
+              ];
+
+              return (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  {/* Header */}
+                  <div className={`rounded-[2.5rem] border shadow-sm p-8 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
+                      <div>
+                        <h2 className={`text-2xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{t('admin.analyticsPanel.title')}</h2>
+                        <p className={`text-sm font-medium mt-1 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>{t('admin.analyticsPanel.subtitle')}</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-sm ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                          <Calendar size={16} className="text-indigo-500" />
+                          <input type="date" value={statsStartDate} onChange={e => setStatsStartDate(e.target.value)} className="bg-transparent border-none outline-none text-sm font-bold cursor-pointer" style={{ colorScheme: isDarkMode ? 'dark' : 'light' }} />
+                          <span className="text-slate-400 font-bold">→</span>
+                          <input type="date" value={statsEndDate} onChange={e => setStatsEndDate(e.target.value)} className="bg-transparent border-none outline-none text-sm font-bold cursor-pointer" style={{ colorScheme: isDarkMode ? 'dark' : 'light' }} />
+                        </div>
+                        <button onClick={() => fetchDetailedStats(statsStartDate, statsEndDate)} className={`px-5 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all active:scale-95 ${isDarkMode ? 'bg-slate-800 border-slate-700 text-indigo-400 hover:bg-slate-700' : 'bg-slate-50 border-slate-100 text-indigo-600 hover:bg-indigo-50'}`}>
+                          <RefreshCw size={15} className={`inline mr-1.5 ${isStatsLoading ? 'animate-spin' : ''}`} />
+                          {isStatsLoading ? 'Đang tải...' : 'Tải dữ liệu'}
+                        </button>
+                        <button onClick={handleExportPDF} disabled={!detailedStats} className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-40">
+                          <Download size={15} />
+                          {t('admin.analyticsPanel.exportBtn')}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Summary cards */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                      {[
+                        { label: t('admin.analyticsPanel.joinedUsers'), value: detailedStats?.totalJoined ?? 0, color: 'text-indigo-500', bg: isDarkMode ? 'bg-indigo-950/30' : 'bg-indigo-50', border: isDarkMode ? 'border-indigo-900/40' : 'border-indigo-100' },
+                        { label: t('admin.analyticsPanel.posts'), value: detailedStats?.totalPosts ?? 0, color: 'text-emerald-500', bg: isDarkMode ? 'bg-emerald-950/30' : 'bg-emerald-50', border: isDarkMode ? 'border-emerald-900/40' : 'border-emerald-100' },
+                        { label: t('admin.analyticsPanel.premiumSubs'), value: detailedStats?.totalPremiums ?? 0, color: 'text-amber-500', bg: isDarkMode ? 'bg-amber-950/30' : 'bg-amber-50', border: isDarkMode ? 'border-amber-900/40' : 'border-amber-100' },
+                        { label: t('admin.analyticsPanel.reportedPosts'), value: detailedStats?.totalReports ?? 0, color: 'text-rose-500', bg: isDarkMode ? 'bg-rose-950/30' : 'bg-rose-50', border: isDarkMode ? 'border-rose-900/40' : 'border-rose-100' }
+                      ].map((card, i) => (
+                        <div key={i} className={`p-5 rounded-2xl border ${card.bg} ${card.border}`}>
+                          <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>{card.label}</p>
+                          <p className={`text-3xl font-black ${card.color}`}>{isStatsLoading ? '—' : card.value.toLocaleString()}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* SVG Bar Chart */}
+                    {dailyArr.length > 0 && (
+                      <div>
+                        <p className={`text-[10px] font-black uppercase tracking-widest mb-4 ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Biểu đồ theo ngày</p>
+                        <div className="flex gap-4 mb-3 flex-wrap">
+                          {[['#6366f1','Người tham gia'], ['#10b981','Bài viết'], ['#f59e0b','Premium'], ['#ef4444','Báo cáo']].map(([c,l]) => (
+                            <div key={l} className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full inline-block" style={{ background: c }}></span><span className={`text-[10px] font-bold ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>{l}</span></div>
+                          ))}
+                        </div>
+                        <div className="overflow-x-auto">
+                          <svg width={Math.max(dailyArr.length * 44 + 24, 600)} height="160" className="min-w-full">
+                            {dailyArr.map((d, i) => {
+                              const x = i * 44 + 12;
+                              const bars = [
+                                { val: d.joinedUsers || 0, color: '#6366f1' },
+                                { val: d.createdPosts || 0, color: '#10b981' },
+                                { val: d.premiumRegistrations || 0, color: '#f59e0b' },
+                                { val: d.reportedPosts || 0, color: '#ef4444' }
+                              ];
+                              return (
+                                <g key={d.date}>
+                                  {bars.map((b, bi) => {
+                                    const h = maxVal > 0 ? Math.max(2, (b.val / maxVal) * 120) : 2;
+                                    return <rect key={bi} x={x + bi * 7} y={130 - h} width={5} height={h} rx={2} fill={b.color} opacity={0.85} />;
+                                  })}
+                                  <text x={x + 14} y={150} fontSize="6" fill={isDarkMode ? '#475569' : '#94a3b8'} textAnchor="middle">{d.date?.slice(5)}</text>
+                                </g>
+                              );
+                            })}
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+                    {isStatsLoading && (
+                      <div className="flex items-center justify-center py-16 gap-3">
+                        <RefreshCw size={20} className="animate-spin text-indigo-500" />
+                        <p className={`text-sm font-bold ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Đang tải dữ liệu thống kê...</p>
+                      </div>
+                    )}
+                    {!detailedStats && !isStatsLoading && (
+                      <div className="flex flex-col items-center justify-center py-12 gap-4">
+                        <BarChart3 size={48} className="text-slate-300" />
+                        <p className={`text-sm font-bold ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Chọn khoảng thời gian và nhấn "Tải dữ liệu" để xem thống kê.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Event detail log */}
+                  {detailedStats && (
+                    <div className={`rounded-[2.5rem] border shadow-sm p-8 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                          <h3 className={`text-lg font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Chi tiết từng sự kiện</h3>
+                          <p className={`text-xs font-medium mt-0.5 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>{filteredEvents.length} sự kiện</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {/* Filter type */}
+                          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                            <Filter size={13} className="text-indigo-500" />
+                            <select value={statsFilterType} onChange={e => setStatsFilterType(e.target.value)} className={`bg-transparent border-none outline-none text-xs font-bold cursor-pointer ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                              {typeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                          </div>
+                          {/* Search */}
+                          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                            <Search size={13} className="text-slate-400" />
+                            <input type="text" placeholder="Tìm tên, email..." value={statsSearchQuery} onChange={e => setStatsSearchQuery(e.target.value)} className={`bg-transparent border-none outline-none text-xs font-bold w-40 ${isDarkMode ? 'text-slate-300 placeholder:text-slate-600' : 'text-slate-700 placeholder:text-slate-400'}`} />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left min-w-[700px]">
+                          <thead>
+                            <tr className={`text-[9px] font-black uppercase tracking-[0.2em] border-b ${isDarkMode ? 'text-slate-700 border-slate-800' : 'text-slate-300 border-slate-50'}`}>
+                              <th className="pb-4 px-3">{t('admin.analyticsPanel.table.eventType')}</th>
+                              <th className="pb-4 px-3">{t('admin.analyticsPanel.table.user')}</th>
+                              <th className="pb-4 px-3">Email</th>
+                              <th className="pb-4 px-3">{t('admin.analyticsPanel.table.time')}</th>
+                              <th className="pb-4 px-3">{t('admin.analyticsPanel.table.details')}</th>
+                            </tr>
+                          </thead>
+                          <tbody className={`divide-y ${isDarkMode ? 'divide-slate-800' : 'divide-slate-50'}`}>
+                            {filteredEvents.slice(0, 200).map((e, idx) => {
+                              const color = eventColors[e.type] || '#6366f1';
+                              return (
+                                <tr key={idx} className={`group transition-colors ${isDarkMode ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50/50'}`}>
+                                  <td className="py-3 px-3">
+                                    <span className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest inline-block" style={{ background: color + '20', color }}>
+                                      {e.typeName}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-3">
+                                    <p className={`text-xs font-black leading-none mb-0.5 ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>{e.fullName}</p>
+                                    <p className={`text-[10px] font-bold ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>@{e.username}</p>
+                                  </td>
+                                  <td className={`py-3 px-3 text-xs font-bold ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>{e.email}</td>
+                                  <td className={`py-3 px-3 text-[10px] font-black ${isDarkMode ? 'text-slate-600' : 'text-slate-400'} whitespace-nowrap`}>{e.time}</td>
+                                  <td className={`py-3 px-3 text-[10px] font-medium max-w-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                    <p className="line-clamp-2">{e.details}</p>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                            {filteredEvents.length === 0 && (
+                              <tr><td colSpan={5} className="py-12 text-center text-slate-400 font-bold italic text-sm">Không có dữ liệu phù hợp</td></tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                      {filteredEvents.length > 200 && (
+                        <p className={`text-center text-xs font-bold mt-4 ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Hiển thị 200 / {filteredEvents.length} sự kiện. Xuất PDF để xem toàn bộ.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()
           ) : (
             /* --- REPORTS TAB --- */
             <div className={`rounded-[2.5rem] border shadow-sm p-8 animate-in fade-in slide-in-from-bottom-4 duration-500 min-h-[600px] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
@@ -1274,6 +1693,38 @@ const AdminDashboard = () => {
                   {isUpdatingPackage ? t('admin.modals.createPackage.submitting') : t('admin.modals.createPackage.submit')}
                 </button>
              </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Group Confirmation Modal */}
+      {deleteGroupTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setDeleteGroupTarget(null)}></div>
+          <div className={`rounded-[2.5rem] w-full max-w-md relative z-10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border p-8 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-white'}`}>
+            <div className="flex flex-col items-center text-center">
+              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 ${isDarkMode ? 'bg-rose-950/30 text-rose-500' : 'bg-rose-50 text-rose-500'}`}>
+                <Trash2 size={32} />
+              </div>
+              <h3 className={`text-xl font-black mb-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{t('admin.groups.deleteConfirmTitle') || 'Xóa nhóm cộng đồng?'}</h3>
+              <p className={`text-sm font-medium mb-8 leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                {t('admin.groups.deleteConfirmMessage', { name: deleteGroupTarget.name }) || `Bạn có chắc chắn muốn xóa nhóm "${deleteGroupTarget.name}" không? Hành động này không thể hoàn tác.`}
+              </p>
+              <div className="flex w-full gap-3">
+                <button 
+                  onClick={() => handleDeleteGroup(deleteGroupTarget.groupId)}
+                  className="flex-1 py-4 rounded-2xl bg-rose-500 text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-rose-500/20 hover:bg-rose-600 transition-all active:scale-95"
+                >
+                  {t('admin.groups.deleteBtn') || 'Xác nhận xóa'}
+                </button>
+                <button 
+                  onClick={() => setDeleteGroupTarget(null)}
+                  className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 ${isDarkMode ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  {t('admin.groups.cancelBtn') || 'Hủy bỏ'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

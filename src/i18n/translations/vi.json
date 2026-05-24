@@ -593,6 +593,10 @@
         "noGroups": "Không tìm thấy nhóm nào",
         "unclassified": "Chưa phân loại",
         "deleteConfirm": "Bạn có chắc chắn muốn xóa nhóm này? Hành động này sẽ xóa toàn bộ bài viết, tin nhắn và thành viên của nhóm.",
+        "deleteConfirmTitle": "Xóa nhóm cộng đồng?",
+        "deleteConfirmMessage": "Bạn có chắc chắn muốn xóa nhóm \"{{name}}\" không? Hành động này không thể hoàn tác.",
+        "deleteBtn": "Xác nhận xóa",
+        "cancelBtn": "Hủy bỏ",
         "table": {
           "name": "Tên nhóm",
           "privacy": "Quyền riêng tư",
@@ -675,7 +679,27 @@
         "successLockUser": "Đã khóa tài khoản",
         "errorToggleStatus": "Cập nhật trạng thái thất bại",
         "successDeleteGroup": "Đã xóa nhóm thành công",
-        "errorDeleteGroup": "Lỗi khi xóa nhóm"
+        "errorDeleteGroup": "Lỗi khi xóa nhóm",
+        "errorDetailedStats": "Lỗi lấy dữ liệu thống kê chi tiết"
+      },
+      "analyticsPanel": {
+        "title": "Thống kê chi tiết hệ thống",
+        "subtitle": "Xem biểu đồ và chi tiết số liệu người dùng, bài viết, gói dịch vụ, báo cáo vi phạm",
+        "startDate": "Từ ngày",
+        "endDate": "Đến ngày",
+        "joinedUsers": "Người tham gia",
+        "posts": "Bài viết mới",
+        "premiumSubs": "Đăng ký Premium",
+        "reportedPosts": "Bài viết bị báo cáo",
+        "exportBtn": "Xuất báo cáo PDF",
+        "filterType": "Loại sự kiện",
+        "allEvents": "Tất cả sự kiện",
+        "table": {
+          "user": "Người dùng",
+          "eventType": "Hành động",
+          "time": "Ngày giờ",
+          "details": "Chi tiết"
+        }
       }
     }
   }
