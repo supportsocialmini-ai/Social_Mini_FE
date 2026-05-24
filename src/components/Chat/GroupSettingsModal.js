@@ -4,13 +4,14 @@ import messageService from '../../services/messageService';
 import { useAuth } from '../../context/AuthContext';
 
 const GroupSettingsModal = ({ group, onClose, onGroupUpdated, getFullAvatarUrl }) => {
-  const { user } = useAuth();
+  const { user, isAdmin: isSystemAdmin } = useAuth();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingAvatar, setUpdatingAvatar] = useState(false);
   const [removingMemberId, setRemovingMemberId] = useState(null);
 
-  const isAdmin = group.isAdmin || group.CreatorId === user?.userId;
+  const groupCreatorId = group.creatorId || group.CreatorId || group.createdBy || group.CreatedBy;
+  const isAdmin = group.isAdmin || groupCreatorId === user?.userId || isSystemAdmin;
 
   useEffect(() => {
     fetchMembers();
@@ -135,7 +136,7 @@ const GroupSettingsModal = ({ group, onClose, onGroupUpdated, getFullAvatarUrl }
                   const mId = m.userId || m.UserId;
                   const isTargetAdmin = m.isAdmin || m.IsAdmin;
                   const isMe = mId === user?.userId;
-                  const isCreator = mId === group.CreatorId;
+                  const isCreator = mId === groupCreatorId;
 
                   return (
                     <div key={mId} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
@@ -164,7 +165,7 @@ const GroupSettingsModal = ({ group, onClose, onGroupUpdated, getFullAvatarUrl }
                         <button 
                           onClick={() => handleRemoveMember(mId)}
                           disabled={removingMemberId === mId}
-                          className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all hover:scale-105 active:scale-95 flex-shrink-0"
                           title="Xóa khỏi nhóm"
                         >
                           {removingMemberId === mId ? (

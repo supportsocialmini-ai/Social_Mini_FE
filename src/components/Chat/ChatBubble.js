@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import messageService from '../../services/messageService';
 import userService from '../../services/userService';
+import GroupSettingsModal from './GroupSettingsModal';
 
 /* ─── Mini Chat Bubble Window ─────────────────────────────── */
 const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUser, onlineUsers }) => {
@@ -11,6 +12,7 @@ const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUs
   const [inputText, setInputText] = useState('');
   const [isOtherTyping, setIsOtherTyping] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef(null);
   const typingRef = useRef(null);
   const selectedUserRef = useRef(chatUser);
@@ -184,6 +186,18 @@ const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUs
           </p>
         </div>
         <div className="flex items-center gap-1">
+          {isGroup && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowSettings(true); }}
+              className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/20 text-white/70 hover:text-white transition-all mr-0.5"
+              title="Cài đặt nhóm"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }}
             className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/20 text-white/70 hover:text-white transition-all"
@@ -287,6 +301,26 @@ const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUs
           </form>
         </>
       )}
+
+      {showSettings && (
+        <GroupSettingsModal
+          group={{
+            conversationId,
+            displayName: chatUser.displayName,
+            displayAvatar: chatUser.displayAvatar,
+            creatorId: chatUser.creatorId,
+            CreatorId: chatUser.CreatorId,
+            isAdmin: chatUser.isAdmin
+          }}
+          onClose={() => setShowSettings(false)}
+          getFullAvatarUrl={getFullAvatarUrl}
+          onGroupUpdated={(updatedGroup) => {
+            chatUser.displayName = updatedGroup.displayName;
+            chatUser.displayAvatar = updatedGroup.displayAvatar;
+            chatUser.avatarUrl = updatedGroup.avatarUrl;
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -357,7 +391,9 @@ const MessengerDropdown = ({ onOpenChat, getFullAvatarUrl, onlineUsers, unreadCo
           displayName: g.name,
           displayAvatar: getFullAvatarUrl(g.avatarUrl, g.name),
           isGroup: true,
-          conversationId: g.conversation?.conversationId || g.groupId 
+          conversationId: g.conversation?.conversationId || g.groupId,
+          creatorId: g.createdBy || g.CreatedBy || g.creatorId || g.CreatorId,
+          isAdmin: g.isAdmin || (g.createdBy || g.CreatedBy) === user?.userId
         }));
 
         setUsers(userData);

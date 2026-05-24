@@ -39,6 +39,14 @@ const groupService = {
 
   getSuggestedGroups: () => {
     return axiosClient.get('/api/group/suggested');
+  },
+
+  removeMember: (groupId, userId) => {
+    return axiosClient.delete(`/api/group/${groupId}/members/${userId}/remove`);
+  },
+
+  inviteToGroup: (groupId, friendId) => {
+    return axiosClient.post(`/api/group/${groupId}/members/${friendId}/invite`);
   }
 };
 

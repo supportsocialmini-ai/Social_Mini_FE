@@ -27,6 +27,12 @@ const adminService = {
   },
   createPackage: (data) => {
     return axiosClient.post('api/admin/packages', data);
+  },
+  getGroups: () => {
+    return axiosClient.get('api/admin/groups');
+  },
+  deleteGroup: (groupId) => {
+    return axiosClient.delete(`api/admin/groups/${groupId}`);
   }
 };
 

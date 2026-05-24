@@ -276,7 +276,8 @@
           "Like": "{{name}} đã thích bài viết của bạn.",
           "Comment": "{{name}} đã bình luận vào bài viết của bạn.",
           "FriendRequest": "{{name}} đã gửi lời mời kết bạn cho bạn.",
-          "FriendAccept": "{{name}} đã chấp nhận lời mời kết bạn."
+          "FriendAccept": "{{name}} đã chấp nhận lời mời kết bạn.",
+          "GroupInvite": "{{name}} đã mời bạn tham gia nhóm."
         }
       },
       "Search": {
@@ -369,7 +370,8 @@
       "securityDesc": "Cập nhật mật khẩu để giữ cho tài khoản của bạn an toàn.",
       "changePasswordSuccess": "Đổi mật khẩu thành công!",
       "changePasswordError": "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu cũ.",
-      "oldPasswordVerified": "Xác nhận mật khẩu đúng! Bây giờ hãy nhập mật khẩu mới."
+      "oldPasswordVerified": "Xác nhận mật khẩu đúng! Bây giờ hãy nhập mật khẩu mới.",
+      "dangerZone": "Vùng nguy hiểm"
     },
     "messaging": {
       "title": "Tin nhắn",
@@ -448,6 +450,228 @@
       "deleteCommentSuccess": "Đã xóa bình luận!",
       "deleteCommentError": "Không thể xóa bình luận này",
       "fetchCommentsError": "Không thể tải bình luận"
+    },
+    "groups": {
+      "public": "Nhóm công khai",
+      "private": "Nhóm riêng tư",
+      "members": "thành viên",
+      "discuss": "Thảo luận",
+      "joined": "Đã tham gia",
+      "leave": "Rời nhóm",
+      "join": "Tham gia nhóm",
+      "inviteFriends": "Mời bạn bè",
+      "about": "Giới thiệu",
+      "defaultDesc": "Chào mừng bạn đến với cộng đồng của chúng tôi. Hãy cùng nhau xây dựng một môi trường văn minh và bổ ích.",
+      "createdAt": "Tạo ngày",
+      "managedBy": "Quản trị bởi",
+      "membersTitle": "Thành viên",
+      "manageMembers": "Quản lý thành viên",
+      "viewAllMembers": "Xem tất cả thành viên",
+      "membersList": "Danh sách thành viên",
+      "searchMembers": "Tìm kiếm thành viên...",
+      "searchFriends": "Tìm kiếm bạn bè...",
+      "noMembersFound": "Không tìm thấy thành viên nào",
+      "noFriendsToInvite": "Không có bạn bè để mời",
+      "allFriendsInGroup": "Tất cả bạn bè của bạn đã ở trong nhóm này!",
+      "inviteHint": "Thêm bạn bè để mời vào nhóm",
+      "invite": "Mời",
+      "inviting": "Đang mời...",
+      "invited": "Đã mời!",
+      "owner": "Trưởng nhóm",
+      "kick": "Kích",
+      "kicking": "Đang kích...",
+      "notFound": "Không tìm thấy nhóm",
+      "membersOnly": "Chỉ thành viên mới có thể đăng bài trong nhóm này",
+      "noPosts": "Chưa có bài viết nào trong nhóm này",
+      "joinSuccess": "Đã tham gia nhóm!",
+      "joinError": "Lỗi khi tham gia",
+      "leaveConfirm": "Bạn có chắc chắn muốn rời nhóm?",
+      "leaveSuccess": "Đã rời nhóm",
+      "leaveError": "Lỗi khi rời nhóm",
+      "kickConfirm": "Bạn có chắc chắn muốn kích thành viên này khỏi nhóm?",
+      "kickSuccess": "Đã kích thành viên khỏi nhóm thành công!",
+      "kickError": "Không thể kích thành viên này!",
+      "chatError": "Không thể mở chat nhóm",
+      "inviteSuccess": "Đã mời bạn bè vào nhóm thành công!",
+      "inviteError": "Không thể mời bạn bè này",
+      "inviteLoadError": "Không thể tải danh sách bạn bè",
+      "errorLoad": "Không thể tải thông tin nhóm"
+    },
+    "admin": {
+      "sidebar": {
+        "dashboard": "Bảng điều khiển",
+        "users": "Người dùng",
+        "groups": "Nhóm cộng đồng",
+        "reports": "Báo cáo",
+        "premium": "Gói Premium",
+        "analysis": "Phân tích",
+        "analytics": "Thống kê chi tiết",
+        "stats": "Số liệu",
+        "system": "Hệ thống",
+        "settings": "Cài đặt",
+        "help": "Trợ giúp",
+        "logout": "Đăng xuất",
+        "light": "Sáng",
+        "dark": "Tối"
+      },
+      "header": {
+        "welcome": "Chào mừng quay trở lại, {{name}}!",
+        "subtitle": "Đây là thời điểm tuyệt vời nhất để quản lý cộng đồng của bạn",
+        "search": "Tìm kiếm số liệu...",
+        "maintainOn": "Bảo trì: BẬT",
+        "maintainOff": "Bảo trì: TẮT",
+        "switchLanguage": "Chuyển đổi ngôn ngữ"
+      },
+      "dashboard": {
+        "globalView": "Tổng quan",
+        "securityReport": "Báo cáo bảo mật",
+        "totalReports": "Tổng số {{count}} báo cáo được gửi từ cộng đồng",
+        "totalUsers": "Người dùng",
+        "totalRegistered": "Tổng số đăng ký",
+        "activeUsers": "Hoạt động",
+        "activeMembers": "Thành viên hoạt động",
+        "totalPosts": "Bài viết",
+        "totalPostsLabel": "Tổng số bài đăng",
+        "activeReports": "Báo cáo xấu",
+        "activeReportsLabel": "Báo cáo chưa xử lý",
+        "systemTraffic": "Lượng truy cập hệ thống",
+        "growth": "Tăng trưởng",
+        "retention": "Giữ chân",
+        "allAccounts": "Tất cả tài khoản",
+        "thisYear": "Năm nay",
+        "health": "Sức khỏe hệ thống",
+        "engagement": "Tương tác",
+        "activeUsersLabel": "Người dùng hoạt động",
+        "returning": "Quay lại",
+        "others": "Khác",
+        "recentReports": "Báo cáo gần đây",
+        "seeAll": "Xem tất cả",
+        "noRecentReports": "Không có báo cáo nào gần đây",
+        "securityGoals": "Mục tiêu bảo mật",
+        "communityModeration": "Kiểm duyệt cộng đồng",
+        "systemOptimization": "Tối ưu hóa hệ thống",
+        "reportResolution": "Xử lý báo cáo",
+        "table": {
+          "reporter": "Người báo cáo",
+          "category": "Danh mục",
+          "status": "Trạng thái",
+          "time": "Thời gian",
+          "details": "Chi tiết",
+          "flaggedContent": "Nội dung vi phạm",
+          "identity": "Danh tính",
+          "actions": "Hành động",
+          "moderation": "Kiểm duyệt"
+        }
+      },
+      "users": {
+        "title": "Quản lý người dùng",
+        "subtitle": "Tổng cộng {{count}} thành viên trong cộng đồng",
+        "table": {
+          "profile": "Hồ sơ",
+          "contact": "Liên hệ",
+          "joined": "Đã tham gia",
+          "status": "Trạng thái",
+          "actions": "Hành động"
+        },
+        "status": {
+          "active": "Đang hoạt động",
+          "banned": "Bị khóa"
+        },
+        "actions": {
+          "restrict": "Khóa tài khoản",
+          "restore": "Mở khóa tài khoản"
+        }
+      },
+      "groups": {
+        "title": "Quản lý nhóm cộng đồng",
+        "subtitle": "Tổng cộng {{count}} nhóm trong hệ thống",
+        "noGroups": "Không tìm thấy nhóm nào",
+        "unclassified": "Chưa phân loại",
+        "deleteConfirm": "Bạn có chắc chắn muốn xóa nhóm này? Hành động này sẽ xóa toàn bộ bài viết, tin nhắn và thành viên của nhóm.",
+        "table": {
+          "name": "Tên nhóm",
+          "privacy": "Quyền riêng tư",
+          "creator": "Trưởng nhóm",
+          "members": "Thành viên",
+          "joined": "Ngày tạo",
+          "actions": "Hành động"
+        },
+        "status": {
+          "public": "Công khai",
+          "private": "Riêng tư"
+        },
+        "actions": {
+          "delete": "Xóa nhóm"
+        }
+      },
+      "premium": {
+        "title": "Gói Premium",
+        "subtitle": "Quản lý giá cả và trạng thái hoạt động của các gói dịch vụ",
+        "createBtn": "Tạo gói mới",
+        "plan": "Gói thuê bao",
+        "price": "Giá tiền (VND)",
+        "description": "Mô tả",
+        "features": "Tính năng (Chọn tính năng)",
+        "confirmBtn": "Xác nhận tạo gói",
+        "featureLabels": {
+          "filterAge": "Lọc độ tuổi",
+          "noAds": "Ẩn quảng cáo",
+          "seeIdentity": "Xem danh tính",
+          "radarPremium": "Radar cao cấp"
+        },
+        "noPackages": "Không tìm thấy gói dịch vụ nào. Vui lòng kiểm tra dữ liệu mẫu."
+      },
+      "modals": {
+        "userDetails": {
+          "globalStatus": "Trạng thái hệ thống",
+          "restricted": "Bị khóa",
+          "restoreBtn": "Mở khóa tài khoản",
+          "restrictBtn": "Khóa tài khoản",
+          "closeBtn": "Đóng hồ sơ"
+        },
+        "reportDetails": {
+          "title": "Chi tiết báo cáo vi phạm",
+          "sourceIdentity": "Người báo cáo",
+          "platformType": "Loại đối tượng",
+          "originalContent": "Nội dung gốc",
+          "violatedStandard": "Tiêu chuẩn vi phạm",
+          "noDescription": "Không có mô tả chi tiết bổ sung nào.",
+          "resolveBtn": "Xử lý vi phạm",
+          "dismissBtn": "Bỏ qua",
+          "statusReport": "Báo cáo trạng thái"
+        },
+        "createPackage": {
+          "title": "Tạo Gói Dịch Vụ Mới",
+          "name": "Tên gói",
+          "namePlaceholder": "Ví dụ: Chat Random, Ads...",
+          "price": "Giá tiền (VND)",
+          "description": "Mô tả",
+          "features": "Tính năng (Chọn sẵn)",
+          "submit": "Xác nhận tạo gói",
+          "submitting": "Đang tạo..."
+        }
+      },
+      "toasts": {
+        "errorGetData": "Lỗi lấy dữ liệu Admin",
+        "errorGetUsers": "Lỗi lấy danh sách người dùng",
+        "errorGetGroups": "Lỗi lấy danh sách nhóm",
+        "errorGetReports": "Lỗi lấy danh sách báo cáo",
+        "errorGetPackages": "Lỗi lấy danh sách gói dịch vụ",
+        "successUpdatePackage": "Đã cập nhật gói dịch vụ",
+        "errorUpdatePackage": "Lỗi cập nhật gói dịch vụ",
+        "successCreatePackage": "Đã tạo gói dịch vụ mới",
+        "errorCreatePackage": "Lỗi tạo gói dịch vụ",
+        "successResolveReport": "Đã xử lý báo cáo",
+        "errorResolveReport": "Lỗi xử lý báo cáo",
+        "successMaintenanceOn": "Đã BẬT chế độ bảo trì hệ thống",
+        "successMaintenanceOff": "Đã TẮT chế độ bảo trì hệ thống",
+        "errorMaintenance": "Không thể thay đổi trạng thái bảo trì",
+        "successUnlockUser": "Đã mở khóa tài khoản",
+        "successLockUser": "Đã khóa tài khoản",
+        "errorToggleStatus": "Cập nhật trạng thái thất bại",
+        "successDeleteGroup": "Đã xóa nhóm thành công",
+        "errorDeleteGroup": "Lỗi khi xóa nhóm"
+      }
     }
   }
 }
