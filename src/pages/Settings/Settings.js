@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +17,9 @@ const Settings = () => {
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef(null);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [pastedAvatarUrl, setPastedAvatarUrl] = useState('');
+  const [imageUrlMode, setImageUrlMode] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: user?.fullName || '',
@@ -98,6 +102,63 @@ const Settings = () => {
       // Silencing success toast per user request
     } catch (error) {
       toast.error(t(`api.${error.errorMessage || 'User.Profile.UpdateFail'}`));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveAvatarUrl = async () => {
+    if (!pastedAvatarUrl) return;
+    setLoading(true);
+    try {
+      const payload = {
+        fullName: user.fullName || user.username,
+        username: user.username,
+        email: user.email,
+        bio: user.bio || '',
+        avatarUrl: pastedAvatarUrl,
+        gender: user.gender || '',
+        dateOfBirth: user.dateOfBirth ? user.dateOfBirth.split('T')[0] : null,
+        phoneNumber: user.phoneNumber || '',
+        interests: user.interests || ''
+      };
+      
+      const response = await userService.updateUser(payload);
+      const updated = response || { ...user, avatarUrl: pastedAvatarUrl };
+      updateUserData(updated);
+      setIsAvatarModalOpen(false);
+      setPastedAvatarUrl('');
+      setImageUrlMode(false);
+      toast.success("Đã cập nhật ảnh đại diện thành công!");
+    } catch (error) {
+      toast.error(t(`api.${error.errorMessage || 'User.Avatar.UploadFail'}`) || "Lỗi cập nhật ảnh đại diện");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setLoading(true);
+    try {
+      const payload = {
+        fullName: user.fullName || user.username,
+        username: user.username,
+        email: user.email,
+        bio: user.bio || '',
+        avatarUrl: "default_avatar.png",
+        gender: user.gender || '',
+        dateOfBirth: user.dateOfBirth ? user.dateOfBirth.split('T')[0] : null,
+        phoneNumber: user.phoneNumber || '',
+        interests: user.interests || ''
+      };
+      
+      const response = await userService.updateUser(payload);
+      const updated = response || { ...user, avatarUrl: "default_avatar.png" };
+      updateUserData(updated);
+      setIsAvatarModalOpen(false);
+      toast.success("Đã khôi phục ảnh đại diện mặc định!");
+    } catch (error) {
+      toast.error(t(`api.${error.errorMessage || 'User.Avatar.UploadFail'}`) || "Lỗi khôi phục ảnh đại diện");
     } finally {
       setLoading(false);
     }
@@ -261,13 +322,16 @@ const Settings = () => {
                           }}
                         />
                         <button 
-                          onClick={() => avatarInputRef.current.click()}
+                          onClick={() => setIsAvatarModalOpen(true)}
                           disabled={avatarUploading}
                           className="bg-[#1a1a1a] text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-800 transition-colors disabled:opacity-50"
                         >
                           {avatarUploading ? "..." : t('settings.changePhoto')}
                         </button>
-                        <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-50 transition-colors">
+                        <button 
+                          onClick={handleRemoveAvatar}
+                          className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-50 transition-colors"
+                        >
                           {t('settings.remove')}
                         </button>
                       </div>
@@ -571,6 +635,154 @@ const Settings = () => {
           </main>
         </div>
       </div>
+
+      {/* Avatar Option/URL Modal */}
+      {isAvatarModalOpen && createPortal(
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center px-4 animate-fade-in">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm modal-backdrop"
+            onClick={() => {
+              setIsAvatarModalOpen(false);
+              setPastedAvatarUrl('');
+              setImageUrlMode(false);
+            }}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden modal-content p-8"
+            style={{ backgroundColor: '#ffffff', backdropFilter: 'none' }}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">Thay đổi ảnh đại diện</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Chọn phương thức tải ảnh</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setIsAvatarModalOpen(false);
+                  setPastedAvatarUrl('');
+                  setImageUrlMode(false);
+                }}
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-slate-900 transition-all"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {!imageUrlMode ? (
+              <div className="space-y-4">
+                {/* Option 1: Choose from device */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    avatarInputRef.current?.click();
+                    setIsAvatarModalOpen(false);
+                  }}
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl border border-slate-100 hover:border-indigo-500 hover:bg-indigo-50/10 transition-all group text-left bg-white"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-100 transition-all shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-slate-800">Chọn ảnh từ thiết bị</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Tải lên ảnh từ máy tính hoặc điện thoại của bạn</p>
+                  </div>
+                </button>
+
+                {/* Option 2: Paste URL */}
+                <button
+                  type="button"
+                  onClick={() => setImageUrlMode(true)}
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl border border-slate-100 hover:border-indigo-500 hover:bg-indigo-50/10 transition-all group text-left bg-white"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 group-hover:bg-purple-100 transition-all shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-slate-800">Sử dụng liên kết ảnh (URL)</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Dán đường dẫn ảnh trực tuyến (HTTP/HTTPS)</p>
+                  </div>
+                </button>
+
+                {/* Option 3: Reset to default */}
+                <button
+                  type="button"
+                  onClick={handleRemoveAvatar}
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl border border-slate-100 hover:border-red-500 hover:bg-red-50/10 transition-all group text-left bg-white"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-600 group-hover:bg-red-100 transition-all shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-slate-800">Sử dụng ảnh mặc định</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Khôi phục về ảnh đại diện chữ cái mặc định</p>
+                  </div>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Đường dẫn ảnh (URL)</label>
+                  <input 
+                    type="url"
+                    placeholder="https://example.com/avatar.jpg"
+                    value={pastedAvatarUrl}
+                    onChange={(e) => setPastedAvatarUrl(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  />
+                </div>
+
+                {pastedAvatarUrl && (
+                  <div className="space-y-2 flex flex-col items-center py-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest self-start ml-1">Xem trước ảnh</label>
+                    <div className="w-28 h-28 rounded-full overflow-hidden border-2 border-indigo-100 shadow-inner bg-slate-50 relative">
+                      <img 
+                        src={pastedAvatarUrl} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src = "https://placehold.co/150?text=Anh+loi";
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      setImageUrlMode(false);
+                      setPastedAvatarUrl('');
+                    }}
+                    className="flex-1 px-6 py-3.5 rounded-2xl bg-slate-100 text-slate-600 font-bold text-sm hover:bg-slate-200 transition-all"
+                  >
+                    Quay lại
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={handleSaveAvatarUrl}
+                    disabled={loading || !pastedAvatarUrl}
+                    className="flex-1 px-6 py-3.5 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50"
+                  >
+                    {loading ? "Đang lưu..." : "Lưu ảnh"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
