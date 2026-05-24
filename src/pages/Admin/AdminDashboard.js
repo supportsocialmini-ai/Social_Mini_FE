@@ -55,13 +55,17 @@ const AdminDashboard = () => {
   const [isUpdatingPackage, setIsUpdatingPackage] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newPackage, setNewPackage] = useState({ name: '', price: 0, description: '', features: '', isActive: true });
+  // Pagination for users tab
+  const [usersCurrentPage, setUsersCurrentPage] = useState(1);
+  const [usersTotalCount, setUsersTotalCount] = useState(0);
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     if (isAdmin) {
       if (activeTab === 'reports') {
         fetchReports();
       } else if (activeTab === 'users') {
-        fetchUsers();
+        fetchUsers(1);
       } else if (activeTab === 'groups') {
         fetchGroups();
       } else if (activeTab === 'premium') {
@@ -78,10 +82,13 @@ const AdminDashboard = () => {
     try {
       const [statsRes, usersRes] = await Promise.all([
         adminService.getStats(),
-        adminService.getUsers()
+        adminService.getUsers(1, PAGE_SIZE)
       ]);
       setStats(statsRes);
-      setUsers(usersRes);
+      const usersData = usersRes?.users?.$values || usersRes?.users || (Array.isArray(usersRes) ? usersRes : []);
+      setUsers(usersData);
+      setUsersTotalCount(usersRes?.totalCount || 0);
+      setUsersCurrentPage(1);
     } catch (error) {
       toast.error(t('admin.toasts.errorGetData'));
     } finally {
@@ -89,11 +96,15 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 1) => {
     setIsLoading(true);
     try {
-      const usersRes = await adminService.getUsers();
-      setUsers(usersRes);
+      const res = await adminService.getUsers(page, PAGE_SIZE);
+      // API returns { totalCount, page, pageSize, users }
+      const usersData = res?.users?.$values || res?.users || (Array.isArray(res) ? res : []);
+      setUsers(usersData);
+      setUsersTotalCount(res?.totalCount || 0);
+      setUsersCurrentPage(page);
     } catch (error) {
       toast.error(t('admin.toasts.errorGetUsers'));
     } finally {
@@ -221,6 +232,13 @@ const AdminDashboard = () => {
     } catch (error) {
       toast.error(t('admin.toasts.errorToggleStatus'));
     }
+  };
+
+  const usersTotalPages = Math.ceil(usersTotalCount / PAGE_SIZE);
+
+  const handleUserPageChange = (newPage) => {
+    if (newPage < 1 || newPage > usersTotalPages || isLoading) return;
+    fetchUsers(newPage);
   };
 
   if (!isAdmin) {
@@ -602,10 +620,10 @@ const AdminDashboard = () => {
                <div className="flex items-center justify-between mb-10">
                   <div>
                     <h2 className={`text-2xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{t('admin.users.title')}</h2>
-                    <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>{t('admin.users.subtitle', { count: filteredUsers.length })}</p>
+                    <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>{t('admin.users.subtitle', { count: usersTotalCount })}</p>
                   </div>
                   <div className="flex gap-2">
-                     <button onClick={fetchUsers} className={`p-3 rounded-2xl border transition-all active:scale-95 ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-500 hover:text-indigo-400' : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-indigo-600'}`}>
+                     <button onClick={() => fetchUsers(usersCurrentPage)} className={`p-3 rounded-2xl border transition-all active:scale-95 ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-500 hover:text-indigo-400' : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-indigo-600'}`}>
                         <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
                      </button>
                   </div>
@@ -678,6 +696,69 @@ const AdminDashboard = () => {
                      </tbody>
                   </table>
                </div>
+
+               {/* PAGINATION */}
+               {usersTotalPages > 1 && (
+                 <div className="flex items-center justify-between mt-8 pt-6 border-t" style={{ borderColor: isDarkMode ? '#1e293b' : '#f1f5f9' }}>
+                   <p className={`text-xs font-bold ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                     {t('admin.users.pagination.showing', {
+                       from: (usersCurrentPage - 1) * PAGE_SIZE + 1,
+                       to: Math.min(usersCurrentPage * PAGE_SIZE, usersTotalCount),
+                       total: usersTotalCount
+                     }) || `Hiển thị ${(usersCurrentPage - 1) * PAGE_SIZE + 1}–${Math.min(usersCurrentPage * PAGE_SIZE, usersTotalCount)} / ${usersTotalCount} người dùng`}
+                   </p>
+                   <div className="flex items-center gap-2">
+                     <button
+                       onClick={() => handleUserPageChange(usersCurrentPage - 1)}
+                       disabled={usersCurrentPage <= 1 || isLoading}
+                       className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${
+                         isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-indigo-400' : 'bg-slate-50 border-slate-100 text-slate-600 hover:text-indigo-600'
+                       }`}
+                     >
+                       ← {t('admin.users.pagination.prev') || 'Trước'}
+                     </button>
+
+                     <div className="flex items-center gap-1">
+                       {Array.from({ length: usersTotalPages }, (_, i) => i + 1)
+                         .filter(p => p === 1 || p === usersTotalPages || Math.abs(p - usersCurrentPage) <= 1)
+                         .reduce((acc, p, idx, arr) => {
+                           if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                           acc.push(p);
+                           return acc;
+                         }, [])
+                         .map((item, idx) =>
+                           item === '...' ? (
+                             <span key={`ellipsis-${idx}`} className={`px-2 text-xs font-bold ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>…</span>
+                           ) : (
+                             <button
+                               key={item}
+                               onClick={() => handleUserPageChange(item)}
+                               disabled={isLoading}
+                               className={`w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-95 ${
+                                 item === usersCurrentPage
+                                   ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                                   : (isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-indigo-400' : 'bg-white border-slate-100 text-slate-600 hover:text-indigo-600')
+                               }`}
+                             >
+                               {item}
+                             </button>
+                           )
+                         )
+                       }
+                     </div>
+
+                     <button
+                       onClick={() => handleUserPageChange(usersCurrentPage + 1)}
+                       disabled={usersCurrentPage >= usersTotalPages || isLoading}
+                       className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${
+                         isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-indigo-400' : 'bg-slate-50 border-slate-100 text-slate-600 hover:text-indigo-600'
+                       }`}
+                     >
+                       {t('admin.users.pagination.next') || 'Sau'} →
+                     </button>
+                   </div>
+                 </div>
+               )}
             </div>
           ) : activeTab === 'groups' ? (
             /* --- GROUPS TAB --- */

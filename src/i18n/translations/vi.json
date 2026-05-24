@@ -580,6 +580,11 @@
         "actions": {
           "restrict": "Khóa tài khoản",
           "restore": "Mở khóa tài khoản"
+        },
+        "pagination": {
+          "showing": "Hiển thị {{from}}–{{to}} / {{total}} người dùng",
+          "prev": "Trước",
+          "next": "Sau"
         }
       },
       "groups": {

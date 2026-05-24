@@ -4,8 +4,8 @@ const adminService = {
   getStats: () => {
     return axiosClient.get('api/admin/stats');
   },
-  getUsers: () => {
-    return axiosClient.get('api/admin/users');
+  getUsers: (page = 1, pageSize = 10) => {
+    return axiosClient.get(`api/admin/users?page=${page}&pageSize=${pageSize}`);
   },
   getMaintenanceStatus: () => {
     return axiosClient.get('api/admin/maintenance-status');

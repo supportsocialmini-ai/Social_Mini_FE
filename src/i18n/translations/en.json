@@ -580,6 +580,11 @@
         "actions": {
           "restrict": "Restrict Account",
           "restore": "Access Restore"
+        },
+        "pagination": {
+          "showing": "Showing {{from}}–{{to}} of {{total}} users",
+          "prev": "Prev",
+          "next": "Next"
         }
       },
       "groups": {
