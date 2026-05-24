@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Layout/Navbar';
 import PostCard from '../../components/Post/PostCard';
@@ -137,9 +137,14 @@ const Home = () => {
     }
   };
 
-  const fetchPosts = async () => {
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isNextLoading, setIsNextLoading] = useState(false);
+  const loadMoreRef = useRef(null);
+
+  const fetchPosts = async (pageNumber = 1) => {
     try {
-      const response = await postService.getPosts();
+      const response = await postService.getPosts(pageNumber, 10);
       const rawPosts = Array.isArray(response) ? response : (response?.$values || []);
       const normalized = rawPosts.filter(p => p).map(post => ({
         ...post,
@@ -150,13 +155,37 @@ const Home = () => {
         commentCount: post.commentCount || 0,
         isLiked: post.isLiked || false,
       }));
-      setPosts(normalized);
+      if (pageNumber === 1) {
+        setPosts(normalized);
+      } else {
+        setPosts(prev => [...prev, ...normalized]);
+      }
+      // Determine if more data exists based on returned count
+      if (normalized.length < 10) {
+        setHasMore(false);
+      }
     } catch (err) {
       console.error('Lỗi lấy bài viết:', err);
     } finally {
       setIsFeedLoading(false);
+      setIsNextLoading(false);
     }
   };
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasMore) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !isNextLoading) {
+        setIsNextLoading(true);
+        const nextPage = page + 1;
+        setPage(nextPage);
+        fetchPosts(nextPage);
+      }
+    }, { rootMargin: '200px' });
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [loadMoreRef.current, hasMore, isNextLoading, page]);
 
   const fetchSuggestedGroups = async () => {
     try {
@@ -168,60 +197,20 @@ const Home = () => {
     }
   };
 
-  const handlePostSubmit = async () => {
-    if (!postContent.trim()) return;
-    setIsPosting(true);
-    try {
-      if (imageFile) {
-        await postService.createPostWithImage(postContent, privacy, imageFile);
-      } else {
-        await postService.createPost({ Content: postContent, privacy });
-      }
-      setPostContent(''); setImagePreview(null); setImageFile(null);
-      fetchPosts();
-      toast.success(t('home.postSuccess'));
-    } catch (error) {
-      toast.error(error.errorMessage || t('home.postError'));
-    } finally { setIsPosting(false); }
-  };
-
-  const handleImageSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = ev => setImagePreview(ev.target?.result);
-    reader.readAsDataURL(file);
-  };
-
   const handleFollow = async (userId, fullName) => {
-    // Optimistic update
     setSentIds(prev => new Set([...prev, userId]));
-    
     try {
       await friendService.sendRequest(userId);
-      // Success
     } catch (error) { 
-      // If error is not 400 (which usually means already sent/pending), we might want to revert
-      // But for a better UX, we'll just keep it as 'Sent' to avoid repeated failed clicks
       console.error('Không thể gửi lời mời kết bạn:', error);
     }
   };
-
-  const STORY_GRADS = [
-    'from-pink-500 via-rose-400 to-orange-400',
-    'from-violet-500 to-indigo-500',
-    'from-blue-500 to-cyan-400',
-    'from-emerald-500 to-teal-400',
-    'from-amber-500 to-orange-400',
-  ];
 
   return (
     <div className="min-h-screen relative" style={{
       fontFamily: "'Plus Jakarta Sans', sans-serif",
       background: 'linear-gradient(135deg, #f0f0ff 0%, #f5f0ff 30%, #fdf4ff 60%, #f0f6ff 100%)',
     }}>
-      {/* Animated background blobs — fixed to viewport, no layout impact */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full opacity-[0.07] blur-3xl"
           style={{ background: 'radial-gradient(circle, #6366f1, transparent)', animation: 'blob1 18s ease-in-out infinite' }} />
@@ -241,7 +230,6 @@ const Home = () => {
         .story-ring:hover { animation: storyPulse 0.6s ease; }
         .glass-hover:hover { background: rgba(255,255,255,0.82) !important; box-shadow: 0 12px 40px rgba(99,102,241,0.1), 0 2px 8px rgba(0,0,0,0.06) !important; transform: translateY(-1px); }
         .nav-item:hover .nav-icon { transform: scale(1.1); }
-        /* Post creator — CSS focus-within, no JS state */
         .post-creator { transition: box-shadow 0.25s ease; }
         .post-creator:focus-within { box-shadow: 0 0 0 2px rgba(99,102,241,0.28), 0 8px 32px rgba(99,102,241,0.1) !important; }
         .post-creator textarea { transition: height 0.2s ease; min-height: 52px; max-height: 200px; }
@@ -253,10 +241,8 @@ const Home = () => {
 
       <div className="relative z-10 max-w-full mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] gap-6 pt-6 px-4 sm:px-8 pb-24">
 
-        {/* ── LEFT SIDEBAR ─────────────────────────────── */}
         <aside className="hidden lg:block">
           <div className="sticky top-[76px] space-y-2">
-            {/* Profile card */}
             <Link to="/profile" className="glass-hover flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 group"
               style={glass.card}>
               <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-indigo-300/60 flex-shrink-0">
@@ -272,7 +258,6 @@ const Home = () => {
 
             <div className="h-px mx-3" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.15), transparent)' }} />
 
-            {/* Nav items */}
             {NAV_ITEMS(t).map(item => (
               <Link key={item.to + item.label} to={item.to}
                 className="glass-hover nav-item flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-300 group"
@@ -307,13 +292,9 @@ const Home = () => {
           </div>
         </aside>
 
-        {/* ── CENTER FEED ──────────────────────────────── */}
         <main className="min-w-0 space-y-4 max-w-[800px] mx-auto w-full">
-
-          {/* Stories */}
           <div className="rounded-2xl p-4 transition-all duration-300" style={glass.card}>
             <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-              {/* My story */}
               <div className="flex flex-col items-center gap-1.5 flex-shrink-0 cursor-pointer story-ring">
                 <div className="relative w-[60px] h-[60px]">
                   <div className="w-full h-full rounded-full p-[2.5px]"
@@ -346,14 +327,12 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Post Creator — isolated component, typing won't re-render Home */}
           <PostCreator
             user={user}
             getFullAvatarUrl={getFullAvatarUrl}
-            onPostSuccess={fetchPosts}
+            onPostSuccess={() => fetchPosts(1)}
           />
 
-          {/* Feed Posts */}
           {isFeedLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map(i => (
@@ -374,6 +353,7 @@ const Home = () => {
               ))}
             </div>
           ) : posts.length > 0 ? (
+<>
             <div className="space-y-4">
               {posts.map((post, idx) => (
                 <div key={post.postId || post.id} className="post-enter" style={{ animationDelay: `${idx * 0.05}s` }}>
@@ -387,6 +367,17 @@ const Home = () => {
                 </div>
               ))}
             </div>
+            {isNextLoading && (
+              <div className="flex justify-center items-center py-4 text-slate-500" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.2" strokeWidth="4" />
+                  <path d="M22 12a10 10 0 01-10 10" stroke="currentColor" strokeWidth="4" />
+                </svg>
+                Đang tải thêm bài viết...
+              </div>
+            )}
+            <div ref={loadMoreRef} />
+          </>
           ) : (
             <div className="rounded-2xl p-16 text-center" style={glass.card}>
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"

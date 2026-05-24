@@ -1,8 +1,8 @@
 import axiosClient from '../api/axiosClient';
 
 const postService = {
-  getPosts: () => {
-    return axiosClient.get('api/post');
+  getPosts: (page = 1, pageSize = 10) => {
+    return axiosClient.get(`api/post?page=${page}&pageSize=${pageSize}`);
   },
   getMyPosts: () => {
     return axiosClient.get('api/post/mypost');
