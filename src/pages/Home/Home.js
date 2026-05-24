@@ -157,12 +157,13 @@ const Home = () => {
       }));
       if (pageNumber === 1) {
         setPosts(normalized);
+        setPage(1);
+        setHasMore(normalized.length === 10);
       } else {
         setPosts(prev => [...prev, ...normalized]);
-      }
-      // Determine if more data exists based on returned count
-      if (normalized.length < 10) {
-        setHasMore(false);
+        if (normalized.length < 10) {
+          setHasMore(false);
+        }
       }
     } catch (err) {
       console.error('Lỗi lấy bài viết:', err);
