@@ -9,15 +9,9 @@ import postService from '../../services/postService';
 import friendService from '../../services/friendService';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
-
-const TRENDING = (t) => [
-  { category: t('home.trendingItems.tech'), tag: '#ReactJS', count: `12.5K ${t('home.trendingItems.posts')}`, color: '#6366f1' },
-  { category: t('home.trendingItems.design'), tag: '#Minimalism', count: `8.2K ${t('home.trendingItems.posts')}`, color: '#8b5cf6' },
-  { category: t('home.trendingItems.vietnam'), tag: '#CherryBlossom', count: `43.1K ${t('home.trendingItems.posts')}`, color: '#ec4899' },
-];
+import axiosClient from '../../api/axiosClient';
 
 const NAV_ITEMS = (t) => [
-  { to: '/', label: t('home.nav.home'), grad: 'from-indigo-500 to-blue-500', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
   { to: '/friends', label: t('home.nav.friends'), grad: 'from-violet-500 to-purple-500', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
   { to: '/messaging', label: t('home.nav.messages'), grad: 'from-purple-500 to-pink-500', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
   { to: '/groups', label: 'Cộng đồng', grad: 'from-orange-500 to-red-500', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
@@ -50,6 +44,7 @@ const Home = () => {
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [isFeedLoading, setIsFeedLoading] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [activeFooterModal, setActiveFooterModal] = useState(null);
 
   const SUGGESTED_INTERESTS = ["Công nghệ", "Đánh cầu", "Du lịch", "Ẩm thực", "Âm nhạc", "Phim ảnh", "Kinh doanh", "Thể thao", "Nghệ thuật"];
 
@@ -434,28 +429,49 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Trending */}
+            {/* Hot Features Card */}
             <div className="rounded-2xl p-5 transition-all duration-300" style={glass.card}>
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg, #f97316, #f59e0b)' }}>
+                  style={{ background: 'linear-gradient(135deg, #f43f5e, #ec4899)' }}>
                   <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <p className="font-bold text-slate-800 text-sm">{t('home.trending')}</p>
+                <p className="font-bold text-slate-800 text-sm">Tính năng đang HOT</p>
               </div>
-              <div className="space-y-3.5">
-                {TRENDING(t).map((item, i) => (
-                  <div key={item.tag} className="cursor-pointer group p-2.5 rounded-xl transition-all duration-200"
-                    style={{ background: 'transparent' }}
-                    onMouseEnter={e => e.currentTarget.style.background = `${item.color}0d`}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                    <p className="text-[10px] text-slate-400 font-medium">{item.category}</p>
-                    <p className="text-sm font-bold mt-0.5 transition-colors group-hover:text-indigo-600" style={{ color: '#1e293b' }}>{item.tag}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{item.count}</p>
-                  </div>
-                ))}
+              
+              <div 
+                onClick={() => navigate('/chat-random')}
+                className="cursor-pointer group p-3.5 rounded-2xl transition-all duration-300 border border-transparent hover:border-pink-200/50 hover:shadow-lg hover:shadow-pink-500/5 relative overflow-hidden"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgba(244, 63, 94, 0.03), rgba(236, 72, 153, 0.03))',
+                  border: '1px solid rgba(244, 63, 94, 0.08)' 
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(244, 63, 94, 0.06), rgba(236, 72, 153, 0.06))';
+                  e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.2)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(244, 63, 94, 0.03), rgba(236, 72, 153, 0.03))';
+                  e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.08)';
+                }}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-sm font-bold text-slate-800 transition-colors group-hover:text-rose-500">Chat Random Ẩn Danh</p>
+                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-500 border border-rose-100 uppercase tracking-wider animate-pulse">
+                    Hot
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed mb-3">
+                  Tìm kiếm và ghép cặp ngẫu nhiên với người dùng khác. Trò chuyện hoàn toàn ẩn danh, bảo mật và kết nối nhanh chóng!
+                </p>
+                <div className="flex items-center gap-1.5 text-xs font-black text-rose-500 group-hover:translate-x-1 transition-transform">
+                  <span>Trải nghiệm ngay</span>
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
               </div>
             </div>
 
@@ -463,12 +479,18 @@ const Home = () => {
             <div className="px-1">
               <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2">
                 {[
-                  { key: 'home.about', label: t('home.about') },
-                  { key: 'home.help', label: t('home.help') },
-                  { key: 'home.privacy', label: t('home.privacy') },
-                  { key: 'home.terms', label: t('home.terms') }
+                  { key: 'about', label: t('home.about') },
+                  { key: 'help', label: t('home.help') },
+                  { key: 'privacy', label: t('home.privacy') },
+                  { key: 'terms', label: t('home.terms') }
                 ].map(item => (
-                  <button key={item.key} className="text-[10px] font-bold text-slate-500 hover:text-indigo-600 hover:underline transition-colors">{item.label}</button>
+                  <button 
+                    key={item.key} 
+                    onClick={() => setActiveFooterModal(item.key)}
+                    className="text-[10px] font-bold text-slate-500 hover:text-indigo-600 hover:underline transition-colors"
+                  >
+                    {item.label}
+                  </button>
                 ))}
               </div>
               <p className="text-[10px] font-semibold text-slate-400 tracking-wider">© 2026 MINISOCIAL · v2.0.0</p>
@@ -528,6 +550,145 @@ const Home = () => {
               </button>
               
               <p className="text-center mt-6 text-[10px] font-bold text-slate-300 uppercase tracking-widest">Bạn có thể thay đổi trong phần cài đặt sau</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer Static Modals */}
+      {activeFooterModal && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setActiveFooterModal(null)} />
+          <div className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[85vh]">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                  {activeFooterModal === 'about' && (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  )}
+                  {activeFooterModal === 'help' && (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  )}
+                  {activeFooterModal === 'privacy' && (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                  )}
+                  {activeFooterModal === 'terms' && (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  )}
+                </div>
+                <h3 className="font-extrabold text-slate-800 text-base">
+                  {activeFooterModal === 'about' && "Giới thiệu về MiniSocial"}
+                  {activeFooterModal === 'help' && "Trung tâm Trợ giúp (FAQ)"}
+                  {activeFooterModal === 'privacy' && "Chính sách Quyền riêng tư"}
+                  {activeFooterModal === 'terms' && "Điều khoản Dịch vụ"}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setActiveFooterModal(null)}
+                className="p-1 rounded-lg hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="overflow-y-auto px-6 py-5 flex-1 text-slate-600 text-sm leading-relaxed space-y-4">
+              {activeFooterModal === 'about' && (
+                <>
+                  <p><strong>MiniSocial</strong> là nền tảng mạng xã hội thu nhỏ hiện đại, thân thiện, được phát triển nhằm mục đích kết nối cộng đồng, chia sẻ khoảnh khắc cá nhân và tương tác thời gian thực.</p>
+                  <p>Nền tảng của chúng tôi tập trung tối đa vào tốc độ truyền tải, thiết kế hiện đại (Glassmorphism) và sự đơn giản, giúp bạn trải nghiệm không gian mạng xã hội sạch sẽ và văn minh nhất.</p>
+                  <div className="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-100/50 space-y-2.5">
+                    <p className="font-bold text-indigo-950 text-xs uppercase tracking-wider">Tính năng nổi bật</p>
+                    <ul className="list-disc pl-5 space-y-1.5 text-xs text-slate-700 font-medium">
+                      <li>Bảng tin (News Feed) cập nhật bài đăng tức thì.</li>
+                      <li>Nhắn tin và gọi điện WebRTC thời gian thực.</li>
+                      <li>Chat Random ẩn danh - ghép đôi ngẫu nhiên đầy thú vị.</li>
+                      <li>Hệ thống nhóm cộng đồng đa dạng chủ đề thảo luận.</li>
+                    </ul>
+                  </div>
+                  <p>Chúng tôi luôn nỗ lực không ngừng cải tiến và cập nhật các tính năng mới để xây dựng một cộng đồng MiniSocial bền vững, kết nối mọi người xích lại gần nhau hơn.</p>
+                </>
+              )}
+
+              {activeFooterModal === 'help' && (
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <p className="font-bold text-slate-800">1. Làm thế nào để đăng ký Premium?</p>
+                    <p className="text-slate-600 text-xs">Bạn có thể chọn gói mong muốn ở danh sách bên cột phải (ở giao diện Trang chủ) hoặc vào <strong>Cài đặt &gt; Nâng cấp Premium</strong>. Thanh toán an toàn, nhanh chóng qua cổng VNPay.</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="font-bold text-slate-800">2. Chat Random ẩn danh là gì?</p>
+                    <p className="text-slate-600 text-xs">Đây là tính năng độc đáo cho phép bạn ghép đôi trò chuyện ngẫu nhiên với một thành viên online khác trên hệ thống. Mọi thông tin cá nhân của cả hai bên đều được giữ kín hoàn toàn để đảm bảo sự ẩn danh và thú vị.</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="font-bold text-slate-800">3. Làm sao để báo cáo vi phạm?</p>
+                    <p className="text-slate-600 text-xs">Nếu phát hiện bài viết hoặc hành vi không lành mạnh, hãy bấm vào nút 3 chấm góc phải bài đăng đó, chọn <strong>Báo cáo xấu</strong>, ghi rõ lý do và nhấn gửi. Ban quản trị sẽ tiếp nhận và xử lý trong vòng 24h.</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="font-bold text-slate-800">4. Liên hệ hỗ trợ trực tiếp</p>
+                    <p className="text-slate-600 text-xs">Mọi thắc mắc kỹ thuật vui lòng gửi về email: <span className="text-indigo-600 font-bold">support.socialmini@gmail.com</span> hoặc liên hệ Hotline: <span className="font-bold">1900 6060</span> (8:00 - 22:00 hàng ngày).</p>
+                  </div>
+                </div>
+              )}
+
+              {activeFooterModal === 'privacy' && (
+                <>
+                  <p>MiniSocial cam kết bảo vệ thông tin cá nhân và tôn trọng quyền riêng tư của bạn. Dưới đây là tóm tắt chính sách bảo mật dữ liệu:</p>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="font-bold text-slate-800 text-xs uppercase tracking-wider">1. Thu thập dữ liệu</p>
+                      <p className="text-slate-600 text-xs mt-1">Chúng tôi chỉ thu thập thông tin cơ bản phục vụ tài khoản như: Họ và tên, Email, Ảnh đại diện và thông tin sở thích để gợi ý nội dung phù hợp.</p>
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 text-xs uppercase tracking-wider">2. Bảo mật thông tin</p>
+                      <p className="text-slate-600 text-xs mt-1">Mật khẩu tài khoản của bạn được mã hóa một chiều bằng thuật toán BCrypt cực kỳ bảo mật trước khi lưu vào cơ sở dữ liệu. Dữ liệu chat được truyền tải an toàn qua giao thức SignalR.</p>
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 text-xs uppercase tracking-wider">3. Chia sẻ dữ liệu</p>
+                      <p className="text-slate-600 text-xs mt-1">Chúng tôi cam kết tuyệt đối KHÔNG bán, cho thuê hay chia sẻ thông tin cá nhân của bạn với bất kỳ bên thứ ba nào vì mục đích quảng cáo hay thương mại.</p>
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 text-xs uppercase tracking-wider">4. Quyền tự quyết tài khoản</p>
+                      <p className="text-slate-600 text-xs mt-1">Bạn có toàn quyền chỉnh sửa thông tin cá nhân hoặc xóa tài khoản vĩnh viễn trong phần <strong>Cài đặt &gt; Quản lý tài khoản</strong> bất cứ khi nào bạn muốn.</p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {activeFooterModal === 'terms' && (
+                <>
+                  <p>Chào mừng bạn đến với MiniSocial. Khi tham gia cộng đồng của chúng tôi, bạn đồng ý tuân thủ các điều khoản dịch vụ sau đây:</p>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="font-bold text-slate-800 text-xs">1. Đăng ký & Bảo mật tài khoản</p>
+                      <p className="text-slate-600 text-xs mt-1">Bạn cần cung cấp email hợp lệ và tự chịu trách nhiệm đối với mọi hoạt động phát sinh từ tài khoản và mật khẩu của mình.</p>
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 text-xs">2. Quy định đăng tải nội dung</p>
+                      <p className="text-slate-600 text-xs mt-1">Nghiêm cấm đăng tải hình ảnh bạo lực, đồi trụy, thông tin sai sự thật, hoặc các nội dung quấy rối, công kích cá nhân hay tổ chức khác.</p>
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 text-xs">3. Quyền sở hữu trí tuệ</p>
+                      <p className="text-slate-600 text-xs mt-1">Bạn sở hữu bản quyền bài viết của mình đăng lên. Tuy nhiên, bằng việc đăng tải, bạn cho phép MiniSocial quyền hiển thị công khai nội dung đó trên hệ thống.</p>
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 text-xs">4. Chấm dứt dịch vụ</p>
+                      <p className="text-slate-600 text-xs mt-1">Chúng tôi có quyền khóa hoặc hủy bỏ tài khoản vi phạm nghiêm trọng quy chuẩn ứng xử mà không cần thông báo trước.</p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 flex-shrink-0 flex justify-end">
+              <button 
+                onClick={() => setActiveFooterModal(null)}
+                className="px-5 py-2.5 bg-slate-900 text-white font-bold rounded-xl text-xs hover:bg-slate-800 transition-colors shadow-lg shadow-slate-100"
+              >
+                Đóng
+              </button>
             </div>
           </div>
         </div>

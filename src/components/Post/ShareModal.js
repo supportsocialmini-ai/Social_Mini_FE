@@ -95,7 +95,7 @@ const ShareModal = ({ isOpen, onClose, post, onShareSuccess }) => {
             placeholder="Bạn đang nghĩ gì về bài viết này?"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full min-h-[100px] bg-transparent text-slate-700 placeholder-slate-400 border-none focus:ring-0 resize-none text-lg mb-4"
+            className="w-full min-h-[100px] bg-transparent text-slate-700 placeholder-slate-400 border-none outline-none focus:ring-0 resize-none text-lg mb-4"
           />
 
           {/* Original Post Preview */}

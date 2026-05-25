@@ -50,6 +50,10 @@ const messageService = {
   // Xóa thành viên khỏi nhóm
   removeMember: (groupId, userId) => {
     return axiosClient.delete(`api/chat/group/${groupId}/members/${userId}`);
+  },
+  // Xóa cả đoạn chat từ phía mình
+  deleteConversation: (conversationId) => {
+    return axiosClient.delete(`api/chat/conversation/${conversationId}`);
   }
 };
 

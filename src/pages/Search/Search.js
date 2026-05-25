@@ -12,12 +12,14 @@ const Search = () => {
   const { getFullAvatarUrl } = useAuth();
   const { t } = useTranslation();
   const query = searchParams.get('q') || '';
+  const interestParam = searchParams.get('interest') || '';
 
   const [users, setUsers] = useState([]);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'people' | 'posts'
   const [inputValue, setInputValue] = useState(query);
+  const [selectedInterest, setSelectedInterest] = useState(interestParam);
   const [expandedPosts, setExpandedPosts] = useState({});
   const [sentIds, setSentIds] = useState(new Set());
 
@@ -25,7 +27,7 @@ const Search = () => {
     setExpandedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
   };
 
-  const doSearch = useCallback(async (q) => {
+  const doSearch = useCallback(async (q, interestVal = '') => {
     if (!q || q.trim().length < 2) {
       setUsers([]);
       setPosts([]);
@@ -33,7 +35,7 @@ const Search = () => {
     }
     setLoading(true);
     try {
-      const response = await searchService.search(q.trim());
+      const response = await searchService.search(q.trim(), interestVal);
       // axiosClient đã bóc result nên response là { users: [], posts: [] }
       const data = response;
       setUsers(data?.users || data?.Users || []);
@@ -44,25 +46,28 @@ const Search = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   // Gọi API khi query thay đổi
   useEffect(() => {
-    doSearch(query);
+    doSearch(query, interestParam);
     setInputValue(query);
-  }, [query]);
+    setSelectedInterest(interestParam);
+  }, [query, interestParam, doSearch]);
 
   // Debounce: Cập nhật URL khi người dùng gõ
   useEffect(() => {
     const timer = setTimeout(() => {
       if (inputValue.trim().length >= 2) {
-        setSearchParams({ q: inputValue.trim() });
+        const params = { q: inputValue.trim() };
+        if (selectedInterest) params.interest = selectedInterest;
+        setSearchParams(params);
       } else if (inputValue.trim().length === 0) {
         setSearchParams({});
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [inputValue]);
+  }, [inputValue, selectedInterest, setSearchParams]);
 
   const handleAddFriend = async (userId, fullName) => {
     // Optimistic update
@@ -91,6 +96,23 @@ const Search = () => {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
+            <select
+              value={selectedInterest}
+              onChange={(e) => setSelectedInterest(e.target.value)}
+              className="bg-transparent text-sm text-indigo-600 font-extrabold border-none outline-none cursor-pointer max-w-[150px]"
+            >
+              <option value="">Sở thích</option>
+              <option value="Công nghệ">Công nghệ</option>
+              <option value="Đánh cầu">Đánh cầu</option>
+              <option value="Du lịch">Du lịch</option>
+              <option value="Ẩm thực">Ẩm thực</option>
+              <option value="Âm nhạc">Âm nhạc</option>
+              <option value="Phim ảnh">Phim ảnh</option>
+              <option value="Kinh doanh">Kinh doanh</option>
+              <option value="Thể thao">Thể thao</option>
+              <option value="Nghệ thuật">Nghệ thuật</option>
+            </select>
+            <div className="w-px h-5 bg-gray-200 mr-2 flex-shrink-0" />
             <input
               type="text"
               value={inputValue}

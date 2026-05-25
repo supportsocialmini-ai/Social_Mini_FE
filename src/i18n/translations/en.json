@@ -389,7 +389,13 @@
       "sendError": "Failed to send!",
       "imageOnlyError": "Please select an image file!",
       "uploadError": "Failed to send image!",
-      "newMessageFrom": "New message from {{name}}"
+      "newMessageFrom": "New message from {{name}}",
+      "deleteChat": "Delete Conversation",
+      "deleteChatConfirmTitle": "Delete Conversation?",
+      "deleteChatConfirmMsg": "Are you sure you want to delete the entire history of this conversation from your side? This action cannot be undone.",
+      "deleteChatSuccess": "Conversation deleted successfully!",
+      "deleteChatError": "Failed to delete conversation!",
+      "noChatToDelete": "No chat history to delete!"
     },
     "friends": {
       "title": "Friends",
@@ -700,6 +706,20 @@
           "time": "Date Time",
           "details": "Details"
         }
+      },
+      "settingsPanel": {
+        "title": "System Settings",
+        "subtitle": "Manage language, light/dark themes, and maintenance mode status",
+        "maintenanceSection": "Maintenance Mode",
+        "maintenanceDesc": "When maintenance mode is enabled, regular users will not be able to access the app. Only administrator accounts are allowed to log in and use the system.",
+        "languageSection": "System Language",
+        "languageDesc": "Select the default language for the admin dashboard interface.",
+        "themeSection": "Interface Mode",
+        "themeDesc": "Choose between light or dark display mode based on your preference.",
+        "themeLight": "Light Mode",
+        "themeDark": "Dark Mode",
+        "maintenanceBtnOn": "Enable Maintenance",
+        "maintenanceBtnOff": "Disable Maintenance"
       }
     }
   }

@@ -8,6 +8,24 @@ import { ChatBubbleManager, MessengerDropdown } from '../Chat/ChatBubble';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 
+const formatTimeAgo = (dateStr) => {
+  if (!dateStr) return 'Vừa xong';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 1) return 'Vừa xong';
+  if (diffMins < 60) return `${diffMins} phút trước`;
+  
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} giờ trước`;
+  
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return 'Hôm qua';
+  return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+};
+
 const Navbar = () => {
   const { user, logout, getFullAvatarUrl, isAdmin } = useAuth();
   const { unreadMessageCount, onlineUsers, unreadCountsPerUser, connection, openChats, handleOpenChat, handleCloseChat } = useChat();
@@ -24,6 +42,8 @@ const Navbar = () => {
   const [isSuggestOpen, setIsSuggestOpen] = useState(false);
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [selectedInterest, setSelectedInterest] = useState('');
+  const [isInterestOpen, setIsInterestOpen] = useState(false);
 
   const searchRef = useRef(null);
   const notifRef = useRef(null);
@@ -48,6 +68,7 @@ const Navbar = () => {
     setIsMenuOpen(false);
     setIsMobileSearchOpen(false);
     setSearchInput(''); // Clear search on navigation
+    setSelectedInterest(''); // Clear selected interest
   }, [location.pathname]);
 
   useEffect(() => {
@@ -56,7 +77,7 @@ const Navbar = () => {
     const timer = setTimeout(async () => {
       try {
         const { default: searchService } = await import('../../services/searchService');
-        const res = await searchService.search(searchInput.trim());
+        const res = await searchService.search(searchInput.trim(), selectedInterest);
         const users = res?.users || res?.$values || res || [];
         setSuggestions(Array.isArray(users) ? users.slice(0, 6) : []);
         setIsSuggestOpen(true);
@@ -67,12 +88,13 @@ const Navbar = () => {
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, selectedInterest]);
 
   const handleSearchKeyDown = (e) => {
     if (e.key === 'Enter' && searchInput.trim().length >= 2) {
       setIsSuggestOpen(false);
-      navigate(`/search?q=${encodeURIComponent(searchInput.trim())}`);
+      const interestParam = selectedInterest ? `&interest=${encodeURIComponent(selectedInterest)}` : '';
+      navigate(`/search?q=${encodeURIComponent(searchInput.trim())}${interestParam}`);
     }
     if (e.key === 'Escape') setIsSuggestOpen(false);
   };
@@ -118,6 +140,24 @@ const Navbar = () => {
     }
   };
 
+  const handleNotifClick = (notif) => {
+    setIsNotifOpen(false);
+    const type = notif.notificationType;
+    if (type === 'Like' || type === 'Comment') {
+      navigate('/profile');
+    } else if (type === 'FriendRequest' || type === 'FriendAccept') {
+      if (notif.senderId) {
+        navigate(`/profile/${notif.senderId}`);
+      } else {
+        navigate('/friends');
+      }
+    } else if (type === 'GroupInvite') {
+      navigate('/groups');
+    } else {
+      navigate('/');
+    }
+  };
+
   return (
     <>
       <nav className="sticky top-0 z-[2000] px-4 py-2 sm:py-3"
@@ -133,12 +173,48 @@ const Navbar = () => {
             MiniSocial
           </Link>
 
-          {/* Search bar */}
-          <div ref={searchRef} className="hidden sm:block relative mx-4 flex-1 max-w-md">
-            <div className="flex items-center bg-gray-100 border border-gray-200 px-4 py-2 rounded-full focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-400 transition-all">
+          {/* Search bar - absolute centered to align with main content column */}
+          <div ref={searchRef} className="hidden sm:block absolute left-1/2 -translate-x-1/2 w-[420px] z-10">
+            <div className="flex items-center w-full bg-gray-100 border border-gray-200 px-4 py-2 rounded-full focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-400 transition-all">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
+              {/* Custom interest dropdown */}
+              <div className="relative flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setIsInterestOpen(v => !v); }}
+                  className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors px-1 py-0.5 rounded-lg hover:bg-indigo-50"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
+                  </svg>
+                  <span className="max-w-[80px] truncate">{selectedInterest || 'Sở thích'}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform duration-200 ${isInterestOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {isInterestOpen && (
+                  <div className="absolute top-full left-0 mt-2 w-40 bg-white rounded-2xl shadow-xl border border-gray-100 z-[100] overflow-hidden py-1"
+                    style={{ boxShadow: '0 8px 32px rgba(99,102,241,0.15)' }}>
+                    {['', 'Công nghệ', 'Đánh cầu', 'Du lịch', 'Ẩm thực', 'Âm nhạc', 'Phim ảnh', 'Kinh doanh', 'Thể thao', 'Nghệ thuật'].map((interest) => (
+                      <button
+                        key={interest}
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); setSelectedInterest(interest); setIsInterestOpen(false); }}
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                          selectedInterest === interest
+                            ? 'bg-indigo-50 text-indigo-700 font-bold'
+                            : 'text-gray-700 hover:bg-gray-50 font-medium'
+                        }`}
+                      >
+                        {interest || 'Tất cả'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="w-px h-4 bg-gray-200 mx-2 flex-shrink-0" />
               <input
                 type="text"
                 name="navbar-search-desktop"
@@ -240,13 +316,24 @@ const Navbar = () => {
                         const senderName = notif.sender?.fullName || notif.sender?.username || t('navbar.user');
                         const translatedMsg = t(`api.${notif.message}`, { name: senderName });
                         return (
-                          <div key={notif.notificationId} className="px-4 py-3.5 rounded-2xl hover:bg-slate-50 transition-all border-b border-transparent last:border-0 group">
-                            <p className="text-sm text-slate-800 leading-snug">
-                              <span className="font-bold text-slate-900">{senderName}</span>
-                              {" "}
-                              {translatedMsg.replace(senderName, "").trim()}
-                            </p>
-                            <p className="text-[10px] text-slate-400 mt-1.5 font-bold uppercase tracking-wider">Vừa xong</p>
+                          <div 
+                            key={notif.notificationId} 
+                            onClick={() => handleNotifClick(notif)}
+                            className="px-4 py-3.5 rounded-2xl hover:bg-slate-50 cursor-pointer transition-all border-b border-transparent last:border-0 group flex items-start justify-between gap-3"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-slate-800 leading-snug">
+                                <span className="font-bold text-slate-900">{senderName}</span>
+                                {" "}
+                                {translatedMsg.replace(senderName, "").trim()}
+                              </p>
+                              <p className="text-[10px] text-slate-400 mt-1.5 font-bold uppercase tracking-wider">
+                                {formatTimeAgo(notif.createdAt || notif.CreatedAt)}
+                              </p>
+                            </div>
+                            {!notif.isRead && (
+                              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
+                            )}
                           </div>
                         );
                       })}

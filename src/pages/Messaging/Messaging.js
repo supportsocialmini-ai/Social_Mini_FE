@@ -176,7 +176,8 @@ const Messaging = () => {
             messageContent: m.messageContent || m.MessageContent,
             imageUrl: m.imageUrl || m.ImageUrl,
             createdAt: m.createdAt || m.CreatedAt,
-            isRead: m.isRead || m.IsRead
+            isRead: m.isRead || m.IsRead,
+            conversationId: m.conversationId || m.ConversationId
           }))
         );
 
@@ -412,6 +413,56 @@ const Messaging = () => {
     }
   };
 
+  const getActiveConversationId = () => {
+    if (selectedGroup) {
+      return selectedGroup.conversationId || selectedGroup.ConversationId;
+    }
+    if (selectedUser) {
+      if (selectedUser.conversationId) return selectedUser.conversationId;
+      if (selectedUser.ConversationId) return selectedUser.ConversationId;
+      if (messages && messages.length > 0) {
+        const found = messages.find(m => m.conversationId || m.ConversationId);
+        if (found) return found.conversationId || found.ConversationId;
+      }
+    }
+    return null;
+  };
+
+  const handleDeleteConversation = async (conversationId, type) => {
+    if (!conversationId) {
+      toast.warn(t('messaging.noChatToDelete'));
+      return;
+    }
+
+    if (!window.confirm(t('messaging.deleteChatConfirmMsg'))) {
+      return;
+    }
+
+    try {
+      await messageService.deleteConversation(conversationId);
+      toast.success(t('messaging.deleteChatSuccess'));
+
+      if (type === 'dm') {
+        setUsers(prev => prev.filter(u => {
+          const uConvId = u.conversationId || u.ConversationId;
+          return uConvId !== conversationId;
+        }));
+        setSelectedUser(null);
+        setMessages([]);
+      } else {
+        setGroups(prev => prev.filter(g => {
+          const gConvId = g.conversationId || g.ConversationId;
+          return gConvId !== conversationId;
+        }));
+        setSelectedGroup(null);
+        setGroupMessages([]);
+      }
+    } catch (error) {
+      console.error("Delete conversation error:", error);
+      toast.error(t('messaging.deleteChatError'));
+    }
+  };
+
   const handleGroupCreated = (newGroup, memberIds) => {
     const gId = newGroup.conversationId || newGroup.ConversationId;
     const normalized = {
@@ -517,6 +568,8 @@ const Messaging = () => {
       else handleSendMessage(e);
     }
   };
+
+  const activeConversationId = getActiveConversationId();
 
   return (
     <div className="h-screen flex flex-col bg-[#fcfcfd] overflow-hidden">
@@ -681,6 +734,17 @@ const Messaging = () => {
                     )}
                   </div>
                   <div className="ml-auto flex items-center gap-2 sm:gap-4">
+                    {activeConversationId && (
+                      <button 
+                        onClick={() => handleDeleteConversation(activeConversationId, 'dm')} 
+                        className="p-2 sm:p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" 
+                        title={t('messaging.deleteChat')}
+                      >
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
                     <button onClick={() => startCall(selectedUser, 'audio')} className="p-2 sm:p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
                       <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                     </button>
@@ -747,6 +811,17 @@ const Messaging = () => {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{selectedGroup.memberCount || ''} thành viên</p>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
+                    {activeConversationId && (
+                      <button 
+                        onClick={() => handleDeleteConversation(activeConversationId, 'group')} 
+                        className="p-2 sm:p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" 
+                        title="Rời nhóm & Xóa cuộc trò chuyện"
+                      >
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
                     <button 
                       onClick={() => setShowGroupSettings(true)}
                       className="p-2 sm:p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"

@@ -20,6 +20,39 @@ const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUs
   const isGroup = chatUser.isGroup || false;
   const conversationId = chatUser.conversationId || chatUser.userId;
 
+  const { startCall } = useChat();
+
+  const getActiveConversationId = () => {
+    if (isGroup) return conversationId;
+    if (chatUser.conversationId) return chatUser.conversationId;
+    if (chatUser.ConversationId) return chatUser.ConversationId;
+    if (messages && messages.length > 0) {
+      const found = messages.find(m => m.conversationId || m.ConversationId);
+      if (found) return found.conversationId || found.ConversationId;
+    }
+    return null;
+  };
+
+  const handleDeleteChat = async () => {
+    const activeConvId = getActiveConversationId();
+    if (!activeConvId) {
+      alert('Không có lịch sử trò chuyện để xóa!');
+      return;
+    }
+
+    if (!window.confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử trò chuyện này từ phía bạn không? Hành động này không thể hoàn tác.')) {
+      return;
+    }
+
+    try {
+      await messageService.deleteConversation(activeConvId);
+      onClose();
+    } catch (e) {
+      console.error(e);
+      alert('Xóa cuộc trò chuyện thất bại!');
+    }
+  };
+
   useEffect(() => { selectedUserRef.current = chatUser; }, [chatUser]);
 
   // Fetch message history
@@ -51,6 +84,7 @@ const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUs
               imageUrl: m.imageUrl || m.ImageUrl,
               createdAt: m.createdAt || m.CreatedAt,
               isRead: m.isRead || m.IsRead,
+              conversationId: m.conversationId || m.ConversationId
             }))
         );
       } catch (e) { console.error(e); }
@@ -187,16 +221,58 @@ const ChatWindow = ({ chatUser, onClose, connection, getFullAvatarUrl, currentUs
         </div>
         <div className="flex items-center gap-1">
           {isGroup && (
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowSettings(true); }}
-              className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/20 text-white/70 hover:text-white transition-all mr-0.5"
-              title="Cài đặt nhóm"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </button>
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowSettings(true); }}
+                className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/20 text-white/70 hover:text-white transition-all mr-0.5"
+                title="Cài đặt nhóm"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDeleteChat(); }}
+                className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/20 text-white/70 hover:text-white transition-all mr-0.5"
+                title="Rời nhóm & Xóa cuộc trò chuyện"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1v3M4 7h16" />
+                </svg>
+              </button>
+            </>
+          )}
+          {!isGroup && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); startCall(chatUser, 'audio'); }}
+                className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/20 text-white/70 hover:text-white transition-all"
+                title="Gọi thoại"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); startCall(chatUser, 'video'); }}
+                className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/20 text-white/70 hover:text-white transition-all"
+                title="Gọi video"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDeleteChat(); }}
+                className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/20 text-white/70 hover:text-white transition-all"
+                title="Xóa cuộc trò chuyện"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1v3M4 7h16" />
+                </svg>
+              </button>
+            </>
           )}
           <button
             onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }}
@@ -371,7 +447,7 @@ const MessengerDropdown = ({ onOpenChat, getFullAvatarUrl, onlineUsers, unreadCo
       try {
         const [usersRes, groupsRes] = await Promise.all([
           userService.getUsersToChat(),
-          import('../../services/groupService').then(m => m.default.getMyGroups())
+          messageService.getGroups()
         ]);
         
         const rawUsers = usersRes?.data || usersRes;
@@ -380,20 +456,23 @@ const MessengerDropdown = ({ onOpenChat, getFullAvatarUrl, onlineUsers, unreadCo
           ...u,
           displayName: u.fullName || u.FullName || u.username || 'Người dùng',
           displayAvatar: getFullAvatarUrl(u.avatarUrl || u.AvatarUrl) || '',
-          isGroup: false
+          isGroup: false,
+          conversationId: u.conversationId || u.ConversationId || null,
+          lastMessageTime: u.lastMessageTime || u.LastMessageTime || null
         }));
 
-        const rawGroups = groupsRes?.data || groupsRes;
-        let groupData = rawGroups?.$values || (Array.isArray(rawGroups) ? rawGroups : []);
+        const rawGroups = groupsRes?.data || groupsRes?.$values || groupsRes || [];
+        let groupData = rawGroups?.result?.$values || rawGroups?.result || rawGroups?.$values || (Array.isArray(rawGroups) ? rawGroups : []);
         groupData = groupData.map(g => ({
           ...g,
-          userId: g.groupId, 
-          displayName: g.name,
-          displayAvatar: getFullAvatarUrl(g.avatarUrl, g.name),
+          userId: g.conversationId || g.ConversationId, 
+          displayName: g.title || g.Title || 'Nhóm không tên',
+          displayAvatar: (g.avatarUrl || g.AvatarUrl) ? getFullAvatarUrl(g.avatarUrl || g.AvatarUrl) : null,
           isGroup: true,
-          conversationId: g.conversation?.conversationId || g.groupId,
-          creatorId: g.createdBy || g.CreatedBy || g.creatorId || g.CreatorId,
-          isAdmin: g.isAdmin || (g.createdBy || g.CreatedBy) === user?.userId
+          conversationId: g.conversationId || g.ConversationId,
+          creatorId: g.creatorId || g.CreatorId,
+          isAdmin: g.isAdmin || g.IsAdmin || g.creatorId === user?.userId,
+          lastMessageTime: g.lastMessageTime || g.LastMessageTime || null
         }));
 
         setUsers(userData);
@@ -472,74 +551,85 @@ const MessengerDropdown = ({ onOpenChat, getFullAvatarUrl, onlineUsers, unreadCo
             </div>
           ) : (
             <div className="p-1.5 space-y-0.5">
-              {/* Render Groups First */}
-              {groups.map(g => (
-                <button
-                  key={`group_${g.groupId}`}
-                  onClick={() => { onOpenChat(g); setIsOpen(false); }}
-                  className="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl hover:bg-indigo-50/50 transition-all text-left group relative"
-                >
-                  <div className="relative flex-shrink-0">
-                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white overflow-hidden shadow-md ring-2 ring-white">
-                      <img
-                        src={g.displayAvatar}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(g.displayName)}&background=4f46e5&color=fff`; }}
-                      />
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100">
-                      <svg className="w-3 h-3 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">
-                      {g.displayName}
-                    </p>
-                    <p className="text-[10px] font-bold text-indigo-500/70 uppercase tracking-wider">Thảo luận nhóm</p>
-                  </div>
-                </button>
-              ))}
+              {(() => {
+                const combinedChats = [...groups, ...users].sort((a, b) => {
+                  const timeA = a.lastMessageTime || a.LastMessageTime;
+                  const timeB = b.lastMessageTime || b.LastMessageTime;
+                  if (!timeA && !timeB) return 0;
+                  if (!timeA) return 1;
+                  if (!timeB) return -1;
+                  return new Date(timeB) - new Date(timeA);
+                });
 
-              {/* Render Users */}
-              {users.map(u => {
-                const isOnline = onlineUsers?.has(u.userId);
-                const unread = unreadCountsPerUser?.[u.userId] || 0;
-                return (
-                  <button
-                    key={u.userId}
-                    onClick={() => { onOpenChat(u); setIsOpen(false); }}
-                    className="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl hover:bg-slate-50 transition-all text-left group relative"
-                  >
-                    <div className="relative flex-shrink-0">
-                      <img
-                        src={u.displayAvatar}
-                        alt=""
-                        className="w-11 h-11 rounded-full object-cover ring-2 ring-white shadow-sm"
-                        onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.displayName)}&background=6366f1&color=fff`; }}
-                      />
-                      {isOnline && (
-                        <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-[3px] border-white shadow-sm" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">
-                        {u.displayName}
-                      </p>
-                      <p className={`text-xs font-medium truncate ${isOnline ? 'text-indigo-500/80' : 'text-slate-400'}`}>
-                        {isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}
-                      </p>
-                    </div>
-                    {unread > 0 && (
-                      <span className="w-5 h-5 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-200">
-                        {unread > 9 ? '9+' : unread}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+                return combinedChats.map(item => {
+                  if (item.isGroup) {
+                    return (
+                      <button
+                        key={`group_${item.conversationId}`}
+                        onClick={() => { onOpenChat(item); setIsOpen(false); }}
+                        className="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl hover:bg-indigo-50/50 transition-all text-left group relative"
+                      >
+                        <div className="relative flex-shrink-0">
+                          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white overflow-hidden shadow-md ring-2 ring-white">
+                            <img
+                              src={item.displayAvatar}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.displayName)}&background=4f46e5&color=fff`; }}
+                            />
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100">
+                            <svg className="w-3 h-3 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[14px] font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">
+                            {item.displayName}
+                          </p>
+                          <p className="text-[10px] font-bold text-indigo-500/70 uppercase tracking-wider">Thảo luận nhóm</p>
+                        </div>
+                      </button>
+                    );
+                  } else {
+                    const isOnline = onlineUsers?.has(item.userId);
+                    const unread = unreadCountsPerUser?.[item.userId] || 0;
+                    return (
+                      <button
+                        key={item.userId}
+                        onClick={() => { onOpenChat(item); setIsOpen(false); }}
+                        className="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl hover:bg-slate-50 transition-all text-left group relative"
+                      >
+                        <div className="relative flex-shrink-0">
+                          <img
+                            src={item.displayAvatar}
+                            alt=""
+                            className="w-11 h-11 rounded-full object-cover ring-2 ring-white shadow-sm"
+                            onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.displayName)}&background=6366f1&color=fff`; }}
+                          />
+                          {isOnline && (
+                            <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-[3px] border-white shadow-sm" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[14px] font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">
+                            {item.displayName}
+                          </p>
+                          <p className={`text-xs font-medium truncate ${isOnline ? 'text-indigo-500/80' : 'text-slate-400'}`}>
+                            {isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}
+                          </p>
+                        </div>
+                        {unread > 0 && (
+                          <span className="w-5 h-5 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-200">
+                            {unread > 9 ? '9+' : unread}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  }
+                });
+              })()}
             </div>
           )}
         </div>

@@ -389,7 +389,13 @@
       "sendError": "Gửi thất bại!",
       "imageOnlyError": "Vui lòng chọn tệp hình ảnh!",
       "uploadError": "Gửi ảnh thất bại!",
-      "newMessageFrom": "Tin nhắn mới từ {{name}}"
+      "newMessageFrom": "Tin nhắn mới từ {{name}}",
+      "deleteChat": "Xóa cuộc trò chuyện",
+      "deleteChatConfirmTitle": "Xóa cuộc trò chuyện?",
+      "deleteChatConfirmMsg": "Bạn có chắc chắn muốn xóa toàn bộ lịch sử trò chuyện này từ phía bạn không? Hành động này không thể hoàn tác.",
+      "deleteChatSuccess": "Đã xóa cuộc trò chuyện thành công!",
+      "deleteChatError": "Xóa cuộc trò chuyện thất bại!",
+      "noChatToDelete": "Không có lịch sử trò chuyện để xóa!"
     },
     "friends": {
       "title": "Bạn bè",
@@ -700,6 +706,20 @@
           "time": "Ngày giờ",
           "details": "Chi tiết"
         }
+      },
+      "settingsPanel": {
+        "title": "Cài đặt hệ thống",
+        "subtitle": "Quản lý ngôn ngữ, giao diện sáng tối và bảo trì hệ thống",
+        "maintenanceSection": "Chế độ bảo trì",
+        "maintenanceDesc": "Khi bật chế độ bảo trì, người dùng thông thường sẽ không thể truy cập ứng dụng. Chỉ tài khoản quản trị viên mới có quyền đăng nhập và sử dụng hệ thống.",
+        "languageSection": "Ngôn ngữ hệ thống",
+        "languageDesc": "Chọn ngôn ngữ hiển thị mặc định cho giao diện quản trị.",
+        "themeSection": "Giao diện hiển thị",
+        "themeDesc": "Lựa chọn chế độ sáng hoặc tối phù hợp với sở thích của bạn.",
+        "themeLight": "Chế độ sáng",
+        "themeDark": "Chế độ tối",
+        "maintenanceBtnOn": "Bật bảo trì",
+        "maintenanceBtnOff": "Tắt bảo trì"
       }
     }
   }
