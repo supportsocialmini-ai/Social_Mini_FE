@@ -1,7 +1,55 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import adminService from '../../services/adminService';
 
 const Maintenance = () => {
+  const [reason, setReason] = useState('');
+  const [version, setVersion] = useState('');
+  const [endTime, setEndTime] = useState('');
+
+  useEffect(() => {
+    // 1. Try reading from localStorage first (which is populated on 503 error interceptor)
+    const cachedReason = localStorage.getItem('maintenance_reason');
+    const cachedVersion = localStorage.getItem('maintenance_version');
+    const cachedEndTime = localStorage.getItem('maintenance_endTime');
+
+    if (cachedReason) setReason(cachedReason);
+    if (cachedVersion) setVersion(cachedVersion);
+    if (cachedEndTime) setEndTime(cachedEndTime);
+
+    // 2. Fetch fresh data from backend maintenance-info API
+    const fetchInfo = async () => {
+      try {
+        const response = await adminService.getMaintenanceInfo();
+        if (response) {
+          setReason(response.reason || '');
+          setVersion(response.version || '');
+          setEndTime(response.endTime || '');
+        }
+      } catch (error) {
+        console.error('Lỗi lấy thông tin bảo trì từ API:', error);
+      }
+    };
+    fetchInfo();
+  }, []);
+
+  // Format end time to a readable format
+  const formatEndTime = (isoString) => {
+    if (!isoString) return 'Sớm nhất có thể';
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch {
+      return isoString;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f4f7fe] flex items-center justify-center p-6 relative overflow-hidden font-sans">
       {/* Background Decorative Elements */}
@@ -23,22 +71,18 @@ const Maintenance = () => {
           Under <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500">Maintenance</span>
         </h1>
         
-        <p className="text-lg text-slate-500 font-medium leading-relaxed mb-10 max-w-sm mx-auto">
-          Chúng tôi đang thực hiện một số nâng cấp quan trọng để mang lại trải nghiệm tốt nhất cho bạn. Hệ thống sẽ sớm quay lại!
+        <p className="text-lg text-slate-500 font-semibold leading-relaxed mb-10 max-w-sm mx-auto">
+          {reason || 'Chúng tôi đang thực hiện một số nâng cấp quan trọng để mang lại trải nghiệm tốt nhất cho bạn. Hệ thống sẽ sớm quay lại!'}
         </p>
 
-        <div className="grid grid-cols-3 gap-4 mb-12">
-          <div className="bg-white/50 p-4 rounded-2xl border border-white shadow-sm">
-             <p className="text-2xl font-black text-indigo-600">99%</p>
-             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Uptime</p>
+        <div className="grid grid-cols-2 gap-4 mb-12">
+          <div className="bg-white/50 p-4 rounded-2xl border border-white shadow-sm flex flex-col justify-center min-h-[90px]">
+             <p className="text-sm font-black text-indigo-600 leading-snug">{endTime ? formatEndTime(endTime) : 'Sớm'}</p>
+             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Returns</p>
           </div>
-          <div className="bg-white/50 p-4 rounded-2xl border border-white shadow-sm">
-             <p className="text-2xl font-black text-indigo-600">Soon</p>
-             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Returns</p>
-          </div>
-          <div className="bg-white/50 p-4 rounded-2xl border border-white shadow-sm">
-             <p className="text-2xl font-black text-indigo-600">2.0</p>
-             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Version</p>
+          <div className="bg-white/50 p-4 rounded-2xl border border-white shadow-sm flex flex-col justify-center min-h-[90px]">
+             <p className="text-xl font-black text-indigo-600">{version || '2.0'}</p>
+             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Version</p>
           </div>
         </div>
 

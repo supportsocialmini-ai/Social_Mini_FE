@@ -55,6 +55,10 @@ axiosClient.interceptors.response.use(
     }
 
     if (error.response && error.response.status === 503 && !window.location.pathname.includes('/maintenance')) {
+      const { reason, version, endTime } = error.response.data || {};
+      localStorage.setItem('maintenance_reason', reason || '');
+      localStorage.setItem('maintenance_version', version || '');
+      localStorage.setItem('maintenance_endTime', endTime || '');
       window.location.href = '/maintenance';
     }
 

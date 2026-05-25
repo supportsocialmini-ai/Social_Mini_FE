@@ -13,6 +13,12 @@ const adminService = {
   toggleMaintenance: () => {
     return axiosClient.post('api/admin/toggle-maintenance');
   },
+  getMaintenanceInfo: () => {
+    return axiosClient.get('api/admin/maintenance-info');
+  },
+  saveMaintenanceInfo: (data) => {
+    return axiosClient.post('api/admin/maintenance-info', data);
+  },
   toggleUserStatus: (userId) => {
     return axiosClient.post(`api/admin/users/${userId}/toggle-status`);
   },

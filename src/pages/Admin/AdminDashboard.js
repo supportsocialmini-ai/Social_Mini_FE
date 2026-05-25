@@ -91,6 +91,10 @@ const AdminDashboard = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [isTogglingMaintenance, setIsTogglingMaintenance] = useState(false);
+  const [maintenanceReason, setMaintenanceReason] = useState('');
+  const [maintenanceVersion, setMaintenanceVersion] = useState('');
+  const [maintenanceEndTime, setMaintenanceEndTime] = useState('');
+  const [isSavingMaintenanceInfo, setIsSavingMaintenanceInfo] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [packages, setPackages] = useState([]);
   const [isUpdatingPackage, setIsUpdatingPackage] = useState(false);
@@ -126,6 +130,7 @@ const AdminDashboard = () => {
         fetchData();
       }
       fetchMaintenanceStatus();
+      fetchMaintenanceInfo();
     }
   }, [isAdmin, activeTab]);
 
@@ -437,6 +442,19 @@ const AdminDashboard = () => {
       setIsMaintenance(response.isMaintenance);
     } catch (error) {
       console.error('Lỗi lấy trạng thái bảo trì', error);
+    }
+  };
+
+  const fetchMaintenanceInfo = async () => {
+    try {
+      const response = await adminService.getMaintenanceInfo();
+      if (response) {
+        setMaintenanceReason(response.reason || '');
+        setMaintenanceVersion(response.version || '');
+        setMaintenanceEndTime(response.endTime || '');
+      }
+    } catch (error) {
+      console.error('Lỗi lấy thông tin chi tiết bảo trì', error);
     }
   };
 
@@ -1455,7 +1473,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Theme Mode Card */}
-                <div className={`p-8 rounded-[2.5rem] border shadow-sm flex flex-col justify-between md:col-span-2 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                <div className={`p-8 rounded-[2.5rem] border shadow-sm flex flex-col justify-between ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
                   <div>
                     <div className="flex items-center gap-3 mb-6">
                       <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500">
@@ -1492,6 +1510,96 @@ const AdminDashboard = () => {
                       {t('admin.settingsPanel.themeDark')}
                     </button>
                   </div>
+                </div>
+
+                {/* Maintenance Info Card */}
+                <div className={`p-8 rounded-[2.5rem] border shadow-sm flex flex-col justify-between ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                  <div>
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 rounded-2xl bg-rose-500/10 text-rose-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <h3 className={`text-lg font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Thông tin bảo trì</h3>
+                    </div>
+                    <p className={`text-sm font-medium leading-relaxed mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Điền thông tin hiển thị cho người dùng khi hệ thống vào chế độ bảo trì.
+                    </p>
+
+                    {/* Maintenance Reason */}
+                    <div className="mb-4">
+                      <label className={`block text-xs font-black uppercase tracking-wider mb-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-400'}`}>Lý do bảo trì</label>
+                      <textarea
+                        value={maintenanceReason}
+                        onChange={(e) => setMaintenanceReason(e.target.value)}
+                        placeholder="VD: Nâng cấp hệ thống cơ sở dữ liệu và tối ưu hiệu năng..."
+                        rows={3}
+                        className={`w-full px-4 py-3 rounded-2xl border text-sm font-medium outline-none resize-none transition-all focus:ring-2 focus:ring-rose-400 ${
+                          isDarkMode
+                            ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
+                            : 'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400'
+                        }`}
+                      />
+                    </div>
+
+                    {/* Version After Maintenance */}
+                    <div className="mb-4">
+                      <label className={`block text-xs font-black uppercase tracking-wider mb-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-400'}`}>Phiên bản sau bảo trì</label>
+                      <input
+                        type="text"
+                        value={maintenanceVersion}
+                        onChange={(e) => setMaintenanceVersion(e.target.value)}
+                        placeholder="VD: v2.1.0"
+                        className={`w-full px-4 py-3 rounded-2xl border text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-rose-400 ${
+                          isDarkMode
+                            ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
+                            : 'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400'
+                        }`}
+                      />
+                    </div>
+
+                    {/* Maintenance End Time */}
+                    <div className="mb-6">
+                      <label className={`block text-xs font-black uppercase tracking-wider mb-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-400'}`}>Thời gian ngưng bảo trì</label>
+                      <input
+                        type="datetime-local"
+                        value={maintenanceEndTime}
+                        onChange={(e) => setMaintenanceEndTime(e.target.value)}
+                        className={`w-full px-4 py-3 rounded-2xl border text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-rose-400 ${
+                          isDarkMode
+                            ? 'bg-slate-800 border-slate-700 text-white'
+                            : 'bg-slate-50 border-slate-200 text-slate-800'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={async () => {
+                      setIsSavingMaintenanceInfo(true);
+                      try {
+                        await adminService.saveMaintenanceInfo({
+                          reason: maintenanceReason,
+                          version: maintenanceVersion,
+                          endTime: maintenanceEndTime,
+                        });
+                        toast.success('Đã lưu thông tin bảo trì!');
+                      } catch {
+                        toast.error('Lưu thông tin thất bại!');
+                      } finally {
+                        setIsSavingMaintenanceInfo(false);
+                      }
+                    }}
+                    disabled={isSavingMaintenanceInfo}
+                    className="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 bg-rose-500 text-white shadow-lg shadow-rose-500/25 hover:bg-rose-600"
+                  >
+                    {isSavingMaintenanceInfo ? (
+                      <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Đang lưu...</>
+                    ) : (
+                      <><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> Lưu thông tin</>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
