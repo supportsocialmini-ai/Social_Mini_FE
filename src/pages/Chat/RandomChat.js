@@ -54,7 +54,11 @@ const RandomChat = () => {
     const fetchDbPackages = async () => {
       try {
         const res = await axiosClient.get('/api/payment/packages');
-        setDbPackages(res || []);
+        const allPackages = res || [];
+        const chatPackages = allPackages.filter(pkg =>
+          !pkg.features?.split(',').map(f => f.trim()).includes('Sponsor Post')
+        );
+        setDbPackages(chatPackages);
       } catch (err) {
         console.error("Lỗi lấy danh sách gói:", err);
       }

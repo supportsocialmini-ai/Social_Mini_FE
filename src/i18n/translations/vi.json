@@ -469,7 +469,8 @@
       "commentError": "Lỗi khi bình luận",
       "deleteCommentSuccess": "Đã xóa bình luận!",
       "deleteCommentError": "Không thể xóa bình luận này",
-      "fetchCommentsError": "Không thể tải bình luận"
+      "fetchCommentsError": "Không thể tải bình luận",
+      "sponsored": "Bài viết được quảng cáo"
     },
     "groups": {
       "public": "Nhóm công khai",
@@ -643,6 +644,7 @@
         "createBtn": "Tạo gói mới",
         "plan": "Gói thuê bao",
         "price": "Giá tiền (VND)",
+        "durationDays": "Thời hạn (ngày)",
         "description": "Mô tả",
         "features": "Tính năng (Chọn tính năng)",
         "confirmBtn": "Xác nhận tạo gói",
@@ -650,7 +652,10 @@
           "filterAge": "Lọc độ tuổi",
           "noAds": "Ẩn quảng cáo",
           "seeIdentity": "Xem danh tính",
-          "radarPremium": "Radar cao cấp"
+          "radarPremium": "Radar cao cấp",
+          "sponsorPost": "Quảng cáo bài viết",
+          "filterGender": "Lọc giới tính",
+          "backgroundEffect": "Hiệu ứng radar"
         },
         "noPackages": "Không tìm thấy gói dịch vụ nào. Vui lòng kiểm tra dữ liệu mẫu."
       },

@@ -469,7 +469,8 @@
       "commentError": "Error posting comment",
       "deleteCommentSuccess": "Comment deleted!",
       "deleteCommentError": "Could not delete this comment",
-      "fetchCommentsError": "Could not load comments"
+      "fetchCommentsError": "Could not load comments",
+      "sponsored": "Sponsored Post"
     },
     "groups": {
       "public": "Public group",
@@ -643,6 +644,7 @@
         "createBtn": "Create New Package",
         "plan": "Subscription Plan",
         "price": "Price (VND)",
+        "durationDays": "Duration (days)",
         "description": "Description",
         "features": "Features (Select)",
         "confirmBtn": "Confirm Create",
@@ -650,7 +652,10 @@
           "filterAge": "Filter Age",
           "noAds": "No Ads",
           "seeIdentity": "See Identity",
-          "radarPremium": "Radar Premium"
+          "radarPremium": "Radar Premium",
+          "sponsorPost": "Sponsor Post",
+          "filterGender": "Filter Gender",
+          "backgroundEffect": "Background Effect"
         },
         "noPackages": "No packages found. Check your database seeding."
       },

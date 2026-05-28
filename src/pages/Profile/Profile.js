@@ -10,6 +10,7 @@ import friendService from '../../services/friendService';
 import { toast } from 'react-toastify';
 import ConfirmModal from '../../components/Common/ConfirmModal';
 import { useTranslation } from 'react-i18next';
+import { Crown } from 'lucide-react';
 
 const Profile = () => {
   const { userId: routeUserId } = useParams();
@@ -514,6 +515,28 @@ const Profile = () => {
             )}
           </div>
           <p className="text-gray-500 text-sm mb-3">@{profileUser?.username || 'username'}</p>
+          
+          {/* Thông tin gói Premium & Ngày hết hạn */}
+          {profileUser?.subscriptions?.some(s => s.isActive) && (
+            <div className="mb-3 flex items-center gap-2 flex-wrap">
+              {profileUser.subscriptions
+                .filter(s => s.isActive)
+                .map(sub => {
+                  const endDate = sub.endDate || sub.EndDate;
+                  const formattedDate = endDate 
+                    ? new Date(endDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                    : 'Không thời hạn';
+                  return (
+                    <span key={sub.id} className="px-3 py-1 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm">
+                      <Crown className="w-3.5 h-3.5 fill-current text-amber-500" />
+                      <span>{sub.tier || 'Premium'}: Hạn dùng {formattedDate}</span>
+                    </span>
+                  );
+                })
+              }
+            </div>
+          )}
+
           <p className="text-gray-700 text-sm leading-relaxed max-w-lg mb-3 flex flex-col gap-1">
             {profileUser?.email && <span>📧 {profileUser.email}</span>}
             {profileUser?.phoneNumber && <span>📱 {profileUser.phoneNumber}</span>}

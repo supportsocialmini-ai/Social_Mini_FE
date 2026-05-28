@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, XCircle, Home, Zap, Crown } from 'lucide-react';
+import { CheckCircle, XCircle, Home, Zap, Crown, Sparkles, TrendingUp } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import userService from '../../services/userService';
 
@@ -9,6 +9,8 @@ const PaymentResult = () => {
   const navigate = useNavigate();
   const { updateUserData } = useAuth();
   const status = searchParams.get('status');
+  const type = searchParams.get('type') || 'premium';
+  const days = searchParams.get('days') || '30';
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,48 +42,86 @@ const PaymentResult = () => {
   }
 
   const isSuccess = status === 'success';
+  const isAds = type === 'ads';
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-lg bg-white rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in duration-500">
-        <div className={`p-12 text-center ${isSuccess ? 'bg-indigo-600' : 'bg-rose-600'} text-white`}>
+        <div className={`p-12 text-center ${
+          isSuccess 
+            ? (isAds ? 'bg-gradient-to-br from-amber-500 via-orange-500 to-yellow-600' : 'bg-indigo-600') 
+            : 'bg-rose-600'
+        } text-white`}>
            <div className="flex justify-center mb-6">
               {isSuccess ? (
                 <div className="relative">
-                   <CheckCircle className="w-24 h-24" />
-                   <Crown className="absolute -top-4 -right-4 w-12 h-12 text-amber-400 rotate-12 fill-current animate-bounce" />
+                   {isAds ? (
+                     <>
+                       <CheckCircle className="w-24 h-24 text-white" />
+                       <Sparkles className="absolute -top-4 -right-4 w-12 h-12 text-yellow-300 rotate-12 fill-current animate-bounce" />
+                     </>
+                   ) : (
+                     <>
+                       <CheckCircle className="w-24 h-24" />
+                       <Crown className="absolute -top-4 -right-4 w-12 h-12 text-amber-400 rotate-12 fill-current animate-bounce" />
+                     </>
+                   )}
                 </div>
               ) : (
                 <XCircle className="w-24 h-24" />
               )}
            </div>
-           <h1 className="text-4xl font-black mb-2">
-             {isSuccess ? 'Thanh toán thành công!' : 'Thanh toán thất bại'}
-           </h1>
-           <p className="text-white/70 font-medium italic">
+           <h1 className="text-4xl font-black mb-2 leading-tight">
              {isSuccess 
-               ? 'Chúc mừng bạn đã chính thức trở thành hội viên Premium.' 
+               ? (isAds ? 'Quảng cáo thành công!' : 'Thanh toán thành công!') 
+               : 'Thanh toán thất bại'}
+           </h1>
+           <p className="text-white/80 font-medium italic">
+             {isSuccess 
+               ? (isAds 
+                   ? 'Chúc mừng! Bài viết của bạn hiện đã được đưa lên xu hướng.' 
+                   : 'Chúc mừng bạn đã chính thức trở thành hội viên Premium.') 
                : 'Đã có lỗi xảy ra trong quá trình thanh toán. Vui lòng thử lại sau.'}
            </p>
         </div>
 
         <div className="p-12 space-y-8">
            {isSuccess ? (
-             <div className="space-y-6">
-                <div className="bg-indigo-50 p-6 rounded-3xl border border-indigo-100 italic text-indigo-700 font-medium">
-                   "Hữu Duyên thiên lý năng tương ngộ." - Mọi tính năng cao cấp cho Random Chat hiện đã được mở khóa dành riêng cho bạn!
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="p-4 bg-slate-50 rounded-2xl text-center">
-                      <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Thời hạn</p>
-                      <p className="font-black text-slate-900">+30 Ngày VIP</p>
-                   </div>
-                   <div className="p-4 bg-slate-50 rounded-2xl text-center">
-                      <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Cấp độ</p>
-                      <p className="font-black text-amber-500">PREMIUM</p>
-                   </div>
-                </div>
-             </div>
+             isAds ? (
+               <div className="space-y-6">
+                  <div className="bg-amber-50/60 p-6 rounded-3xl border border-amber-100 italic text-amber-800 font-semibold leading-relaxed">
+                     "Nhất nghệ tinh, nhất thân vinh." - Bài viết của bạn đã được đẩy lên đầu Bảng tin của mọi người dùng để tăng lượng tiếp cận tối đa!
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="p-4 bg-slate-50 rounded-2xl text-center">
+                        <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Thời hạn quảng cáo</p>
+                        <p className="font-black text-slate-900">+{days} Ngày</p>
+                     </div>
+                     <div className="p-4 bg-slate-50 rounded-2xl text-center">
+                        <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Trạng thái</p>
+                        <p className="font-black text-amber-600 flex items-center justify-center gap-1">
+                           <TrendingUp className="w-4 h-4" /> NỔI BẬT
+                        </p>
+                     </div>
+                  </div>
+               </div>
+             ) : (
+               <div className="space-y-6">
+                  <div className="bg-indigo-50 p-6 rounded-3xl border border-indigo-100 italic text-indigo-700 font-medium">
+                     "Hữu Duyên thiên lý năng tương ngộ." - Mọi tính năng cao cấp cho Random Chat hiện đã được mở khóa dành riêng cho bạn!
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="p-4 bg-slate-50 rounded-2xl text-center">
+                        <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Thời hạn</p>
+                        <p className="font-black text-slate-900">+{days} Ngày VIP</p>
+                     </div>
+                     <div className="p-4 bg-slate-50 rounded-2xl text-center">
+                        <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Cấp độ</p>
+                        <p className="font-black text-amber-500">PREMIUM</p>
+                     </div>
+                  </div>
+               </div>
+             )
            ) : (
              <div className="bg-rose-50 p-6 rounded-3xl border border-rose-100 text-rose-700 font-medium text-center">
                 Mã lỗi: {searchParams.get('code') || 'Hủy bỏ'} <br/>
@@ -90,24 +130,44 @@ const PaymentResult = () => {
            )}
 
            <div className="flex flex-col gap-3">
-              <button 
-                onClick={() => navigate('/chat-random')}
-                className={`w-full py-5 rounded-2xl font-black text-white shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 ${
-                  isSuccess ? 'bg-slate-900 hover:bg-slate-800' : 'bg-rose-600 hover:bg-rose-700'
-                }`}
-              >
-                {isSuccess ? <Zap className="w-5 h-5 fill-current text-indigo-400" /> : <Home className="w-5 h-5" />}
-                {isSuccess ? 'Trải nghiệm Premium ngay' : 'Quay lại trang chủ'}
-              </button>
-              <button 
-                onClick={() => navigate('/')}
-                className="w-full py-4 text-slate-400 font-bold hover:text-slate-600 transition-colors"
-              >
-                Về trang chủ
-              </button>
+              {isSuccess ? (
+                isAds ? (
+                  <button 
+                    onClick={() => navigate('/')}
+                    className="w-full py-5 rounded-2xl font-black text-white shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-800"
+                  >
+                    <Sparkles className="w-5 h-5 text-amber-400 fill-current" />
+                    Xem bài viết trên Trang chủ
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => navigate('/chat-random')}
+                    className="w-full py-5 rounded-2xl font-black text-white shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-800"
+                  >
+                    <Zap className="w-5 h-5 fill-current text-indigo-400" />
+                    Trải nghiệm Premium ngay
+                  </button>
+                )
+              ) : (
+                <button 
+                  onClick={() => navigate('/')}
+                  className="w-full py-5 rounded-2xl font-black text-white shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 bg-rose-600 hover:bg-rose-700"
+                >
+                  <Home className="w-5 h-5" />
+                  Quay lại trang chủ
+                </button>
+              )}
+              {isSuccess && (
+                <button 
+                  onClick={() => navigate('/')}
+                  className="w-full py-4 text-slate-400 font-bold hover:text-slate-600 transition-colors"
+                >
+                  Về trang chủ
+                </button>
+              )}
            </div>
-        </div>
-      </div>
+         </div>
+       </div>
       
       <p className="mt-8 text-slate-400 font-bold text-sm tracking-widest uppercase">
         © 2026 MINISOCIAL SECURITY PAYMENT

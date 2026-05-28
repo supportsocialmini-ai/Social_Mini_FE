@@ -37,6 +37,9 @@ const postService = {
   },
   getPostLikes: (postId) => {
     return axiosClient.get(`api/post/${postId}/likes`);
+  },
+  toggleSponsor: (postId) => {
+    return axiosClient.put(`api/post/${postId}/toggle-sponsor`);
   }
 };
 

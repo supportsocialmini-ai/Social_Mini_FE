@@ -12,7 +12,8 @@ import friendService from '../../services/friendService';
 import { useAuth } from '../../context/AuthContext';
 import ReportModal from '../Common/ReportModal';
 import ShareModal from './ShareModal';
-import { Flag, Share2 } from 'lucide-react';
+import { Flag, Share2, Crown, Check, CreditCard, Clock, Shield } from 'lucide-react';
+import axiosClient from '../../api/axiosClient';
 
 /* ── Glassmorphism card style ── */
 const glassCard = {
@@ -59,14 +60,52 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
   const [isDeleting, setIsDeleting]         = useState(false);
   const [isSaved, setIsSaved]               = useState(false);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [isConfirmSponsorOpen, setIsConfirmSponsorOpen] = useState(false);
   const [isExpanded, setIsExpanded]         = useState(false);
   const [likeAnimating, setLikeAnimating]   = useState(false);
   const [isSentRequest, setIsSentRequest]   = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [dbPackages, setDbPackages] = useState([]);
+  const [selectedPackageId, setSelectedPackageId] = useState(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isCustomDuration, setIsCustomDuration] = useState(false);
+  const [customDays, setCustomDays] = useState(3);
+
+  const getSelectedPackage = () => {
+    return dbPackages.find(p => p.id === selectedPackageId) || dbPackages[0];
+  };
+
+  const getCustomPrice = () => {
+    const pkg = getSelectedPackage();
+    if (!pkg) return 0;
+    const ratePerDay = pkg.price / (pkg.durationDays || 1);
+    return Math.round(ratePerDay * customDays);
+  };
 
   const isPostOwner = currentUser?.userId === post.userId;
   const privacy = post.privacy || 'Public';
+
+  useEffect(() => {
+    const fetchDbPackages = async () => {
+      try {
+        const res = await axiosClient.get('/api/payment/packages');
+        const adsPackages = (res || []).filter(pkg => 
+          pkg.features?.split(',').map(f => f.trim()).includes('Sponsor Post')
+        );
+        setDbPackages(adsPackages);
+        if (adsPackages.length > 0) {
+          setSelectedPackageId(adsPackages[0].id);
+        }
+      } catch (err) {
+        console.error("Lỗi lấy danh sách gói cước:", err);
+      }
+    };
+    if (showPremiumModal) {
+      fetchDbPackages();
+    }
+  }, [showPremiumModal]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -140,6 +179,23 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
     return date.toLocaleDateString('vi-VN');
   };
 
+  const getSponsorTimeRemaining = () => {
+    if (!post.sponsorEndDate) return '';
+    const end = new Date(post.sponsorEndDate);
+    const now = new Date();
+    const diffMs = end - now;
+    if (diffMs <= 0) return 'Hết hạn';
+    
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays >= 1) return `Còn ${diffDays} ngày`;
+    
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    if (diffHours >= 1) return `Còn ${diffHours} giờ`;
+    
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    return `Còn ${diffMins} phút`;
+  };
+
   const handleLike = async () => {
     if (isLiking) return;
     setIsLiking(true);
@@ -183,6 +239,69 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
       toast.error(t(`api.${error.errorMessage || 'Post.Upsert.UpdateFail'}`));
     } finally {
       setIsMenuOpen(false);
+    }
+  };
+
+  const [localIsSponsored, setLocalIsSponsored] = useState(post.isSponsored || false);
+
+  const handleUpgrade = async () => {
+    if (!selectedPackageId) return;
+    setIsProcessingPayment(true);
+    try {
+      const response = await axiosClient.post('/api/payment/create', { 
+        packageId: selectedPackageId,
+        postId: post.postId || post.id,
+        customDays: isCustomDuration ? customDays : null
+      });
+      if (response.paymentUrl) {
+        window.location.href = response.paymentUrl;
+      }
+    } catch (err) {
+      toast.error("Không thể khởi tạo thanh toán.");
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const executeToggleSponsorOff = async () => {
+    try {
+      const res = await postService.toggleSponsor(post.postId || post.id);
+      const isSponsoredNew = res?.data ?? false;
+      setLocalIsSponsored(isSponsoredNew);
+      post.isSponsored = isSponsoredNew;
+      toast.success("Đã tắt quảng cáo bài viết.");
+      if (onLikeChange) onLikeChange();
+    } catch (error) {
+      toast.error("Có lỗi xảy ra khi thực hiện thao tác này.");
+    }
+  };
+
+  const handleToggleSponsor = async () => {
+    const isAdmin = currentUser?.isAdmin || false;
+    
+    if (localIsSponsored) {
+      setIsConfirmSponsorOpen(true);
+      setIsMenuOpen(false);
+      return;
+    }
+
+    if (isAdmin) {
+      // Admin được quyền bật trực tiếp không cần mua
+      try {
+        const res = await postService.toggleSponsor(post.postId || post.id);
+        const isSponsoredNew = res?.data ?? true;
+        setLocalIsSponsored(isSponsoredNew);
+        post.isSponsored = isSponsoredNew;
+        toast.success("Đã bật quảng cáo bài viết (Quyền Admin).");
+        if (onLikeChange) onLikeChange();
+      } catch (error) {
+        toast.error("Có lỗi xảy ra khi thực hiện thao tác này.");
+      } finally {
+        setIsMenuOpen(false);
+      }
+    } else {
+      // Người dùng thường phải mua gói quảng cáo cho bài viết này
+      setIsMenuOpen(false);
+      setShowPremiumModal(true);
     }
   };
 
@@ -286,10 +405,21 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
                   </button>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 <span className="text-xs text-slate-400">{getTimeAgo(post.time || post.createdAt)}</span>
                 <span className="text-slate-200 text-[10px]">•</span>
                 <span className="text-slate-400" title={localPrivacy}><PrivacyIcon privacy={localPrivacy} /></span>
+                {localIsSponsored && (
+                  <>
+                    <span className="text-slate-200 text-[10px]">•</span>
+                    <span className="text-[10px] font-black text-amber-500 bg-amber-50 border border-amber-200/50 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm shadow-amber-500/5 uppercase tracking-widest">
+                      <svg className="w-2.5 h-2.5 text-amber-500 fill-current animate-pulse" viewBox="0 0 24 24">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                      </svg>
+                      {t('posts.sponsored') || 'Bài viết được quảng cáo'}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -463,6 +593,9 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
           {isConfirmDeleteOpen && <ConfirmModal isOpen={isConfirmDeleteOpen} onClose={() => setIsConfirmDeleteOpen(false)} onConfirm={handleDelete}
             title={t('posts.deleteConfirmTitle')} message={t('posts.deleteConfirmMsg')}
             confirmText={t('posts.deleteConfirmBtn')} type="danger" />}
+          {isConfirmSponsorOpen && <ConfirmModal isOpen={isConfirmSponsorOpen} onClose={() => setIsConfirmSponsorOpen(false)} onConfirm={executeToggleSponsorOff}
+            title="Tắt quảng cáo?" message="Khi bạn tắt quảng cáo, bạn sẽ mất hoàn toàn quyền lợi và không thể hoàn tác thao tác này!"
+            confirmText="Tắt quảng cáo" cancelText="Hủy" type="danger" />}
           {isReportModalOpen && <ReportModal 
             isOpen={isReportModalOpen} 
             onClose={() => setIsReportModalOpen(false)} 
@@ -475,9 +608,180 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
             post={post}
             onShareSuccess={() => onLikeChange && onLikeChange()} // Re-fetch to show new post
           />}
+          {showPremiumModal && (
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !isProcessingPayment && setShowPremiumModal(false)}></div>
+              <div className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300 text-left">
+                 {/* Header Modal */}
+                 <div className="bg-slate-900 p-10 text-white relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-8 opacity-10">
+                       <Crown className="w-40 h-40 rotate-12" />
+                    </div>
+                    <div className="relative z-10">
+                       <div className="flex items-center gap-3 mb-4 text-amber-400">
+                          <Crown className="w-8 h-8 fill-current" />
+                          <span className="font-black tracking-widest uppercase text-sm">Quảng cáo bài viết</span>
+                       </div>
+                       <h2 className="text-4xl font-black mb-2">Đẩy bài viết lên xu hướng</h2>
+                       <p className="text-slate-400 font-medium leading-relaxed">Lựa chọn gói thời gian phù hợp để ghim bài viết này lên đầu bảng tin của tất cả mọi người.</p>
+                    </div>
+                 </div>
+
+                 <div className="p-10 space-y-8">
+                     {/* Tab Selector */}
+                     <div className="flex gap-4 p-1.5 bg-slate-100/80 rounded-2xl">
+                        <button
+                          type="button"
+                          onClick={() => setIsCustomDuration(false)}
+                          className={`flex-1 py-3 text-xs font-black uppercase tracking-wider rounded-xl transition-all active:scale-95 ${!isCustomDuration ? 'bg-white text-slate-900 shadow-md shadow-slate-200/50' : 'text-slate-500 hover:text-slate-800'}`}
+                        >
+                           Gói có sẵn
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                             setIsCustomDuration(true);
+                             if (dbPackages.length > 0 && !selectedPackageId) {
+                                setSelectedPackageId(dbPackages[0].id);
+                             }
+                          }}
+                          className={`flex-1 py-3 text-xs font-black uppercase tracking-wider rounded-xl transition-all active:scale-95 ${isCustomDuration ? 'bg-white text-slate-900 shadow-md shadow-slate-200/50' : 'text-slate-500 hover:text-slate-800'}`}
+                        >
+                           Tùy chỉnh số ngày
+                        </button>
+                     </div>
+
+                     {!isCustomDuration ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                           {dbPackages.length > 0 ? dbPackages.map((pkg, idx) => (
+                             <button 
+                               key={pkg.id}
+                               type="button"
+                               onClick={() => setSelectedPackageId(pkg.id)}
+                               disabled={isProcessingPayment}
+                               className={`relative p-6 rounded-3xl border-2 transition-all text-left flex flex-col justify-between hover:scale-[1.02] active:scale-95 ${
+                                  selectedPackageId === pkg.id 
+                                  ? 'border-indigo-600 bg-indigo-50/30' 
+                                  : (idx === 1 ? 'border-amber-400/30 bg-amber-50/10' : 'border-slate-100 bg-slate-50/50 hover:border-slate-200')
+                               }`}
+                             >
+                                {(selectedPackageId === pkg.id || (idx === 1 && !selectedPackageId)) && (
+                                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-slate-900 text-[10px] font-black px-3 py-1 rounded-full uppercase">Đang chọn</span>
+                                )}
+                                <div>
+                                    <p className="text-xs font-black text-slate-500 uppercase mb-1">{pkg.name}</p>
+                                    <p className="text-2xl font-black text-slate-900">
+                                       {pkg.price?.toLocaleString('vi-VN')} ₫
+                                    </p>
+                                    <div className="flex items-center gap-1.5 text-[9px] font-black text-indigo-500 uppercase tracking-widest mt-1">
+                                       <Clock className="w-2.5 h-2.5" />
+                                       {pkg.durationDays || 30} ngày
+                                    </div>
+                                 </div>
+                                <p className="text-[10px] font-bold text-slate-400 mt-4 uppercase tracking-tighter">{pkg.description || 'Ưu đãi đặc biệt'}</p>
+                             </button>
+                           )) : (
+                             <div className="col-span-3 py-10 text-center text-slate-400 font-bold italic">
+                                Đang tải các gói ưu đãi...
+                             </div>
+                           )}
+                        </div>
+                     ) : (
+                        <div className="p-8 bg-slate-50/80 rounded-3xl border border-slate-100 space-y-6">
+                           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                              <div>
+                                 <p className="text-sm font-black text-slate-800">Số ngày muốn quảng cáo</p>
+                                 <p className="text-xs font-medium text-slate-400 mt-1">Nhập số ngày (từ 1 ngày trở lên)</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                 <button
+                                   type="button"
+                                   onClick={() => setCustomDays(prev => Math.max(1, prev - 1))}
+                                   className="w-10 h-10 bg-white border border-slate-200 rounded-xl font-bold flex items-center justify-center hover:bg-slate-100 active:scale-90"
+                                 >-</button>
+                                 <input
+                                   type="number"
+                                   min="1"
+                                   value={customDays}
+                                   onChange={(e) => setCustomDays(Math.max(1, parseInt(e.target.value) || 1))}
+                                   className="w-16 h-10 text-center bg-white border border-slate-200 rounded-xl font-black text-lg outline-none"
+                                 />
+                                 <button
+                                   type="button"
+                                   onClick={() => setCustomDays(prev => prev + 1)}
+                                   className="w-10 h-10 bg-white border border-slate-200 rounded-xl font-bold flex items-center justify-center hover:bg-slate-100 active:scale-90"
+                                 >+</button>
+                              </div>
+                           </div>
+                           
+                           {getSelectedPackage() && (
+                              <div className="pt-4 border-t border-slate-200/50 flex justify-between items-center text-xs font-bold text-slate-600">
+                                 <span>Đơn giá mỗi ngày:</span>
+                                 <span className="text-indigo-600 font-black">
+                                    {Math.round(getSelectedPackage().price / (getSelectedPackage().durationDays || 1)).toLocaleString('vi-VN')} ₫ / ngày
+                                 </span>
+                              </div>
+                           )}
+
+                           <div className="pt-4 border-t border-slate-200/50 flex justify-between items-center">
+                              <span className="text-sm font-black text-slate-800">Tổng tiền tạm tính:</span>
+                              <span className="text-3xl font-black text-slate-900">
+                                 {getCustomPrice().toLocaleString('vi-VN')} ₫
+                              </span>
+                           </div>
+                        </div>
+                     )}
+
+                    {(() => {
+                       const selectedPkg = dbPackages.find(p => p.id === selectedPackageId);
+                       return selectedPkg?.description ? (
+                          <div className="bg-slate-50 p-6 rounded-3xl">
+                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Mô tả gói:</p>
+                             <p className="text-sm font-medium text-slate-600 leading-relaxed">{selectedPkg.description}</p>
+                          </div>
+                       ) : null;
+                    })()}
+
+                    <div className="flex flex-col items-center gap-5 pt-4">
+                       <button 
+                          onClick={handleUpgrade}
+                          disabled={isProcessingPayment || !selectedPackageId}
+                          className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black text-xl hover:bg-indigo-600 hover:shadow-2xl hover:shadow-indigo-200 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                       >
+                          {isProcessingPayment ? (
+                            <>
+                              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                              <span>Đang xử lý...</span>
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="w-6 h-6" />
+                              <span>Thanh toán ngay</span>
+                            </>
+                          )}
+                       </button>
+
+                       <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                         <Shield className="w-3 h-3" />
+                         Thanh toán an toàn qua VNPay
+                       </div>
+                       
+                       <button 
+                         onClick={() => setShowPremiumModal(false)}
+                         disabled={isProcessingPayment}
+                         className="text-slate-400 font-bold text-sm hover:text-slate-600 transition-colors"
+                       >
+                         Để sau
+                       </button>
+                    </div>
+                 </div>
+              </div>
+            </div>
+          )}
         </>,
         document.body
-      )}
+      )
+}
 
       {/* ===== 3-Dot Menu Portal ===== */}
       {isMenuOpen && createPortal(
@@ -518,6 +822,23 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
               
               <div className="h-px my-2 mx-3 bg-slate-100/80" />
               
+              <button onClick={handleToggleSponsor}
+                className={`w-full px-4 py-2.5 text-left text-[14px] flex items-center gap-3 transition-all duration-150 font-bold hover:bg-amber-50 ${
+                  localIsSponsored ? 'text-amber-600' : 'text-slate-700'
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  localIsSponsored ? 'bg-amber-100/60' : 'bg-slate-100'
+                }`}>
+                  <svg className={`h-4 w-4 ${localIsSponsored ? 'text-amber-500 fill-current' : 'text-slate-500'}`} viewBox="0 0 24 24">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                  </svg>
+                </div>
+                {localIsSponsored ? 'Tắt quảng cáo' : 'Quảng cáo bài viết'}
+              </button>
+
+              <div className="h-px my-2 mx-3 bg-slate-100/80" />
+
               <button onClick={() => { setIsConfirmDeleteOpen(true); setIsMenuOpen(false); }}
                 disabled={isDeleting}
                 className="w-full px-4 py-2.5 text-left text-[14px] flex items-center gap-3 transition-all duration-150 text-red-500 font-bold hover:bg-red-50"
