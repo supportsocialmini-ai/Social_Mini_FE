@@ -7,19 +7,22 @@ import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 
+const PRESET_CATEGORIES = ["Công nghệ", "Kinh doanh", "Giải trí", "Giáo dục", "Khoa học", "Sức khỏe", "Thể thao", "Nghệ thuật", "Xã hội", "Đời sống", "Văn hóa", "Thiên nhiên", "Chính trị", "Tôn giáo", "Công nghiệp", "Truyền thông", "Mua sắm", "Du lịch", "Ẩm thực", "Thời trang", "Gia đình", "Quan hệ", "Nghề nghiệp", "Tài chính", "Nhà cửa", "Xe cộ", "Cộng đồng", "Sở thích", "Hoạt động ngoài trời", "Phát triển bản thân"];
+
 const Search = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { getFullAvatarUrl } = useAuth();
   const { t } = useTranslation();
   const query = searchParams.get('q') || '';
-  const interestParam = searchParams.get('interest') || '';
+  const categoryParam = searchParams.get('category') || '';
 
   const [users, setUsers] = useState([]);
   const [posts, setPosts] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'people' | 'posts'
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'people' | 'posts' | 'groups'
   const [inputValue, setInputValue] = useState(query);
-  const [selectedInterest, setSelectedInterest] = useState(interestParam);
+  const [selectedCategory, setSelectedCategory] = useState(categoryParam);
   const [expandedPosts, setExpandedPosts] = useState({});
   const [sentIds, setSentIds] = useState(new Set());
 
@@ -27,19 +30,20 @@ const Search = () => {
     setExpandedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
   };
 
-  const doSearch = useCallback(async (q, interestVal = '') => {
+  const doSearch = useCallback(async (q, categoryVal = '') => {
     if (!q || q.trim().length < 2) {
       setUsers([]);
       setPosts([]);
+      setGroups([]);
       return;
     }
     setLoading(true);
     try {
-      const response = await searchService.search(q.trim(), interestVal);
-      // axiosClient đã bóc result nên response là { users: [], posts: [] }
+      const response = await searchService.search(q.trim(), categoryVal);
       const data = response;
       setUsers(data?.users || data?.Users || []);
       setPosts(data?.posts || data?.Posts || []);
+      setGroups(data?.groups || data?.Groups || []);
     } catch (error) {
       console.error('Search error:', error);
       toast.error(t(`api.${error.errorMessage || 'Search.Query.Fail'}`));
@@ -50,40 +54,39 @@ const Search = () => {
 
   // Gọi API khi query thay đổi
   useEffect(() => {
-    doSearch(query, interestParam);
+    doSearch(query, categoryParam);
     setInputValue(query);
-    setSelectedInterest(interestParam);
-  }, [query, interestParam, doSearch]);
+    setSelectedCategory(categoryParam);
+  }, [query, categoryParam, doSearch]);
 
   // Debounce: Cập nhật URL khi người dùng gõ
   useEffect(() => {
     const timer = setTimeout(() => {
       if (inputValue.trim().length >= 2) {
         const params = { q: inputValue.trim() };
-        if (selectedInterest) params.interest = selectedInterest;
+        if (selectedCategory) params.category = selectedCategory;
         setSearchParams(params);
       } else if (inputValue.trim().length === 0) {
         setSearchParams({});
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [inputValue, selectedInterest, setSearchParams]);
+  }, [inputValue, selectedCategory, setSearchParams]);
 
   const handleAddFriend = async (userId, fullName) => {
     // Optimistic update
     setSentIds(prev => new Set([...prev, userId]));
     try {
       await friendService.sendRequest(userId);
-      // Success toast removed as per silent UI preference, but keeping name for reference if needed
     } catch (error) {
       console.error('Error sending friend request:', error);
-      // Keep it as sent for UX if already pending
     }
   };
 
   const showUsers = activeTab === 'all' || activeTab === 'people';
   const showPosts = activeTab === 'all' || activeTab === 'posts';
-  const hasResults = users.length > 0 || posts.length > 0;
+  const showGroups = activeTab === 'all' || activeTab === 'groups';
+  const hasResults = users.length > 0 || posts.length > 0 || groups.length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/30 to-gray-50">
@@ -97,20 +100,14 @@ const Search = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <select
-              value={selectedInterest}
-              onChange={(e) => setSelectedInterest(e.target.value)}
-              className="bg-transparent text-sm text-indigo-600 font-extrabold border-none outline-none cursor-pointer max-w-[150px]"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="bg-transparent text-sm text-indigo-600 font-extrabold border-none outline-none cursor-pointer max-w-[150px] custom-scrollbar"
             >
-              <option value="">Sở thích</option>
-              <option value="Công nghệ">Công nghệ</option>
-              <option value="Đánh cầu">Đánh cầu</option>
-              <option value="Du lịch">Du lịch</option>
-              <option value="Ẩm thực">Ẩm thực</option>
-              <option value="Âm nhạc">Âm nhạc</option>
-              <option value="Phim ảnh">Phim ảnh</option>
-              <option value="Kinh doanh">Kinh doanh</option>
-              <option value="Thể thao">Thể thao</option>
-              <option value="Nghệ thuật">Nghệ thuật</option>
+              <option value="">Lĩnh vực</option>
+              {PRESET_CATEGORIES.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
             </select>
             <div className="w-px h-5 bg-gray-200 mr-2 flex-shrink-0" />
             <input
@@ -137,7 +134,7 @@ const Search = () => {
         {/* Tabs */}
         {query && (
           <div className="flex gap-2 mb-6">
-            {['all', 'people', 'posts'].map((tab) => (
+            {['all', 'people', 'posts', 'groups'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -147,7 +144,13 @@ const Search = () => {
                     : 'bg-white text-gray-600 border border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
                 }`}
               >
-                {tab === 'all' ? t('search.tabAll') : tab === 'people' ? `${t('search.tabPeople')} (${users.length})` : `${t('search.tabPosts')} (${posts.length})`}
+                {tab === 'all' 
+                  ? t('search.tabAll') 
+                  : tab === 'people' 
+                    ? `${t('search.tabPeople')} (${users.length})` 
+                    : tab === 'posts' 
+                      ? `${t('search.tabPosts')} (${posts.length})` 
+                      : `${t('search.tabGroups')} (${groups.length})`}
               </button>
             ))}
           </div>
@@ -311,6 +314,56 @@ const Search = () => {
                     </span>
                   </div>
                 </div>
+              ))}
+            </div>
+          </section>
+        )}
+        {/* Groups Section */}
+        {!loading && showGroups && groups.length > 0 && (
+          <section className="mt-8">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-1 h-5 bg-gradient-to-b from-violet-600 to-indigo-600 rounded-full"></div>
+              <h2 className="font-black text-gray-700 uppercase tracking-widest text-xs">{t('search.tabGroups')}</h2>
+              <span className="ml-auto text-xs text-gray-400 font-medium">{groups.length} {t('search.results')}</span>
+            </div>
+            <div className="space-y-3">
+              {groups.map((group) => (
+                <Link
+                  key={group.groupId}
+                  to={`/groups/${group.groupId}`}
+                  className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md hover:border-violet-100 transition-all duration-200 group block"
+                >
+                  {/* Avatar nhóm */}
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-400 to-indigo-500 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                    {group.avatarUrl ? (
+                      <img
+                        src={group.avatarUrl}
+                        alt={group.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                      />
+                    ) : (
+                      <span className="text-white font-black text-lg">{(group.name || 'G').charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-gray-900 group-hover:text-violet-600 transition-colors truncate">{group.name}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {group.category && (
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-violet-50 text-violet-500 border border-violet-100 uppercase tracking-wider">
+                          {group.category}
+                        </span>
+                      )}
+                      <p className="text-xs text-gray-400 truncate">{group.description || 'Cộng đồng'}</p>
+                    </div>
+                  </div>
+
+                  {/* Arrow */}
+                  <svg className="w-4 h-4 text-gray-300 group-hover:text-violet-400 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
               ))}
             </div>
           </section>

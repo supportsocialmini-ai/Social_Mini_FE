@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Layout/Navbar';
 import PostCard from '../../components/Post/PostCard';
@@ -37,50 +37,72 @@ const Home = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [suggestions, setSuggestions] = useState([]);
+  const [friendSuggestions, setFriendSuggestions] = useState([]);
   const [posts, setPosts] = useState([]);
   const [sentIds, setSentIds] = useState(new Set());
   const [suggestedGroups, setSuggestedGroups] = useState([]);
   const [showInterestsModal, setShowInterestsModal] = useState(false);
-  const [selectedInterests, setSelectedInterests] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [customInterestInput, setCustomInterestInput] = useState('');
+  const [interestsList, setInterestsList] = useState([]);
   const [isFeedLoading, setIsFeedLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [activeFooterModal, setActiveFooterModal] = useState(null);
+  const [showCustomCategory, setShowCustomCategory] = useState(false);
+  const [customCategoryName, setCustomCategoryName] = useState('');
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
+  const categoryBtnRef = useRef(null);
 
-  const SUGGESTED_INTERESTS = ["Công nghệ", "Đánh cầu", "Du lịch", "Ẩm thực", "Âm nhạc", "Phim ảnh", "Kinh doanh", "Thể thao", "Nghệ thuật"];
+  const PRESET_CATEGORIES = ["Công nghệ", "Kinh doanh", "Giải trí", "Giáo dục", "Khoa học", "Sức khỏe", "Thể thao", "Nghệ thuật", "Xã hội", "Đời sống", "Văn hóa", "Thiên nhiên", "Chính trị", "Tôn giáo", "Công nghiệp", "Truyền thông", "Mua sắm", "Du lịch", "Ẩm thực", "Thời trang", "Gia đình", "Quan hệ", "Nghề nghiệp", "Tài chính", "Nhà cửa", "Xe cộ", "Cộng đồng", "Sở thích", "Hoạt động ngoài trời", "Phát triển bản thân"];
 
   const fetchSuggestions = async () => {
     try {
-      const response = await userService.getUsers();
+      const response = await friendService.getFriends();
       let data = response?.$values || response || [];
       if (!Array.isArray(data)) data = [data];
-      
-      const potentialSuggestions = data.filter(u => u && u.userId !== user?.userId).slice(0, 15);
-      
-      const suggestionsWithStatus = await Promise.all(
-        potentialSuggestions.map(async (u) => {
-          try {
-            const statusRes = await friendService.getFriendshipStatus(u.userId);
-            return { ...u, friendshipStatus: statusRes?.status || 'None' };
-          } catch {
-            return { ...u, friendshipStatus: 'None' };
-          }
-        })
-      );
+      setSuggestions(data.filter(u => u && u.userId !== user?.userId).slice(0, 8));
+    } catch (err) {
+      console.error('Lỗi lấy bạn bè:', err);
+    }
+  };
 
-      const finalFiltered = suggestionsWithStatus
-        .filter(u => u.friendshipStatus !== 'Accepted')
-        .slice(0, 5);
+  const fetchFriendSuggestions = async () => {
+    try {
+      // 1. Lấy danh sách bạn bè hiện tại để loại trừ
+      const friendsRes = await friendService.getFriends();
+      let friendsData = friendsRes?.$values || friendsRes || [];
+      if (!Array.isArray(friendsData)) friendsData = [friendsData];
+      const friendIds = new Set(friendsData.map(f => f.userId));
 
-      const initiallySent = new Set(
-        finalFiltered
-          .filter(u => u.friendshipStatus === 'Sent')
-          .map(u => u.userId)
-      );
+      // 2. Lấy danh sách lời mời đang chờ (pending) để loại trừ
+      const pendingRes = await friendService.getPendingRequests();
+      let pendingData = pendingRes?.$values || pendingRes || [];
+      if (!Array.isArray(pendingData)) pendingData = [pendingData];
+      const pendingIds = new Set(pendingData.map(p => p.userId || p.senderId || p.receiverId));
 
-      setSentIds(initiallySent);
-      setSuggestions(finalFiltered);
-    } catch (err) { 
-      console.error('Lỗi lấy suggestions:', err); 
+      // 3. Lấy toàn bộ người dùng trong hệ thống
+      const allUsersRes = await userService.getUsers();
+      let allUsersData = allUsersRes?.$values || allUsersRes || [];
+      if (!Array.isArray(allUsersData)) allUsersData = [allUsersData];
+
+      // 4. Lọc ứng viên:
+      // - Cùng lĩnh vực quan tâm với user hiện tại
+      // - Không phải bản thân
+      // - Chưa là bạn bè
+      // - Chưa gửi lời mời kết bạn
+      const myCategory = (user?.category || '').trim().toLowerCase();
+      let candidates = allUsersData.filter(u => {
+        if (!u || u.userId === user?.userId) return false;
+        if (friendIds.has(u.userId) || pendingIds.has(u.userId)) return false;
+        
+        const uCategory = (u.category || u.Category || '').trim().toLowerCase();
+        return myCategory && uCategory === myCategory;
+      });
+
+      setFriendSuggestions(candidates.slice(0, 5));
+    } catch (err) {
+      console.error('Lỗi lấy gợi ý kết bạn cùng lĩnh vực:', err);
     }
   };
 
@@ -88,45 +110,54 @@ const Home = () => {
     if (user) {
       fetchPosts();
       fetchSuggestions();
+      fetchFriendSuggestions();
       fetchSuggestedGroups();
       
-      // Check if user has no interests and show modal
-      if (!user.interests) {
+      // Check if user has no category and show modal
+      if (!user.category) {
         setShowInterestsModal(true);
       }
     }
   }, [user]);
 
-  const toggleInterest = (interest) => {
-    setSelectedInterests(prev => 
-      prev.includes(interest) 
-        ? prev.filter(i => i !== interest) 
-        : [...prev, interest]
-    );
+  const handleAddWelcomeInterest = () => {
+    const trimmed = customInterestInput.trim();
+    if (!trimmed) return;
+    if (!interestsList.includes(trimmed)) {
+      setInterestsList(prev => [...prev, trimmed]);
+    }
+    setCustomInterestInput('');
   };
 
   const handleSaveInterests = async () => {
-    if (selectedInterests.length === 0) {
-      toast.info("Vui lòng chọn ít nhất một sở thích để chúng mình gợi ý tốt hơn nhé!");
+    if (!selectedCategory) {
+      toast.warn("Vui lòng chọn một lĩnh vực quan tâm chính!");
+      return;
+    }
+    if (selectedCategory === 'Other' && !customCategoryName.trim()) {
+      toast.warn("Vui lòng nhập lĩnh vực quan tâm chính của bạn!");
       return;
     }
     
     setLoading(true);
     try {
-      const interestsString = selectedInterests.join(', ');
+      const finalCategory = selectedCategory === 'Other' ? customCategoryName.trim() : selectedCategory;
+      const interestsString = interestsList.join(', ');
       const response = await userService.updateUser({
         fullName: user.fullName,
         username: user.username,
         email: user.email,
+        category: finalCategory,
         interests: interestsString
       });
       
-      updateUserData(response || { ...user, interests: interestsString });
+      updateUserData(response || { ...user, category: finalCategory, interests: interestsString });
       setShowInterestsModal(false);
       toast.success("Tuyệt vời! Đang chuẩn bị không gian riêng cho bạn...");
       fetchSuggestedGroups();
+      fetchFriendSuggestions();
     } catch (error) {
-      toast.error("Có lỗi khi lưu sở thích, hãy thử lại sau nhé!");
+      toast.error("Có lỗi khi lưu thông tin, hãy thử lại sau nhé!");
     } finally {
       setLoading(false);
     }
@@ -396,36 +427,47 @@ const Home = () => {
             <div className="rounded-2xl p-5 transition-all duration-300" style={glass.card}>
               <div className="flex items-center justify-between mb-4">
                 <p className="font-bold text-slate-800 text-sm">{t('home.suggestedForYou')}</p>
-                <Link to="/friends" className="text-xs font-bold transition-colors" style={{ color: '#6366f1' }}>{t('common.viewAll')}</Link>
+                <Link to="/people/suggestions" className="text-xs font-bold transition-colors" style={{ color: '#6366f1' }}>{t('common.viewAll')}</Link>
               </div>
               <div className="space-y-3">
-                {suggestions.map((u, i) => (
-                  <div key={u.userId} className="flex items-center gap-3 p-2 rounded-xl transition-all duration-200 hover:scale-[1.01]"
-                    style={{ background: 'transparent' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.05)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                    <Link to={`/profile/${u.userId}`} className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden ring-2 ring-white/60"
-                      style={{ background: `linear-gradient(135deg, ${['#6366f1,#8b5cf6', '#ec4899,#f43f5e', '#10b981,#06b6d4', '#f59e0b,#f97316', '#a855f7,#6366f1'][i % 5]})` }}>
-                      <img src={getFullAvatarUrl(u.avatarUrl, u.fullName || u.username)} alt="" className="w-full h-full object-cover" />
-                    </Link>
-                    <Link to={`/profile/${u.userId}`} className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-900 truncate hover:text-indigo-600 transition-colors">{u.fullName}</p>
-                      <p className="text-xs text-slate-400 truncate">@{u.username}</p>
-                    </Link>
-                    <button
-                      onClick={() => handleFollow(u.userId, u.fullName)}
-                      disabled={sentIds.has(u.userId)}
-                      className="text-xs font-bold px-3 py-1.5 rounded-full transition-all hover:scale-105 active:scale-95 flex-shrink-0"
-                      style={sentIds.has(u.userId)
-                        ? { background: 'rgba(99,102,241,0.06)', color: '#94a3b8', cursor: 'default' }
-                        : { background: 'rgba(99,102,241,0.1)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.2)' }}
-                      onMouseEnter={e => !sentIds.has(u.userId) && (e.currentTarget.style.background = 'linear-gradient(135deg, #6366f1, #8b5cf6)', e.currentTarget.style.color = '#fff')}
-                      onMouseLeave={e => !sentIds.has(u.userId) && (e.currentTarget.style.background = 'rgba(99,102,241,0.1)', e.currentTarget.style.color = '#6366f1')}
-                    >
-                      {sentIds.has(u.userId) ? t('posts.sent') : t('posts.addFriend')}
-                    </button>
-                  </div>
-                ))}
+                {friendSuggestions.map((u, i) => {
+                  const name = u.fullName || u.FullName || u.username || u.Username;
+                  const username = u.username || u.Username;
+                  const avatar = u.avatarUrl || u.AvatarUrl;
+                  const cat = (u.category || u.Category || '').trim();
+
+                  return (
+                    <div key={u.userId} className="flex items-center gap-3 p-2 rounded-xl transition-all duration-200 hover:scale-[1.01]"
+                      style={{ background: 'transparent' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.05)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                      <Link to={`/profile/${u.userId}`} className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden ring-2 ring-white/60"
+                        style={{ background: `linear-gradient(135deg, ${['#6366f1,#8b5cf6', '#ec4899,#f43f5e', '#10b981,#06b6d4', '#f59e0b,#f97316', '#a855f7,#6366f1'][i % 5]})` }}>
+                        <img src={getFullAvatarUrl(avatar, name)} alt="" className="w-full h-full object-cover" />
+                      </Link>
+                      <Link to={`/profile/${u.userId}`} className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-900 truncate hover:text-indigo-600 transition-colors">{name}</p>
+                        {cat ? (
+                          <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider truncate">{cat}</p>
+                        ) : (
+                          <p className="text-xs text-slate-400 truncate">@{username}</p>
+                        )}
+                      </Link>
+                      <button
+                        onClick={() => handleFollow(u.userId, name)}
+                        disabled={sentIds.has(u.userId)}
+                        className="text-xs font-bold px-3 py-1.5 rounded-full transition-all hover:scale-105 active:scale-95 flex-shrink-0"
+                        style={sentIds.has(u.userId)
+                          ? { background: 'rgba(99,102,241,0.06)', color: '#94a3b8', cursor: 'default' }
+                          : { background: 'rgba(99,102,241,0.1)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.2)' }}
+                        onMouseEnter={e => !sentIds.has(u.userId) && (e.currentTarget.style.background = 'linear-gradient(135deg, #6366f1, #8b5cf6)', e.currentTarget.style.color = '#fff')}
+                        onMouseLeave={e => !sentIds.has(u.userId) && (e.currentTarget.style.background = 'rgba(99,102,241,0.1)', e.currentTarget.style.color = '#6366f1')}
+                      >
+                        {sentIds.has(u.userId) ? t('posts.sent') : t('posts.addFriend')}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -503,42 +545,170 @@ const Home = () => {
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity" />
           <div className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-            <div className="p-8 md:p-12">
-              <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mb-8 mx-auto rotate-3">
-                <svg className="w-10 h-10 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className="p-8 md:p-12 max-h-[90vh] overflow-y-auto custom-scrollbar">
+              <div className="w-16 h-16 bg-indigo-50 rounded-3xl flex items-center justify-center mb-6 mx-auto rotate-3">
+                <svg className="w-8 h-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" />
                 </svg>
               </div>
               
-              <div className="text-center mb-10">
-                <h2 className="text-3xl font-black text-slate-800 mb-3 tracking-tight">Chào mừng bạn! 👋</h2>
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-black text-slate-800 mb-2 tracking-tight">Chào mừng bạn! 👋</h2>
                 <p className="text-slate-500 text-sm leading-relaxed">
-                  Để trải nghiệm của bạn tuyệt vời hơn, hãy chọn những lĩnh vực bạn quan tâm nhé. Chúng mình sẽ gợi ý những cộng đồng phù hợp nhất!
+                  Để gợi ý những cộng đồng phù hợp nhất, hãy chọn lĩnh vực quan tâm chính và các sở thích của bạn nhé!
                 </p>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-3 mb-10">
-                {SUGGESTED_INTERESTS.map(interest => {
-                  const isSelected = selectedInterests.includes(interest);
-                  return (
+              {/* Lĩnh vực quan tâm */}
+              <div className="mb-6 space-y-1.5 relative">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">Lĩnh vực quan tâm chính <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <button
+                    ref={categoryBtnRef}
+                    type="button"
+                    onClick={() => {
+                      if (!isCategoryDropdownOpen && categoryBtnRef.current) {
+                        const rect = categoryBtnRef.current.getBoundingClientRect();
+                        setDropdownPos({ top: rect.bottom + 6, left: rect.left, width: rect.width });
+                      }
+                      setIsCategoryDropdownOpen(!isCategoryDropdownOpen);
+                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all flex items-center justify-between text-slate-700 text-left cursor-pointer"
+                  >
+                    <span>
+                      {selectedCategory === 'Other' 
+                        ? (customCategoryName.trim() ? customCategoryName : "Lĩnh vực khác...") 
+                        : (selectedCategory || "Chọn lĩnh vực quan tâm...")}
+                    </span>
+                    <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  
+                  {isCategoryDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-[10000]" onClick={() => setIsCategoryDropdownOpen(false)} />
+                      <div className="fixed z-[10001] bg-white border border-slate-100 rounded-2xl shadow-xl max-h-60 overflow-y-auto py-2 custom-scrollbar" style={{ top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory('');
+                            setShowCustomCategory(false);
+                            setIsCategoryDropdownOpen(false);
+                          }}
+                          className="w-full px-4 py-2.5 text-left text-sm font-semibold text-slate-400 hover:bg-slate-50 transition-colors"
+                        >
+                          Chọn lĩnh vực quan tâm...
+                        </button>
+                        {PRESET_CATEGORIES.map(cat => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCategory(cat);
+                              setShowCustomCategory(false);
+                              setIsCategoryDropdownOpen(false);
+                            }}
+                            className={`w-full px-4 py-2.5 text-left text-sm font-semibold transition-colors flex items-center justify-between ${
+                              selectedCategory === cat ? 'bg-indigo-50 text-indigo-600' : 'text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            <span>{cat}</span>
+                            {selectedCategory === cat && (
+                              <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory('Other');
+                            setShowCustomCategory(true);
+                            setIsCategoryDropdownOpen(false);
+                          }}
+                          className={`w-full px-4 py-2.5 text-left text-sm font-semibold transition-colors flex items-center justify-between ${
+                            selectedCategory === 'Other' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-700 hover:bg-slate-50'
+                          }`}
+                        >
+                          <span>Lĩnh vực khác...</span>
+                          {selectedCategory === 'Other' && (
+                            <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {showCustomCategory && (
+                <div className="mb-6 space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">Nhập lĩnh vực quan tâm khác <span className="text-red-500">*</span></label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="Nhập lĩnh vực khác..."
+                    value={customCategoryName}
+                    onChange={e => setCustomCategoryName(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  />
+                </div>
+              )}
+
+              {/* Nhập sở thích khác */}
+              <div className="mb-8 space-y-4">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Sở thích khác của bạn</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={customInterestInput}
+                      onChange={(e) => setCustomInterestInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddWelcomeInterest();
+                        }
+                      }}
+                      placeholder="Nhập sở thích khác..."
+                      className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    />
                     <button
-                      key={interest}
-                      onClick={() => toggleInterest(interest)}
-                      className={`px-5 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300 border-2 ${
-                        isSelected 
-                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-200 scale-105' 
-                          : 'bg-white border-slate-100 text-slate-500 hover:border-indigo-200 hover:text-indigo-600'
-                      }`}
+                      type="button"
+                      onClick={handleAddWelcomeInterest}
+                      className="px-4 py-2.5 bg-indigo-600 text-white font-bold text-sm rounded-2xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
                     >
-                      {interest}
+                      Thêm
                     </button>
-                  );
-                })}
+                  </div>
+                </div>
+
+                {/* Danh sách sở thích đã chọn */}
+                {interestsList.length > 0 && (
+                  <div className="flex flex-wrap gap-2 p-2.5 bg-slate-50 border border-slate-100 rounded-2xl items-center">
+                    {interestsList.map((interest, idx) => (
+                      <span key={idx} className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-lg">
+                        {interest}
+                        <button
+                          type="button"
+                          onClick={() => setInterestsList(prev => prev.filter(item => item !== interest))}
+                          className="ml-1 w-3.5 h-3.5 rounded-full flex items-center justify-center hover:bg-indigo-200 text-indigo-700 font-bold text-[10px]"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <button
                 onClick={handleSaveInterests}
-                disabled={loading || selectedInterests.length === 0}
+                disabled={loading || !selectedCategory}
                 className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 disabled:shadow-none"
               >
                 {loading ? (

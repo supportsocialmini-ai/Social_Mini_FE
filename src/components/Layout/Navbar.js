@@ -39,11 +39,10 @@ const Navbar = () => {
   const [loading, setLoading] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [suggestions, setSuggestions] = useState([]);
+  const [suggestGroups, setSuggestGroups] = useState([]);
   const [isSuggestOpen, setIsSuggestOpen] = useState(false);
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const [selectedInterest, setSelectedInterest] = useState('');
-  const [isInterestOpen, setIsInterestOpen] = useState(false);
 
   const searchRef = useRef(null);
   const notifRef = useRef(null);
@@ -52,7 +51,9 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) setIsSuggestOpen(false);
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setIsSuggestOpen(false);
+      }
       if (notifRef.current && !notifRef.current.contains(e.target)) setIsNotifOpen(false);
       if (menuRef.current && !menuRef.current.contains(e.target)) setIsMenuOpen(false);
       if (mobileSearchRef.current && !mobileSearchRef.current.contains(e.target)) setIsMobileSearchOpen(false);
@@ -68,41 +69,50 @@ const Navbar = () => {
     setIsMenuOpen(false);
     setIsMobileSearchOpen(false);
     setSearchInput(''); // Clear search on navigation
-    setSelectedInterest(''); // Clear selected interest
   }, [location.pathname]);
 
   useEffect(() => {
-    if (searchInput.trim().length < 2) { setSuggestions([]); setIsSuggestOpen(false); return; }
+    if (searchInput.trim().length < 2) { setSuggestions([]); setSuggestGroups([]); setIsSuggestOpen(false); return; }
     setSuggestLoading(true);
     const timer = setTimeout(async () => {
       try {
         const { default: searchService } = await import('../../services/searchService');
-        const res = await searchService.search(searchInput.trim(), selectedInterest);
-        const users = res?.users || res?.$values || res || [];
-        setSuggestions(Array.isArray(users) ? users.slice(0, 6) : []);
+        const res = await searchService.search(searchInput.trim());
+        const users = res?.users || res?.Users || [];
+        const groups = res?.groups || res?.Groups || [];
+        setSuggestions(Array.isArray(users) ? users.slice(0, 4) : []);
+        setSuggestGroups(Array.isArray(groups) ? groups.slice(0, 3) : []);
         setIsSuggestOpen(true);
       } catch {
         setSuggestions([]);
+        setSuggestGroups([]);
       } finally {
         setSuggestLoading(false);
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchInput, selectedInterest]);
+  }, [searchInput]);
 
   const handleSearchKeyDown = (e) => {
     if (e.key === 'Enter' && searchInput.trim().length >= 2) {
       setIsSuggestOpen(false);
-      const interestParam = selectedInterest ? `&interest=${encodeURIComponent(selectedInterest)}` : '';
-      navigate(`/search?q=${encodeURIComponent(searchInput.trim())}${interestParam}`);
+      navigate(`/search?q=${encodeURIComponent(searchInput.trim())}`);
     }
-    if (e.key === 'Escape') setIsSuggestOpen(false);
+    if (e.key === 'Escape') {
+      setIsSuggestOpen(false);
+    }
   };
 
   const handleSuggestionClick = (userId) => {
     setIsSuggestOpen(false);
     setSearchInput('');
     navigate(`/profile/${userId}`);
+  };
+
+  const handleGroupClick = (groupId) => {
+    setIsSuggestOpen(false);
+    setSearchInput('');
+    navigate(`/groups/${groupId}`);
   };
 
   useEffect(() => {
@@ -179,42 +189,6 @@ const Navbar = () => {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              {/* Custom interest dropdown */}
-              <div className="relative flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setIsInterestOpen(v => !v); }}
-                  className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors px-1 py-0.5 rounded-lg hover:bg-indigo-50"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
-                  </svg>
-                  <span className="max-w-[80px] truncate">{selectedInterest || 'Sở thích'}</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform duration-200 ${isInterestOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {isInterestOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-40 bg-white rounded-2xl shadow-xl border border-gray-100 z-[100] overflow-hidden py-1"
-                    style={{ boxShadow: '0 8px 32px rgba(99,102,241,0.15)' }}>
-                    {['', 'Công nghệ', 'Đánh cầu', 'Du lịch', 'Ẩm thực', 'Âm nhạc', 'Phim ảnh', 'Kinh doanh', 'Thể thao', 'Nghệ thuật'].map((interest) => (
-                      <button
-                        key={interest}
-                        type="button"
-                        onMouseDown={(e) => { e.preventDefault(); setSelectedInterest(interest); setIsInterestOpen(false); }}
-                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                          selectedInterest === interest
-                            ? 'bg-indigo-50 text-indigo-700 font-bold'
-                            : 'text-gray-700 hover:bg-gray-50 font-medium'
-                        }`}
-                      >
-                        {interest || 'Tất cả'}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="w-px h-4 bg-gray-200 mx-2 flex-shrink-0" />
               <input
                 type="text"
                 name="navbar-search-desktop"
@@ -231,29 +205,79 @@ const Navbar = () => {
               )}
             </div>
 
-            {isSuggestOpen && suggestions.length > 0 && (
+            {isSuggestOpen && (suggestions.length > 0 || suggestGroups.length > 0) && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
-                <div className="px-3 py-2 border-b border-gray-50">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('navbar.people')}</p>
-                </div>
-                {suggestions.map((u) => (
-                  <button
-                    key={u.userId}
-                    onMouseDown={() => handleSuggestionClick(u.userId)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-indigo-50 transition-colors group text-left"
-                  >
-                    <div className="relative w-8 h-8 flex-shrink-0">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-blue-500 overflow-hidden">
-                        <img src={getFullAvatarUrl(u.avatarUrl, u.fullName || u.username)} alt={u.fullName} className="w-full h-full object-cover" />
-                      </div>
-                      <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${onlineUsers.has(u.userId) ? 'bg-green-500' : 'bg-gray-300'}`} />
+                {/* People */}
+                {suggestions.length > 0 && (
+                  <>
+                    <div className="px-3 pt-2.5 pb-1">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mọi người</p>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 truncate transition-colors">{u.fullName}</p>
-                      <p className="text-xs text-gray-400 truncate">@{u.username}</p>
+                    {suggestions.map((u) => (
+                      <button
+                        key={u.userId}
+                        onMouseDown={() => handleSuggestionClick(u.userId)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-indigo-50 transition-colors group text-left"
+                      >
+                        <div className="relative w-8 h-8 flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-blue-500 overflow-hidden">
+                            <img src={getFullAvatarUrl(u.avatarUrl, u.fullName || u.username)} alt={u.fullName} className="w-full h-full object-cover" />
+                          </div>
+                          <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${onlineUsers.has(u.userId) ? 'bg-green-500' : 'bg-gray-300'}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 truncate transition-colors">{u.fullName}</p>
+                          <p className="text-xs text-gray-400 truncate">@{u.username}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </>
+                )}
+
+                {/* Groups */}
+                {suggestGroups.length > 0 && (
+                  <>
+                    <div className={`px-3 pb-1 ${suggestions.length > 0 ? 'pt-2 border-t border-gray-50 mt-1' : 'pt-2.5'}`}>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Cộng đồng</p>
                     </div>
-                  </button>
-                ))}
+                    {suggestGroups.map((g) => (
+                      <button
+                        key={g.groupId}
+                        onMouseDown={() => handleGroupClick(g.groupId)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-violet-50 transition-colors group text-left"
+                      >
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-400 to-indigo-500 overflow-hidden flex items-center justify-center flex-shrink-0">
+                          {g.avatarUrl
+                            ? <img src={g.avatarUrl} alt={g.name} className="w-full h-full object-cover" />
+                            : <span className="text-white font-black text-sm">{(g.name || 'G').charAt(0).toUpperCase()}</span>
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 group-hover:text-violet-600 truncate transition-colors">{g.name}</p>
+                          {g.category && <p className="text-[10px] text-violet-400 font-bold uppercase tracking-wider truncate">{g.category}</p>}
+                        </div>
+                        <svg className="w-3.5 h-3.5 text-gray-300 group-hover:text-violet-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    ))}
+                  </>
+                )}
+
+                {/* Xem tất cả */}
+                <button
+                  onMouseDown={() => {
+                    setIsSuggestOpen(false);
+                    setSearchInput('');
+                    navigate(`/search?q=${encodeURIComponent(searchInput.trim())}`);
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 transition-colors border-t border-gray-50"
+                >
+                  Xem tất cả kết quả
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
               </div>
             )}
           </div>

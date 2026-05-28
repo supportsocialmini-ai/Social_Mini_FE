@@ -1,8 +1,8 @@
 import axiosClient from '../api/axiosClient';
 
-const search = (query, interest = '') => {
-  const interestParam = interest ? `&interest=${encodeURIComponent(interest)}` : '';
-  return axiosClient.get(`api/search?q=${encodeURIComponent(query)}${interestParam}`);
+const search = (query, category = '') => {
+  const categoryParam = category ? `&category=${encodeURIComponent(category)}` : '';
+  return axiosClient.get(`api/search?q=${encodeURIComponent(query)}${categoryParam}`);
 };
 
 const searchService = { search };

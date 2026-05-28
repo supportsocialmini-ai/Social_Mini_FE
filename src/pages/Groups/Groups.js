@@ -22,9 +22,13 @@ const Groups = () => {
   const [myGroups, setMyGroups] = useState([]);
   const [discoverGroups, setDiscoverGroups] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: '', description: '', privacy: 'Public', category: '' });
+  const [showCustomCategory, setShowCustomCategory] = useState(false);
+  const [customCategoryName, setCustomCategoryName] = useState('');
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+
+  const PRESET_CATEGORIES = ["Công nghệ", "Kinh doanh", "Giải trí", "Giáo dục", "Khoa học", "Sức khỏe", "Thể thao", "Nghệ thuật", "Xã hội", "Đời sống", "Văn hóa", "Thiên nhiên", "Chính trị", "Tôn giáo", "Công nghiệp", "Truyền thông", "Mua sắm", "Du lịch", "Ẩm thực", "Thời trang", "Gia đình", "Quan hệ", "Nghề nghiệp", "Tài chính", "Nhà cửa", "Xe cộ", "Cộng đồng", "Sở thích", "Hoạt động ngoài trời", "Phát triển bản thân"];
 
   useEffect(() => {
     fetchGroups();
@@ -45,23 +49,24 @@ const Groups = () => {
     }
   };
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await groupService.searchGroups(searchTerm);
-      setDiscoverGroups(Array.isArray(res) ? res : (res?.$values || []));
-    } catch (error) {
-      toast.error("Lỗi tìm kiếm");
-    }
-  };
 
   const handleCreateGroup = async (e) => {
     e.preventDefault();
+    const finalCategory = newGroup.category === 'Other' ? customCategoryName.trim() : newGroup.category;
+    if (!finalCategory) {
+      toast.warn("Vui lòng chọn lĩnh vực cho nhóm!");
+      return;
+    }
     try {
-      await groupService.createGroup(newGroup);
+      await groupService.createGroup({
+        ...newGroup,
+        category: finalCategory
+      });
       toast.success("Tạo nhóm thành công!");
       setIsCreateModalOpen(false);
       setNewGroup({ name: '', description: '', privacy: 'Public', category: '' });
+      setCustomCategoryName('');
+      setShowCustomCategory(false);
       fetchGroups();
     } catch (error) {
       toast.error("Lỗi tạo nhóm");
@@ -92,7 +97,12 @@ const Groups = () => {
             <p className="text-slate-500">Khám phá và kết nối với những người cùng sở thích</p>
           </div>
           <button 
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => {
+              setIsCreateModalOpen(true);
+              setIsCategoryDropdownOpen(false);
+              setShowCustomCategory(false);
+              setCustomCategoryName('');
+            }}
             className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200 hover:scale-105 active:scale-95 transition-all"
           >
             + Tạo nhóm mới
@@ -149,53 +159,50 @@ const Groups = () => {
 
         {/* Discover Groups Section */}
         <section>
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <span className="w-2 h-8 bg-violet-500 rounded-full"></span>
-              Khám phá cộng đồng
-            </h2>
-            <form onSubmit={handleSearch} className="relative w-full sm:w-80">
-              <input 
-                type="text" 
-                placeholder="Tìm kiếm nhóm..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white/80 border border-white rounded-2xl focus:ring-2 focus:ring-indigo-400 outline-none transition-all text-sm"
-              />
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </form>
+          <div className="flex items-center gap-2 mb-6">
+            <span className="w-2 h-8 bg-violet-500 rounded-full"></span>
+            <h2 className="text-xl font-bold text-slate-800">Khám phá cộng đồng</h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {discoverGroups.filter(dg => !myGroups.some(mg => mg.groupId === dg.groupId)).map(group => (
-              <div key={group.groupId} 
-                className="rounded-3xl p-5 transition-all duration-300"
-                style={glass.card}
-              >
-                <div className="w-full aspect-video rounded-2xl bg-slate-100 mb-4 overflow-hidden">
-                  {group.coverUrl ? (
-                    <img src={group.coverUrl} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-100 flex items-center justify-center">
-                      <svg className="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-                <h3 className="font-bold text-slate-800 mb-1 truncate">{group.name}</h3>
-                <p className="text-xs text-slate-500 line-clamp-2 h-8 mb-4">{group.description || 'Tham gia để cùng thảo luận'}</p>
-                <button 
-                  onClick={() => handleJoinGroup(group.groupId)}
-                  className="w-full py-2 bg-indigo-50 text-indigo-600 font-bold rounded-xl hover:bg-indigo-600 hover:text-white transition-all text-sm"
+          {discoverGroups.filter(dg => !myGroups.some(mg => mg.groupId === dg.groupId)).length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {discoverGroups.filter(dg => !myGroups.some(mg => mg.groupId === dg.groupId)).map(group => (
+                <div key={group.groupId}
+                  className="rounded-3xl p-5 transition-all duration-300 hover:translate-y-[-4px]"
+                  style={glass.card}
                 >
-                  Tham gia
-                </button>
-              </div>
-            ))}
-          </div>
+                  <div className="w-full aspect-video rounded-2xl bg-slate-100 mb-4 overflow-hidden">
+                    {group.coverUrl ? (
+                      <img src={group.coverUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-100 flex items-center justify-center">
+                        <svg className="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  {group.category && (
+                    <span className="inline-block text-[10px] font-black px-2 py-0.5 rounded-full bg-violet-50 text-violet-500 border border-violet-100 uppercase tracking-wider mb-2">
+                      {group.category}
+                    </span>
+                  )}
+                  <h3 className="font-bold text-slate-800 mb-1 truncate">{group.name}</h3>
+                  <p className="text-xs text-slate-500 line-clamp-2 h-8 mb-4">{group.description || 'Tham gia để cùng thảo luận'}</p>
+                  <button
+                    onClick={() => handleJoinGroup(group.groupId)}
+                    className="w-full py-2 bg-indigo-50 text-indigo-600 font-bold rounded-xl hover:bg-indigo-600 hover:text-white transition-all text-sm"
+                  >
+                    Tham gia
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white/30 border border-white/50 rounded-3xl p-12 text-center">
+              <p className="text-slate-400 font-medium">Chưa có cộng đồng nào để khám phá</p>
+            </div>
+          )}
         </section>
       </div>
 
@@ -237,19 +244,101 @@ const Groups = () => {
                   <option value="Private">Riêng tư</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Lĩnh vực / Sở thích</label>
-                <select 
-                  value={newGroup.category}
-                  onChange={e => setNewGroup({...newGroup, category: e.target.value})}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-400 outline-none"
-                >
-                  <option value="">Chọn lĩnh vực...</option>
-                  {["Công nghệ", "Đánh cầu", "Du lịch", "Ẩm thực", "Âm nhạc", "Phim ảnh", "Kinh doanh", "Thể thao", "Nghệ thuật"].map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
+              <div className="relative">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                  Lĩnh vực <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-400 outline-none font-semibold text-slate-700 cursor-pointer flex items-center justify-between text-left"
+                  >
+                    <span>
+                      {newGroup.category === 'Other' 
+                        ? (customCategoryName.trim() ? customCategoryName : "Lĩnh vực khác...") 
+                        : (newGroup.category || "Chọn lĩnh vực...")}
+                    </span>
+                    <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  
+                  {isCategoryDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-[10000]" onClick={() => setIsCategoryDropdownOpen(false)} />
+                      <div className="absolute z-[10001] left-0 right-0 mt-1.5 bg-white border border-slate-100 rounded-2xl shadow-xl max-h-60 overflow-y-auto py-2 animate-in fade-in slide-in-from-top-1 duration-150 custom-scrollbar">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewGroup({...newGroup, category: ''});
+                            setShowCustomCategory(false);
+                            setIsCategoryDropdownOpen(false);
+                          }}
+                          className="w-full px-4 py-2.5 text-left text-sm font-semibold text-slate-400 hover:bg-slate-50 transition-colors"
+                        >
+                          Chọn lĩnh vực...
+                        </button>
+                        {PRESET_CATEGORIES.map(cat => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => {
+                              setNewGroup({...newGroup, category: cat});
+                              setShowCustomCategory(false);
+                              setIsCategoryDropdownOpen(false);
+                            }}
+                            className={`w-full px-4 py-2.5 text-left text-sm font-semibold transition-colors flex items-center justify-between ${
+                              newGroup.category === cat ? 'bg-indigo-50 text-indigo-600' : 'text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            <span>{cat}</span>
+                            {newGroup.category === cat && (
+                              <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewGroup({...newGroup, category: 'Other'});
+                            setShowCustomCategory(true);
+                            setIsCategoryDropdownOpen(false);
+                          }}
+                          className={`w-full px-4 py-2.5 text-left text-sm font-semibold transition-colors flex items-center justify-between ${
+                            newGroup.category === 'Other' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-700 hover:bg-slate-50'
+                          }`}
+                        >
+                          <span>Lĩnh vực khác...</span>
+                          {newGroup.category === 'Other' && (
+                            <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
+
+              {showCustomCategory && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                    Nhập lĩnh vực khác <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="Nhập tên lĩnh vực khác..."
+                    value={customCategoryName}
+                    onChange={e => setCustomCategoryName(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-400 outline-none"
+                  />
+                </div>
+              )}
               <div className="flex gap-4 pt-4">
                 <button 
                   type="button"

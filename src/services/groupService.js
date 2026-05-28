@@ -47,6 +47,10 @@ const groupService = {
 
   inviteToGroup: (groupId, friendId) => {
     return axiosClient.post(`/api/group/${groupId}/members/${friendId}/invite`);
+  },
+
+  getTopicUsers: (groupId) => {
+    return axiosClient.get(`/api/group/${groupId}/topic-users`);
   }
 };
 

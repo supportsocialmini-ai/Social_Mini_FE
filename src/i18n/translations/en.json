@@ -51,6 +51,20 @@
       "unfriendSuccess": "Unfriended.",
       "cancelRequest": "Cancel Request"
     },
+    "search": {
+      "tabAll": "All",
+      "tabPeople": "People",
+      "tabPosts": "Posts",
+      "tabGroups": "Groups",
+      "placeholder": "Search users, posts, groups...",
+      "searching": "Searching...",
+      "noResults": "No results found",
+      "tryAnother": "Try another query or filter by a different field.",
+      "startTitle": "Start exploring",
+      "startDesc": "Search for users, public posts, or groups on the network.",
+      "results": "results",
+      "addFriend": "Add Friend"
+    },
     "auth": {
       "passwordMismatch": "Passwords do not match.",
       "welcomeBack": "Welcome back!",
@@ -465,7 +479,11 @@
       "joined": "Joined",
       "leave": "Leave Group",
       "join": "Join Group",
-      "inviteFriends": "Invite Friends",
+      "inviteFriends": "Invite",
+      "friendsTab": "Friends",
+      "topicUsersTab": "Same Field",
+      "searchSameTopic": "Search by field...",
+      "noTopicUsersToInvite": "No users sharing the same field to invite",
       "about": "About",
       "defaultDesc": "Welcome to our community. Let's build a positive and enriching environment together.",
       "createdAt": "Created on",

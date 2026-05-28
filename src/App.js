@@ -19,6 +19,7 @@ import RandomChat from './pages/Chat/RandomChat';
 import Groups from './pages/Groups/Groups';
 import GroupDetail from './pages/Groups/GroupDetail';
 import PaymentResult from './pages/Payment/PaymentResult';
+import PeopleSuggestions from './pages/People/PeopleSuggestions';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import MentalLetterModal from './components/Common/MentalLetterModal';
@@ -92,6 +93,7 @@ function App() {
             <Route path="/groups" element={<PrivateRoute isMaintenance={isMaintenance}><Groups /></PrivateRoute>} />
             <Route path="/groups/:groupId" element={<PrivateRoute isMaintenance={isMaintenance}><GroupDetail /></PrivateRoute>} />
             <Route path="/payment-result" element={<PaymentResult />} />
+            <Route path="/people/suggestions" element={<PrivateRoute isMaintenance={isMaintenance}><PeopleSuggestions /></PrivateRoute>} />
           </Routes>
           <ToastContainer
             position="top-right"

@@ -31,16 +31,21 @@ const Profile = () => {
     gender: '',
     dateOfBirth: '',
     phoneNumber: '',
-    interests: ''
+    interests: '',
+    category: ''
   });
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef(null);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [pastedAvatarUrl, setPastedAvatarUrl] = useState('');
-  const [imageUrlMode, setImageUrlMode] = useState(false);
+  const [customInterest, setCustomInterest] = useState('');
+  const [showCustomCategory, setShowCustomCategory] = useState(false);
+  const [customCategoryName, setCustomCategoryName] = useState('');
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
 
   const SUGGESTED_INTERESTS = ["Công nghệ", "Đánh cầu", "Du lịch", "Ẩm thực", "Âm nhạc", "Phim ảnh", "Kinh doanh", "Thể thao", "Nghệ thuật"];
+  const PRESET_CATEGORIES = ["Công nghệ", "Kinh doanh", "Giải trí", "Giáo dục", "Khoa học", "Sức khỏe", "Thể thao", "Nghệ thuật", "Xã hội", "Đời sống", "Văn hóa", "Thiên nhiên", "Chính trị", "Tôn giáo", "Công nghiệp", "Truyền thông", "Mua sắm", "Du lịch", "Ẩm thực", "Thời trang", "Gia đình", "Quan hệ", "Nghề nghiệp", "Tài chính", "Nhà cửa", "Xe cộ", "Cộng đồng", "Sở thích", "Hoạt động ngoài trời", "Phát triển bản thân"];
 
   const isOwnProfile = !routeUserId || routeUserId === String(currentUser?.userId);
 
@@ -81,6 +86,8 @@ const Profile = () => {
         if (isOwnProfile) {
           setProfileUser(currentUser);
           if (currentUser) {
+            const userCat = currentUser.category || '';
+            const isPreset = PRESET_CATEGORIES.includes(userCat) || userCat === '';
             setFormData({
               username: currentUser.username || '',
               fullName: currentUser.fullName || '',
@@ -90,13 +97,18 @@ const Profile = () => {
               gender: currentUser.gender || '',
               dateOfBirth: currentUser.dateOfBirth ? currentUser.dateOfBirth.split('T')[0] : '',
               phoneNumber: currentUser.phoneNumber || '',
-              interests: currentUser.interests || ''
+              interests: currentUser.interests || '',
+              category: isPreset ? userCat : 'Other'
             });
+            setCustomCategoryName(isPreset ? '' : userCat);
+            setShowCustomCategory(!isPreset);
           }
         } else {
           // Lấy thông tin người dùng từ DB theo ID
           const foundUser = await userService.getUserById(routeUserId);
           setProfileUser(foundUser);
+          const userCat = foundUser?.category || '';
+          const isPreset = PRESET_CATEGORIES.includes(userCat) || userCat === '';
           setFormData({
             username: foundUser?.username || '',
             fullName: foundUser?.fullName || '',
@@ -106,14 +118,18 @@ const Profile = () => {
             gender: foundUser?.gender || '',
             dateOfBirth: foundUser?.dateOfBirth ? foundUser?.dateOfBirth.split('T')[0] : '',
             phoneNumber: foundUser?.phoneNumber || '',
-            interests: foundUser?.interests || ''
+            interests: foundUser?.interests || '',
+            category: isPreset ? userCat : 'Other'
           });
-
-          // Lấy trạng thái bạn bè thực tế từ DB
-          const statusRes = await friendService.getFriendshipStatus(routeUserId);
-          setFriendshipStatus(statusRes?.status || 'None');
-          setRequestId(statusRes?.requestId || null);
+          setCustomCategoryName(isPreset ? '' : userCat);
+          setShowCustomCategory(!isPreset);
         }
+
+        // Lấy trạng thái bạn bè thực tế từ DB
+        const statusRes = await friendService.getFriendshipStatus(routeUserId);
+        setFriendshipStatus(statusRes?.status || 'None');
+        setRequestId(statusRes?.requestId || null);
+        
         await fetchProfilePosts();
       } catch (error) {
         console.error("Lỗi fetch profile:", error);
@@ -147,6 +163,20 @@ const Profile = () => {
     catch (error) { console.error("Error unfriending:", error); }
   };
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleAddCustomInterest = () => {
+    const trimmed = customInterest.trim();
+    if (!trimmed) return;
+    
+    // Split current interests and add the new one if not already present
+    const current = formData.interests ? formData.interests.split(',').map(i => i.trim()).filter(Boolean) : [];
+    if (!current.includes(trimmed)) {
+      const updated = [...current, trimmed];
+      setFormData({ ...formData, interests: updated.join(', ') });
+    }
+    setCustomInterest('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -182,10 +212,17 @@ const Profile = () => {
       return toast.warn(t('api.PhoneNumberInvalid'));
     }
 
+    if (formData.category === 'Other' && !customCategoryName.trim()) {
+      return toast.warn("Vui lòng nhập lĩnh vực quan tâm chính của bạn!");
+    }
+
     setLoading(true);
     try {
       const payload = { ...formData };
       if (payload.dateOfBirth === '') payload.dateOfBirth = null;
+      if (payload.category === 'Other') {
+        payload.category = customCategoryName.trim();
+      }
       
       const response = await userService.updateUser(payload);
       updateUserData(response || formData);
@@ -235,7 +272,8 @@ const Profile = () => {
         gender: profileUser.gender || '',
         dateOfBirth: profileUser.dateOfBirth ? profileUser.dateOfBirth.split('T')[0] : null,
         phoneNumber: profileUser.phoneNumber || '',
-        interests: profileUser.interests || ''
+        interests: profileUser.interests || '',
+        category: profileUser.category || ''
       };
       
       const response = await userService.updateUser(payload);
@@ -265,7 +303,8 @@ const Profile = () => {
         gender: profileUser.gender || '',
         dateOfBirth: profileUser.dateOfBirth ? profileUser.dateOfBirth.split('T')[0] : null,
         phoneNumber: profileUser.phoneNumber || '',
-        interests: profileUser.interests || ''
+        interests: profileUser.interests || '',
+        category: profileUser.category || ''
       };
       
       const response = await userService.updateUser(payload);
@@ -454,9 +493,17 @@ const Profile = () => {
               </p>
             </div>
           )}
-          {profileUser?.interests && (
+          {(profileUser?.category || profileUser?.interests) && (
             <div className="flex flex-wrap gap-2 mt-2 mb-4">
-              {profileUser.interests.split(',').map((interest, idx) => (
+              {profileUser?.category && (
+                <span className="px-2.5 py-1 bg-gray-900 text-white text-[10px] font-black rounded-lg uppercase tracking-wide flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 20l4-16m2 16l4-16" />
+                  </svg>
+                  {profileUser.category}
+                </span>
+              )}
+              {profileUser?.interests && profileUser.interests.split(',').map((interest, idx) => (
                 <span key={idx} className="px-2.5 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-lg border border-indigo-100/50">
                   #{interest.trim()}
                 </span>
@@ -587,26 +634,28 @@ const Profile = () => {
           />
           
           {/* Modal Content */}
-          <div className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl overflow-hidden modal-content"
+          <div className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl overflow-hidden modal-content flex flex-col max-h-[85vh]"
             style={{ backgroundColor: '#ffffff', backdropFilter: 'none' }}
           >
-            <div className="px-8 pt-8 pb-4">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight">{t('profile.editProfile')}</h3>
-                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{t('profile.personalInfo')}</p>
-                </div>
-                <button 
-                  onClick={() => setIsEditing(false)}
-                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-slate-900 transition-all"
-                >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+            {/* Fixed Header */}
+            <div className="px-8 pt-8 pb-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">{t('profile.editProfile')}</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{t('profile.personalInfo')}</p>
               </div>
+              <button 
+                onClick={() => setIsEditing(false)}
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-slate-900 transition-all"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+              {/* Scrollable Body */}
+              <div className="flex-1 overflow-y-auto px-8 py-6 space-y-4 min-h-0">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('profile.fullNamePlaceholder')}</label>
                   <input name="fullName" value={formData.fullName} onChange={handleChange} required minLength={2} maxLength={100}
@@ -638,17 +687,159 @@ const Profile = () => {
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
                 </div>
 
+                <div className="space-y-1.5 relative">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lĩnh vực quan tâm</label>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all flex items-center justify-between text-slate-700 text-left cursor-pointer"
+                    >
+                      <span>
+                        {formData.category === 'Other' 
+                          ? (customCategoryName.trim() ? customCategoryName : "Lĩnh vực khác...") 
+                          : (formData.category || "Chọn lĩnh vực quan tâm")}
+                      </span>
+                      <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    {isCategoryDropdownOpen && (
+                      <>
+                        <div className="fixed inset-0 z-[10000]" onClick={() => setIsCategoryDropdownOpen(false)} />
+                        <div className="absolute z-[10001] left-0 right-0 mt-1.5 bg-white border border-slate-100 rounded-2xl shadow-xl max-h-60 overflow-y-auto py-2 animate-in fade-in slide-in-from-top-1 duration-150 custom-scrollbar">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, category: '' });
+                              setShowCustomCategory(false);
+                              setIsCategoryDropdownOpen(false);
+                            }}
+                            className="w-full px-4 py-2.5 text-left text-sm font-semibold text-slate-400 hover:bg-slate-50 transition-colors"
+                          >
+                            Chọn lĩnh vực quan tâm
+                          </button>
+                          {PRESET_CATEGORIES.map(cat => (
+                            <button
+                              key={cat}
+                              type="button"
+                              onClick={() => {
+                                setFormData({ ...formData, category: cat });
+                                setShowCustomCategory(false);
+                                setIsCategoryDropdownOpen(false);
+                              }}
+                              className={`w-full px-4 py-2.5 text-left text-sm font-semibold transition-colors flex items-center justify-between ${
+                                formData.category === cat ? 'bg-indigo-50 text-indigo-600' : 'text-slate-700 hover:bg-slate-50'
+                              }`}
+                            >
+                              <span>{cat}</span>
+                              {formData.category === cat && (
+                                <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, category: 'Other' });
+                              setShowCustomCategory(true);
+                              setIsCategoryDropdownOpen(false);
+                            }}
+                            className={`w-full px-4 py-2.5 text-left text-sm font-semibold transition-colors flex items-center justify-between ${
+                              formData.category === 'Other' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            <span>Lĩnh vực khác...</span>
+                            {formData.category === 'Other' && (
+                              <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {showCustomCategory && (
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nhập lĩnh vực quan tâm khác</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Nhập lĩnh vực quan tâm khác..."
+                      value={customCategoryName}
+                      onChange={e => setCustomCategoryName(e.target.value)}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    />
+                  </div>
+                )}
+
+                {formData.interests && formData.interests.split(',').map(i => i.trim()).filter(Boolean).length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sở thích đã chọn</label>
+                    <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-100 rounded-2xl items-center">
+                      {formData.interests.split(',').map(i => i.trim()).filter(Boolean).map((interest, idx) => (
+                        <span key={idx} className="flex items-center gap-1.5 px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded-full shadow-md shadow-indigo-100">
+                          {interest}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const current = formData.interests.split(',').map(i => i.trim()).filter(Boolean);
+                              const updated = current.filter(item => item !== interest);
+                              setFormData({ ...formData, interests: updated.join(', ') });
+                            }}
+                            className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition-all font-normal text-xs"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Thêm sở thích khác</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={customInterest}
+                      onChange={(e) => setCustomInterest(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddCustomInterest();
+                        }
+                      }}
+                      placeholder="Nhập sở thích khác..."
+                      className="flex-1 px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomInterest}
+                      className="px-4 py-3 bg-indigo-600 text-white font-bold text-sm rounded-2xl hover:bg-indigo-700 transition-all flex items-center gap-1 shadow-md shadow-indigo-100"
+                    >
+                      Thêm
+                    </button>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sở thích</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Gợi ý sở thích</label>
                   <div className="flex flex-wrap gap-2">
                     {SUGGESTED_INTERESTS.map(interest => {
-                      const isSelected = formData.interests?.split(',').map(i => i.trim()).includes(interest);
+                      const isSelected = formData.interests?.split(',').map(i => i.trim()).filter(Boolean).includes(interest);
                       return (
                         <button
                           key={interest}
                           type="button"
                           onClick={() => {
-                            const currentInterests = formData.interests ? formData.interests.split(',').map(i => i.trim()) : [];
+                            const currentInterests = formData.interests ? formData.interests.split(',').map(i => i.trim()).filter(Boolean) : [];
                             let newInterests;
                             if (isSelected) {
                               newInterests = currentInterests.filter(i => i !== interest);
@@ -659,7 +850,7 @@ const Profile = () => {
                           }}
                           className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
                             isSelected 
-                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100' 
+                              ? 'bg-indigo-50 text-indigo-600 border-indigo-200 shadow-sm' 
                               : 'bg-white text-slate-500 border-slate-100 hover:border-indigo-300'
                           }`}
                         >
@@ -687,24 +878,26 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-4 pb-8">
-                  <button 
-                    type="button" 
-                    onClick={() => setIsEditing(false)}
-                    className="flex-1 px-6 py-3.5 rounded-2xl bg-slate-100 text-slate-600 font-bold text-sm hover:bg-slate-200 transition-all"
-                  >
-                    {t('profile.cancel')}
-                  </button>
-                  <button 
-                    type="submit" 
-                    disabled={loading}
-                    className="flex-1 px-6 py-3.5 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50"
-                  >
-                    {loading ? t('profile.saving') : t('profile.saveChanges')}
-                  </button>
-                </div>
-              </form>
-            </div>
+              </div>
+
+              {/* Fixed Footer */}
+              <div className="px-8 py-4 border-t border-slate-100 bg-slate-50/50 flex gap-3 shrink-0">
+                <button 
+                  type="button" 
+                  onClick={() => setIsEditing(false)}
+                  className="flex-1 px-6 py-3.5 rounded-2xl bg-slate-100 text-slate-600 font-bold text-sm hover:bg-slate-200 transition-all"
+                >
+                  {t('profile.cancel')}
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="flex-1 px-6 py-3.5 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50"
+                >
+                  {loading ? t('profile.saving') : t('profile.saveChanges')}
+                </button>
+              </div>
+            </form>
           </div>
         </div>,
         document.body

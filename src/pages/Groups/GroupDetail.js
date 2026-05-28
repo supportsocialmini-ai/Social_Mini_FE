@@ -38,9 +38,13 @@ const GroupDetail = () => {
 
   // Invite friends modal
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('friends');
   const [friends, setFriends] = useState([]);
   const [friendSearch, setFriendSearch] = useState('');
   const [loadingFriends, setLoadingFriends] = useState(false);
+  const [topicUsers, setTopicUsers] = useState([]);
+  const [topicUsersSearch, setTopicUsersSearch] = useState('');
+  const [loadingTopicUsers, setLoadingTopicUsers] = useState(false);
   const [invitingUserId, setInvitingUserId] = useState(null);
   const [invitedSet, setInvitedSet] = useState(new Set());
 
@@ -119,8 +123,11 @@ const GroupDetail = () => {
 
   const openInviteModal = async () => {
     setShowInviteModal(true);
+    setActiveTab('friends');
     setFriendSearch('');
+    setTopicUsersSearch('');
     setLoadingFriends(true);
+    setLoadingTopicUsers(true);
     try {
       const res = await friendService.getFriends();
       const list = Array.isArray(res) ? res : (res?.$values || []);
@@ -129,6 +136,16 @@ const GroupDetail = () => {
       toast.error(t('groups.inviteLoadError'));
     } finally {
       setLoadingFriends(false);
+    }
+
+    try {
+      const res = await groupService.getTopicUsers(groupId);
+      const list = Array.isArray(res) ? res : (res?.$values || []);
+      setTopicUsers(list);
+    } catch {
+      toast.error("Không thể tải danh sách người cùng sở thích");
+    } finally {
+      setLoadingTopicUsers(false);
     }
   };
 
@@ -157,6 +174,22 @@ const GroupDetail = () => {
       (f.username || '').toLowerCase().includes(friendSearch.toLowerCase());
     return notMember && matchSearch;
   });
+
+  const filteredTopicUsers = topicUsers.filter(u => {
+    const notMember = !memberIds.has(u.userId);
+    const matchSearch = !topicUsersSearch ||
+      (u.category || '').toLowerCase().includes(topicUsersSearch.toLowerCase()) ||
+      (u.fullName || '').toLowerCase().includes(topicUsersSearch.toLowerCase()) ||
+      (u.username || '').toLowerCase().includes(topicUsersSearch.toLowerCase());
+    return notMember && matchSearch;
+  });
+
+  const isInviteLoading = activeTab === 'friends' ? loadingFriends : loadingTopicUsers;
+  const inviteList = activeTab === 'friends' ? filteredFriends : filteredTopicUsers;
+  const rawInviteLength = activeTab === 'friends' ? friends.length : topicUsers.length;
+  const noInviteDataMsg = activeTab === 'friends'
+    ? (rawInviteLength === 0 ? t('groups.noFriendsToInvite') : t('groups.allFriendsInGroup'))
+    : (rawInviteLength === 0 ? t('groups.noTopicUsersToInvite') : 'Tất cả người cùng sở thích đã ở trong nhóm!');
 
   if (loading) return (
     <div className="min-h-screen bg-slate-50">
@@ -483,6 +516,30 @@ const GroupDetail = () => {
               </button>
             </div>
 
+            {/* Tabs */}
+            <div className="flex border-b border-slate-100 px-6 bg-slate-50/50">
+              <button
+                onClick={() => setActiveTab('friends')}
+                className={`flex-1 py-3 text-sm font-black border-b-2 transition-all duration-200 ${
+                  activeTab === 'friends'
+                    ? 'border-violet-600 text-violet-600'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                {t('groups.friendsTab')}
+              </button>
+              <button
+                onClick={() => setActiveTab('topicUsers')}
+                className={`flex-1 py-3 text-sm font-black border-b-2 transition-all duration-200 ${
+                  activeTab === 'topicUsers'
+                    ? 'border-violet-600 text-violet-600'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                {t('groups.topicUsersTab')}
+              </button>
+            </div>
+
             {/* Search */}
             <div className="px-6 pt-4">
               <div className="flex items-center bg-slate-50 border border-slate-100 px-4 py-2.5 rounded-2xl focus-within:bg-white focus-within:ring-2 focus-within:ring-violet-400 transition-all">
@@ -491,22 +548,22 @@ const GroupDetail = () => {
                 </svg>
                 <input
                   type="text"
-                  placeholder={t('groups.searchFriends')}
-                  value={friendSearch}
-                  onChange={e => setFriendSearch(e.target.value)}
+                  placeholder={activeTab === 'friends' ? t('groups.searchFriends') : t('groups.searchSameTopic')}
+                  value={activeTab === 'friends' ? friendSearch : topicUsersSearch}
+                  onChange={e => activeTab === 'friends' ? setFriendSearch(e.target.value) : setTopicUsersSearch(e.target.value)}
                   className="bg-transparent outline-none text-sm w-full placeholder:text-slate-400 font-medium"
                   autoFocus
                 />
               </div>
             </div>
 
-            {/* Friends list */}
+            {/* List */}
             <div className="p-6 space-y-2 max-h-[55vh] overflow-y-auto custom-scrollbar">
-              {loadingFriends ? (
+              {isInviteLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="w-8 h-8 border-4 border-violet-400 border-t-transparent rounded-full animate-spin" />
                 </div>
-              ) : filteredFriends.length === 0 ? (
+              ) : inviteList.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-violet-50 rounded-full flex items-center justify-center mx-auto mb-3">
                     <svg className="w-8 h-8 text-violet-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -514,28 +571,35 @@ const GroupDetail = () => {
                     </svg>
                   </div>
                   <p className="text-slate-400 text-sm font-semibold">
-                    {friends.length === 0 ? t('groups.noFriendsToInvite') : t('groups.allFriendsInGroup')}
+                    {noInviteDataMsg}
                   </p>
                   <p className="text-slate-300 text-xs mt-1">{t('groups.inviteHint')}</p>
                 </div>
               ) : (
-                filteredFriends.map(friend => {
-                  const alreadyInvited = invitedSet.has(friend.userId);
-                  const isInviting = invitingUserId === friend.userId;
+                inviteList.map(user => {
+                  const alreadyInvited = invitedSet.has(user.userId);
+                  const isInviting = invitingUserId === user.userId;
                   return (
-                    <div key={friend.userId} className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
+                    <div key={user.userId} className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
                       <div className="flex items-center gap-3">
                         <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-white ring-2 ring-violet-100 flex-shrink-0">
-                          <img src={getFullAvatarUrl(friend.avatarUrl, friend.fullName)} alt="" className="w-full h-full object-cover" />
+                          <img src={getFullAvatarUrl(user.avatarUrl, user.fullName)} alt="" className="w-full h-full object-cover" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-bold text-slate-800 text-sm truncate">{friend.fullName}</p>
-                          <p className="text-[10px] text-slate-400">@{friend.username}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-800 text-sm truncate">{user.fullName}</span>
+                            {user.category && (
+                              <span className="px-1.5 py-0.5 bg-violet-50 text-violet-600 text-[8px] font-black uppercase rounded shadow-sm">
+                                {user.category}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-slate-400">@{user.username}</p>
                         </div>
                       </div>
 
                       <button
-                        onClick={() => !alreadyInvited && handleInviteFriend(friend.userId)}
+                        onClick={() => !alreadyInvited && handleInviteFriend(user.userId)}
                         disabled={isInviting || alreadyInvited}
                         className={`flex-shrink-0 px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all 
                           ${alreadyInvited
