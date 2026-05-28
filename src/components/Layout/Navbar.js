@@ -43,6 +43,8 @@ const Navbar = () => {
   const [isSuggestOpen, setIsSuggestOpen] = useState(false);
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
+  const mobileMoreRef = useRef(null);
 
   const searchRef = useRef(null);
   const notifRef = useRef(null);
@@ -57,6 +59,7 @@ const Navbar = () => {
       if (notifRef.current && !notifRef.current.contains(e.target)) setIsNotifOpen(false);
       if (menuRef.current && !menuRef.current.contains(e.target)) setIsMenuOpen(false);
       if (mobileSearchRef.current && !mobileSearchRef.current.contains(e.target)) setIsMobileSearchOpen(false);
+      if (mobileMoreRef.current && !mobileMoreRef.current.contains(e.target)) setIsMobileMoreOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -68,6 +71,7 @@ const Navbar = () => {
     setIsNotifOpen(false);
     setIsMenuOpen(false);
     setIsMobileSearchOpen(false);
+    setIsMobileMoreOpen(false);
     setSearchInput(''); // Clear search on navigation
   }, [location.pathname]);
 
@@ -462,25 +466,87 @@ const Navbar = () => {
       )}
 
       {/* Mobile bottom nav */}
-      <div className="sm:hidden fixed bottom-4 left-4 right-4 bg-white/80 backdrop-blur-xl border border-white/50 shadow-2xl rounded-3xl p-2 z-50 flex justify-around items-center">
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100 shadow-2xl z-50 flex justify-around items-center px-2 pb-safe" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+        {/* Nút chính: Trang chủ */}
         {[
           { to: '/', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', label: t('navbar.feed') },
           { to: '/friends', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', label: t('navbar.friends') },
-          { to: '/chat-random', icon: 'M13 10V3L4 14h7v7l9-11h-7z', label: 'Random' },
           { to: '/messaging', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', label: t('navbar.chat'), count: unreadMessageCount },
-          { to: '/settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z', label: t('navbar.settings') },
-        ].map(item => (
-          <Link key={item.to} to={item.to} className="relative p-3 rounded-2xl transition-all text-gray-400 hover:bg-gray-50">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-            </svg>
-            {item.count > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-white text-[10px] font-bold flex items-center justify-center">
-                {item.count > 9 ? '9+' : item.count}
+        ].map(item => {
+          const isActive = location.pathname === item.to;
+          return (
+            <Link key={item.to} to={item.to} className={`relative flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl transition-all ${ isActive ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600' }`}>
+              <div className={`p-1.5 rounded-xl transition-all ${ isActive ? 'bg-indigo-50' : '' }`}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive ? 2.5 : 2} d={item.icon} />
+                </svg>
+              </div>
+              <span className={`text-[9px] font-bold ${ isActive ? 'text-indigo-600' : 'text-gray-400' }`}>{item.label}</span>
+              {item.count > 0 && (
+                <span className="absolute top-1 right-2 w-4 h-4 bg-red-500 rounded-full text-white text-[9px] font-black flex items-center justify-center">
+                  {item.count > 9 ? '9+' : item.count}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+
+        {/* Nút More */}
+        <div className="relative" ref={mobileMoreRef}>
+          <button
+            onClick={() => setIsMobileMoreOpen(!isMobileMoreOpen)}
+            className={`flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl transition-all ${ isMobileMoreOpen ? 'text-indigo-600' : 'text-gray-400' }`}
+          >
+            <div className={`p-1.5 rounded-xl transition-all ${ isMobileMoreOpen ? 'bg-indigo-50' : '' }`}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </div>
+            <span className={`text-[9px] font-bold ${ isMobileMoreOpen ? 'text-indigo-600' : 'text-gray-400' }`}>Thêm</span>
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-2 w-4 h-4 bg-red-500 rounded-full text-white text-[9px] font-black flex items-center justify-center">
+                {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
-          </Link>
-        ))}
+          </button>
+
+          {/* Popup menu More */}
+          {isMobileMoreOpen && (
+            <div className="absolute bottom-full right-0 mb-3 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden w-56 animate-fadeIn">
+              <div className="p-2 space-y-0.5">
+                <Link to="/profile" onClick={() => setIsMobileMoreOpen(false)} className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${ location.pathname === '/profile' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50' }`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  {t('navbar.profile')}
+                </Link>
+                <Link to="/chat-random" onClick={() => setIsMobileMoreOpen(false)} className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${ location.pathname === '/chat-random' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50' }`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                  Random Chat
+                  <span className="ml-auto w-2 h-2 bg-indigo-500 rounded-full animate-ping"></span>
+                </Link>
+                <Link to="/groups" onClick={() => setIsMobileMoreOpen(false)} className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${ location.pathname === '/groups' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50' }`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  Cộng đồng
+                </Link>
+                <Link to="/settings" onClick={() => setIsMobileMoreOpen(false)} className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${ location.pathname === '/settings' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50' }`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  {t('navbar.settings')}
+                </Link>
+                {isAdmin && (
+                  <Link to="/admin" onClick={() => setIsMobileMoreOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-indigo-600 hover:bg-indigo-50 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                    Admin Dashboard
+                  </Link>
+                )}
+                <div className="border-t border-gray-100 mt-1 pt-1">
+                  <button onClick={() => { setIsMobileMoreOpen(false); logout(); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-red-500 hover:bg-red-50 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                    {t('navbar.logout')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <ChatBubbleManager

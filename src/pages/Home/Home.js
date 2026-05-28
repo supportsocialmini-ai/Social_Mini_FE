@@ -56,7 +56,12 @@ const Home = () => {
 
   const PRESET_CATEGORIES = ["Công nghệ", "Kinh doanh", "Giải trí", "Giáo dục", "Khoa học", "Sức khỏe", "Thể thao", "Nghệ thuật", "Xã hội", "Đời sống", "Văn hóa", "Thiên nhiên", "Chính trị", "Tôn giáo", "Công nghiệp", "Truyền thông", "Mua sắm", "Du lịch", "Ẩm thực", "Thời trang", "Gia đình", "Quan hệ", "Nghề nghiệp", "Tài chính", "Nhà cửa", "Xe cộ", "Cộng đồng", "Sở thích", "Hoạt động ngoài trời", "Phát triển bản thân"];
 
-  const fetchSuggestions = async () => {
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isNextLoading, setIsNextLoading] = useState(false);
+  const loadMoreRef = useRef(null);
+
+  const fetchSuggestions = useCallback(async () => {
     try {
       const response = await friendService.getFriends();
       let data = response?.$values || response || [];
@@ -65,32 +70,24 @@ const Home = () => {
     } catch (err) {
       console.error('Lỗi lấy bạn bè:', err);
     }
-  };
+  }, [user?.userId]);
 
-  const fetchFriendSuggestions = async () => {
+  const fetchFriendSuggestions = useCallback(async () => {
     try {
-      // 1. Lấy danh sách bạn bè hiện tại để loại trừ
       const friendsRes = await friendService.getFriends();
       let friendsData = friendsRes?.$values || friendsRes || [];
       if (!Array.isArray(friendsData)) friendsData = [friendsData];
       const friendIds = new Set(friendsData.map(f => f.userId));
 
-      // 2. Lấy danh sách lời mời đang chờ (pending) để loại trừ
       const pendingRes = await friendService.getPendingRequests();
       let pendingData = pendingRes?.$values || pendingRes || [];
       if (!Array.isArray(pendingData)) pendingData = [pendingData];
       const pendingIds = new Set(pendingData.map(p => p.userId || p.senderId || p.receiverId));
 
-      // 3. Lấy toàn bộ người dùng trong hệ thống
       const allUsersRes = await userService.getUsers();
       let allUsersData = allUsersRes?.$values || allUsersRes || [];
       if (!Array.isArray(allUsersData)) allUsersData = [allUsersData];
 
-      // 4. Lọc ứng viên:
-      // - Cùng lĩnh vực quan tâm với user hiện tại
-      // - Không phải bản thân
-      // - Chưa là bạn bè
-      // - Chưa gửi lời mời kết bạn
       const myCategory = (user?.category || '').trim().toLowerCase();
       let candidates = allUsersData.filter(u => {
         if (!u || u.userId === user?.userId) return false;
@@ -104,32 +101,28 @@ const Home = () => {
     } catch (err) {
       console.error('Lỗi lấy gợi ý kết bạn cùng lĩnh vực:', err);
     }
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchPosts();
-      fetchSuggestions();
-      fetchFriendSuggestions();
-      fetchSuggestedGroups();
-      
-      // Check if user has no category and show modal
-      if (!user.category) {
-        setShowInterestsModal(true);
-      }
-    }
   }, [user]);
 
-  const handleAddWelcomeInterest = () => {
+  const fetchSuggestedGroups = useCallback(async () => {
+    try {
+      const { default: groupService } = await import('../../services/groupService');
+      const response = await groupService.getSuggestedGroups();
+      setSuggestedGroups(response?.$values || response || []);
+    } catch (err) {
+      console.error('Lỗi lấy nhóm gợi ý:', err);
+    }
+  }, []);
+
+  const handleAddWelcomeInterest = useCallback(() => {
     const trimmed = customInterestInput.trim();
     if (!trimmed) return;
     if (!interestsList.includes(trimmed)) {
       setInterestsList(prev => [...prev, trimmed]);
     }
     setCustomInterestInput('');
-  };
+  }, [customInterestInput, interestsList]);
 
-  const handleSaveInterests = async () => {
+  const handleSaveInterests = useCallback(async () => {
     if (!selectedCategory) {
       toast.warn("Vui lòng chọn một lĩnh vực quan tâm chính!");
       return;
@@ -161,14 +154,9 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory, customCategoryName, interestsList, user, updateUserData, fetchSuggestedGroups, fetchFriendSuggestions]);
 
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [isNextLoading, setIsNextLoading] = useState(false);
-  const loadMoreRef = useRef(null);
-
-  const fetchPosts = async (pageNumber = 1) => {
+  const fetchPosts = useCallback(async (pageNumber = 1) => {
     try {
       const response = await postService.getPosts(pageNumber, 10);
       const rawPosts = Array.isArray(response) ? response : (response?.$values || []);
@@ -197,7 +185,7 @@ const Home = () => {
       setIsFeedLoading(false);
       setIsNextLoading(false);
     }
-  };
+  }, [getFullAvatarUrl, t]);
 
   // IntersectionObserver for infinite scroll
   useEffect(() => {
@@ -212,26 +200,37 @@ const Home = () => {
     }, { rootMargin: '200px' });
     observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
-  }, [loadMoreRef.current, hasMore, isNextLoading, page]);
+  }, [loadMoreRef.current, hasMore, isNextLoading, page, fetchPosts]);
 
-  const fetchSuggestedGroups = async () => {
-    try {
-      const { default: groupService } = await import('../../services/groupService');
-      const response = await groupService.getSuggestedGroups();
-      setSuggestedGroups(response?.$values || response || []);
-    } catch (err) {
-      console.error('Lỗi lấy nhóm gợi ý:', err);
+  useEffect(() => {
+    if (user) {
+      // Ưu tiên load bài viết trước để tránh lag giao diện lúc đầu
+      fetchPosts(1);
+      
+      // Trì hoãn load gợi ý kết bạn, nhóm và bạn bè để CPU rảnh tay render feed bài viết
+      const timer = setTimeout(() => {
+        fetchSuggestions();
+        fetchFriendSuggestions();
+        fetchSuggestedGroups();
+      }, 300);
+
+      // Check if user has no category and show modal
+      if (!user.category) {
+        setShowInterestsModal(true);
+      }
+
+      return () => clearTimeout(timer);
     }
-  };
+  }, [user, fetchPosts, fetchSuggestions, fetchFriendSuggestions, fetchSuggestedGroups]);
 
-  const handleFollow = async (userId, fullName) => {
+  const handleFollow = useCallback(async (userId, fullName) => {
     setSentIds(prev => new Set([...prev, userId]));
     try {
       await friendService.sendRequest(userId);
     } catch (error) { 
       console.error('Không thể gửi lời mời kết bạn:', error);
     }
-  };
+  }, []);
 
   return (
     <div className="min-h-screen relative" style={{

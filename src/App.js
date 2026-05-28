@@ -93,7 +93,8 @@ function App() {
             <Route path="/groups" element={<PrivateRoute isMaintenance={isMaintenance}><Groups /></PrivateRoute>} />
             <Route path="/groups/:groupId" element={<PrivateRoute isMaintenance={isMaintenance}><GroupDetail /></PrivateRoute>} />
             <Route path="/payment-result" element={<PaymentResult />} />
-            <Route path="/people/suggestions" element={<PrivateRoute isMaintenance={isMaintenance}><PeopleSuggestions /></PrivateRoute>} />
+            <Route path="/people/suggestions" element={<Navigate to="/friends" replace />} />
+            <Route path="/suggestions" element={<Navigate to="/friends" replace />} />
           </Routes>
           <ToastContainer
             position="top-right"

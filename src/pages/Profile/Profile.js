@@ -40,6 +40,9 @@ const Profile = () => {
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [pastedAvatarUrl, setPastedAvatarUrl] = useState('');
   const [customInterest, setCustomInterest] = useState('');
+  const [systemInterests, setSystemInterests] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [showCustomCategory, setShowCustomCategory] = useState(false);
   const [customCategoryName, setCustomCategoryName] = useState('');
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
@@ -130,6 +133,16 @@ const Profile = () => {
         setFriendshipStatus(statusRes?.status || 'None');
         setRequestId(statusRes?.requestId || null);
         
+        if (isOwnProfile) {
+          try {
+            const res = await userService.getUniqueInterests();
+            const data = Array.isArray(res) ? res : (res?.$values || res?.data || []);
+            setSystemInterests(data);
+          } catch (err) {
+            console.error("Failed to load unique interests:", err);
+          }
+        }
+
         await fetchProfilePosts();
       } catch (error) {
         console.error("Lỗi fetch profile:", error);
@@ -175,6 +188,16 @@ const Profile = () => {
       setFormData({ ...formData, interests: updated.join(', ') });
     }
     setCustomInterest('');
+  };
+
+  const handleAddSuggestedInterest = (suggestion) => {
+    const current = formData.interests ? formData.interests.split(',').map(i => i.trim()).filter(Boolean) : [];
+    if (!current.includes(suggestion)) {
+      const updated = [...current, suggestion];
+      setFormData(prev => ({ ...prev, interests: updated.join(', ') }));
+    }
+    setCustomInterest('');
+    setShowSuggestions(false);
   };
 
   const handleSubmit = async (e) => {
@@ -382,6 +405,15 @@ const Profile = () => {
 
   // Posts có ảnh để hiển thị dạng grid
   const postsWithImage = posts.filter(p => p.imageUrl);
+
+  // Lọc gợi ý sở thích động từ hệ thống (kết hợp hardcode + từ DB)
+  const allInterestPool = [...new Set([...SUGGESTED_INTERESTS, ...systemInterests])];
+  const filteredSuggestions = allInterestPool.filter(interest => {
+    const trimmedInput = customInterest.trim().toLowerCase();
+    if (!trimmedInput) return false;
+    const currentSelected = formData.interests ? formData.interests.split(',').map(i => i.trim().toLowerCase()).filter(Boolean) : [];
+    return interest.toLowerCase().includes(trimmedInput) && !currentSelected.includes(interest.toLowerCase());
+  });
 
   return (
     <div className="min-h-screen bg-white">
@@ -803,17 +835,41 @@ const Profile = () => {
                   </div>
                 )}
 
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 relative">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Thêm sở thích khác</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={customInterest}
-                      onChange={(e) => setCustomInterest(e.target.value)}
+                      onChange={(e) => {
+                        setCustomInterest(e.target.value);
+                        setShowSuggestions(true);
+                        setActiveSuggestionIndex(-1);
+                      }}
+                      onFocus={() => setShowSuggestions(true)}
+                      onBlur={() => {
+                        // Trì hoãn ẩn dropdown để người dùng kịp click chuột
+                        setTimeout(() => setShowSuggestions(false), 200);
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
-                          handleAddCustomInterest();
+                          if (activeSuggestionIndex >= 0 && activeSuggestionIndex < filteredSuggestions.length) {
+                            const selected = filteredSuggestions[activeSuggestionIndex];
+                            handleAddSuggestedInterest(selected);
+                          } else {
+                            handleAddCustomInterest();
+                          }
+                        } else if (e.key === 'ArrowDown') {
+                          e.preventDefault();
+                          setActiveSuggestionIndex(prev => 
+                            prev < filteredSuggestions.length - 1 ? prev + 1 : prev
+                          );
+                        } else if (e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          setActiveSuggestionIndex(prev => prev > 0 ? prev - 1 : 0);
+                        } else if (e.key === 'Escape') {
+                          setShowSuggestions(false);
                         }
                       }}
                       placeholder="Nhập sở thích khác..."
@@ -827,6 +883,31 @@ const Profile = () => {
                       Thêm
                     </button>
                   </div>
+
+                  {/* Dropdown gợi ý động từ hệ thống */}
+                  {showSuggestions && filteredSuggestions.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-xl z-50 max-h-48 overflow-y-auto py-1.5 animate-fadeIn">
+                      {filteredSuggestions.map((suggestion, idx) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onMouseDown={() => handleAddSuggestedInterest(suggestion)}
+                          className={`w-full text-left px-4 py-2.5 text-xs font-semibold transition-all flex items-center justify-between ${
+                            idx === activeSuggestionIndex 
+                              ? 'bg-indigo-600 text-white' 
+                              : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600'
+                          }`}
+                        >
+                          <span>{suggestion}</span>
+                          <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full ${
+                            idx === activeSuggestionIndex ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-500'
+                          }`}>
+                            Gợi ý hệ thống
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">

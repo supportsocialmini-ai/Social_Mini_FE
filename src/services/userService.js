@@ -10,8 +10,9 @@ const uploadAvatar = (file) => {
   form.append('file', file);
   return axiosClient.post('api/user/avatar', form);
 };
+const getUniqueInterests = () => axiosClient.get('api/user/interests');
 
 const deactivateAccount = (password) => axiosClient.delete('api/user/me', { data: { password } });
 
-const userService = { getProfile, getUsers, getUserById, getUsersToChat, updateUser, uploadAvatar, deactivateAccount };
+const userService = { getProfile, getUsers, getUserById, getUsersToChat, updateUser, uploadAvatar, deactivateAccount, getUniqueInterests };
 export default userService;

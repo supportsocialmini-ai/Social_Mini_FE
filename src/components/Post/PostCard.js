@@ -458,23 +458,23 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
 
       {createPortal(
         <>
-          <CommentSection postId={post.postId || post.id} isOpen={isCommentOpen} onClose={() => setIsCommentOpen(false)} getFullAvatarUrl={getFullAvatarUrl} />
-          <LikesModal postId={post.postId || post.id} isOpen={isLikesModalOpen} onClose={() => setIsLikesModalOpen(false)} />
-          <ConfirmModal isOpen={isConfirmDeleteOpen} onClose={() => setIsConfirmDeleteOpen(false)} onConfirm={handleDelete}
+          {isCommentOpen && <CommentSection postId={post.postId || post.id} isOpen={isCommentOpen} onClose={() => setIsCommentOpen(false)} getFullAvatarUrl={getFullAvatarUrl} />}
+          {isLikesModalOpen && <LikesModal postId={post.postId || post.id} isOpen={isLikesModalOpen} onClose={() => setIsLikesModalOpen(false)} />}
+          {isConfirmDeleteOpen && <ConfirmModal isOpen={isConfirmDeleteOpen} onClose={() => setIsConfirmDeleteOpen(false)} onConfirm={handleDelete}
             title={t('posts.deleteConfirmTitle')} message={t('posts.deleteConfirmMsg')}
-            confirmText={t('posts.deleteConfirmBtn')} type="danger" />
-          <ReportModal 
+            confirmText={t('posts.deleteConfirmBtn')} type="danger" />}
+          {isReportModalOpen && <ReportModal 
             isOpen={isReportModalOpen} 
             onClose={() => setIsReportModalOpen(false)} 
             targetId={post.postId || post.id} 
             targetType="Post" 
-          />
-          <ShareModal 
+          />}
+          {isShareModalOpen && <ShareModal 
             isOpen={isShareModalOpen} 
             onClose={() => setIsShareModalOpen(false)} 
             post={post}
             onShareSuccess={() => onLikeChange && onLikeChange()} // Re-fetch to show new post
-          />
+          />}
         </>,
         document.body
       )}
@@ -549,4 +549,4 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
   );
 };
 
-export default PostCard;
+export default React.memo(PostCard);
