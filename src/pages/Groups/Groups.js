@@ -210,7 +210,7 @@ const Groups = () => {
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsCreateModalOpen(false)}></div>
-          <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden p-8">
+          <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl p-8">
             <h2 className="text-2xl font-black text-slate-800 mb-6">Tạo nhóm mới</h2>
             <form onSubmit={handleCreateGroup} className="space-y-4">
               <div>
@@ -266,8 +266,8 @@ const Groups = () => {
                   
                   {isCategoryDropdownOpen && (
                     <>
-                      <div className="fixed inset-0 z-[10000]" onClick={() => setIsCategoryDropdownOpen(false)} />
-                      <div className="absolute z-[10001] left-0 right-0 mt-1.5 bg-white border border-slate-100 rounded-2xl shadow-xl max-h-60 overflow-y-auto py-2 animate-in fade-in slide-in-from-top-1 duration-150 custom-scrollbar">
+                      <div className="fixed inset-0 z-[30001]" onClick={() => setIsCategoryDropdownOpen(false)} />
+                      <div className="absolute z-[30002] left-0 right-0 mt-1.5 bg-white border border-slate-100 rounded-2xl shadow-xl max-h-60 overflow-y-auto py-2 animate-in fade-in slide-in-from-top-1 duration-150 custom-scrollbar">
                         <button
                           type="button"
                           onClick={() => {

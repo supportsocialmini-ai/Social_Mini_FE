@@ -42,6 +42,9 @@ const adminService = {
   },
   getDetailedStats: (startDate = '', endDate = '') => {
     return axiosClient.get(`api/admin/detailed-stats?startDate=${startDate}&endDate=${endDate}`);
+  },
+  getRevenue: (startDate = '', endDate = '') => {
+    return axiosClient.get(`api/admin/revenue?startDate=${startDate}&endDate=${endDate}`);
   }
 };
 

@@ -40,6 +40,7 @@ const Profile = () => {
   const avatarInputRef = useRef(null);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [pastedAvatarUrl, setPastedAvatarUrl] = useState('');
+  const [imageUrlMode, setImageUrlMode] = useState(false);
   const [customInterest, setCustomInterest] = useState('');
   const [systemInterests, setSystemInterests] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -53,24 +54,26 @@ const Profile = () => {
 
   const isOwnProfile = !routeUserId || routeUserId === String(currentUser?.userId);
 
-  const fetchProfilePosts = async () => {
+  const fetchProfilePosts = async (targetUser) => {
     try {
-      const response = isOwnProfile
-        ? await postService.getMyPosts()
-        : await postService.getPostsByUserId(routeUserId);
+      const activeUserId = targetUser?.userId || profileUser?.userId || currentUser?.userId || routeUserId;
+      const response = activeUserId 
+        ? await postService.getPostsByUserId(activeUserId)
+        : await postService.getMyPosts();
       // axiosClient đã bóc result
       let rawPosts = Array.isArray(response) ? response : (response?.$values || []);
 
       const normalizedPosts = rawPosts.filter(p => p).map(post => {
         const postUser = post.user || post.User || {};
-        const name = postUser.fullName || postUser.FullName || post.fullName || post.FullName || postUser.username || post.username || 'Người dùng';
+        const activeUser = (postUser.avatarUrl || postUser.AvatarUrl) ? postUser : (targetUser || profileUser || currentUser || {});
+        const name = activeUser.fullName || activeUser.FullName || post.fullName || post.FullName || activeUser.username || post.username || 'Người dùng';
         return {
           ...post,
           postId: post.postId || post.id,
           userId: post.userId || post.UserId,
           author: String(name),
-          authorAvatar: getFullAvatarUrl(postUser?.avatarUrl || postUser?.AvatarUrl, name),
-          avatarUrl: getFullAvatarUrl(postUser?.avatarUrl || postUser?.AvatarUrl, name),
+          authorAvatar: getFullAvatarUrl(activeUser?.avatarUrl || activeUser?.AvatarUrl, name),
+          avatarUrl: getFullAvatarUrl(activeUser?.avatarUrl || activeUser?.AvatarUrl, name),
           time: post.time || post.createdAt || 'Vừa xong',
           likeCount: post.likeCount || 0,
           commentCount: post.commentCount || 0,
@@ -86,8 +89,10 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfileData = async () => {
       setLoading(true);
+      let profileOwner = null;
       try {
         if (isOwnProfile) {
+          profileOwner = currentUser;
           setProfileUser(currentUser);
           if (currentUser) {
             const userCat = currentUser.category || '';
@@ -110,6 +115,7 @@ const Profile = () => {
         } else {
           // Lấy thông tin người dùng từ DB theo ID
           const foundUser = await userService.getUserById(routeUserId);
+          profileOwner = foundUser;
           setProfileUser(foundUser);
           const userCat = foundUser?.category || '';
           const isPreset = PRESET_CATEGORIES.includes(userCat) || userCat === '';
@@ -129,10 +135,12 @@ const Profile = () => {
           setShowCustomCategory(!isPreset);
         }
 
-        // Lấy trạng thái bạn bè thực tế từ DB
-        const statusRes = await friendService.getFriendshipStatus(routeUserId);
-        setFriendshipStatus(statusRes?.status || 'None');
-        setRequestId(statusRes?.requestId || null);
+        if (!isOwnProfile && routeUserId) {
+          // Lấy trạng thái bạn bè thực tế từ DB
+          const statusRes = await friendService.getFriendshipStatus(routeUserId);
+          setFriendshipStatus(statusRes?.status || 'None');
+          setRequestId(statusRes?.requestId || null);
+        }
         
         if (isOwnProfile) {
           try {
@@ -144,7 +152,7 @@ const Profile = () => {
           }
         }
 
-        await fetchProfilePosts();
+        await fetchProfilePosts(profileOwner);
       } catch (error) {
         console.error("Lỗi fetch profile:", error);
       } finally {
@@ -549,20 +557,27 @@ const Profile = () => {
             </div>
           )}
           {(profileUser?.category || profileUser?.interests) && (
-            <div className="flex flex-wrap gap-2 mt-2 mb-4">
+            <div className="space-y-2.5 mt-2 mb-4">
               {profileUser?.category && (
-                <span className="px-2.5 py-1 bg-gray-900 text-white text-[10px] font-black rounded-lg uppercase tracking-wide flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 20l4-16m2 16l4-16" />
-                  </svg>
-                  {profileUser.category}
-                </span>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-gray-500 font-bold min-w-[110px]">Lĩnh vực chính:</span>
+                  <span className="px-2.5 py-1 bg-gray-900 text-white text-[10px] font-black rounded-lg uppercase tracking-wide">
+                    {profileUser.category}
+                  </span>
+                </div>
               )}
-              {profileUser?.interests && profileUser.interests.split(',').map((interest, idx) => (
-                <span key={idx} className="px-2.5 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-lg border border-indigo-100/50">
-                  #{interest.trim()}
-                </span>
-              ))}
+              {profileUser?.interests && (
+                <div className="flex items-start gap-2 text-xs">
+                  <span className="text-gray-500 font-bold min-w-[110px] mt-1">Sở thích cá nhân:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {profileUser.interests.split(',').map((interest, idx) => (
+                      <span key={idx} className="px-2.5 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-lg border border-indigo-100/50">
+                        #{interest.trim()}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <div className="flex items-center gap-4 text-xs text-gray-400">

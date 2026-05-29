@@ -51,6 +51,16 @@ const groupService = {
 
   getTopicUsers: (groupId) => {
     return axiosClient.get(`/api/group/${groupId}/topic-users`);
+  },
+
+  uploadGroupAvatar: (groupId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return axiosClient.post(`/api/group/${groupId}/avatar`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
   }
 };
 

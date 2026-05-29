@@ -80,17 +80,10 @@ const Friends = () => {
             // Exclude current user
             const others = data.filter(u => u && u.userId !== user?.userId);
 
-            // Get friendship statuses in parallel
-            const withStatus = await Promise.all(
-                others.map(async (u) => {
-                    try {
-                        const res = await friendService.getFriendshipStatus(u.userId);
-                        return { ...u, friendshipStatus: res?.status || 'None' };
-                    } catch {
-                        return { ...u, friendshipStatus: 'None' };
-                    }
-                })
-            );
+            const withStatus = others.map(u => ({
+                ...u,
+                friendshipStatus: u.friendshipStatus || 'None'
+            }));
 
             const sent = new Set(
                 withStatus.filter(u => u.friendshipStatus === 'Sent').map(u => u.userId)
@@ -177,7 +170,15 @@ const Friends = () => {
     // Filtered suggestions
     const filteredSuggestions = allUsers.filter(u => {
         const cat = (u.category || u.Category || '').trim();
-        const matchCat = !filterCategory || cat === filterCategory;
+        let matchCat = !filterCategory;
+        if (filterCategory) {
+            if (filterCategory === 'Other') {
+                // Lĩnh vực khác: những category không nằm trong danh sách PRESET_CATEGORIES
+                matchCat = !PRESET_CATEGORIES.includes(cat);
+            } else {
+                matchCat = cat === filterCategory;
+            }
+        }
         const matchSearch = !searchTerm.trim() ||
             (u.fullName || u.FullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             (u.username || u.Username || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -367,6 +368,7 @@ const Friends = () => {
                                     {PRESET_CATEGORIES.map(cat => (
                                         <option key={cat} value={cat}>{cat}</option>
                                     ))}
+                                    <option value="Other">Lĩnh vực khác</option>
                                 </select>
                                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />

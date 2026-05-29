@@ -347,20 +347,28 @@ const Navbar = () => {
                           <div 
                             key={notif.notificationId} 
                             onClick={() => handleNotifClick(notif)}
-                            className="px-4 py-3.5 rounded-2xl hover:bg-slate-50 cursor-pointer transition-all border-b border-transparent last:border-0 group flex items-start justify-between gap-3"
+                            className="px-4 py-3 rounded-2xl hover:bg-slate-50 cursor-pointer transition-all border-b border-transparent last:border-0 group flex items-start gap-3"
                           >
+                            <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 border border-slate-100">
+                              <img 
+                                src={getFullAvatarUrl(notif.sender?.avatarUrl, senderName)} 
+                                alt="" 
+                                className="w-full h-full object-cover"
+                                onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=6366f1&color=fff`; }}
+                              />
+                            </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm text-slate-800 leading-snug">
                                 <span className="font-bold text-slate-900">{senderName}</span>
                                 {" "}
                                 {translatedMsg.replace(senderName, "").trim()}
                               </p>
-                              <p className="text-[10px] text-slate-400 mt-1.5 font-bold uppercase tracking-wider">
+                              <p className="text-[10px] text-slate-400 mt-1 font-bold uppercase tracking-wider">
                                 {formatTimeAgo(notif.createdAt || notif.CreatedAt)}
                               </p>
                             </div>
                             {!notif.isRead && (
-                              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
+                              <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0" />
                             )}
                           </div>
                         );

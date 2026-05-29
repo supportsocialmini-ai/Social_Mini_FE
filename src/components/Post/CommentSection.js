@@ -1,26 +1,37 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import commentService from '../../services/commentService';
 import { useAuth } from '../../context/AuthContext';
 
-const CommentItem = ({ comment, user, getFullAvatarUrl, onDelete, onReply, depth = 0, isReply = false }) => {
+const CommentItem = ({ comment, user, getFullAvatarUrl, onDelete, onReply, depth = 0, isReply = false, onClose }) => {
   const isOwner = user?.userId === comment.userId;
   const { t } = useTranslation();
 
   return (
     <div className={`flex flex-col ${depth === 1 ? 'ml-8 mt-3' : (depth > 1 ? 'mt-3' : 'mt-5')}`}>
       <div className="flex gap-3 group">
-        <div className="w-8 h-8 rounded-xl bg-slate-100 flex-shrink-0 overflow-hidden border border-slate-100">
+        <Link 
+          to={`/profile/${comment.userId}`} 
+          onClick={onClose}
+          className="w-8 h-8 rounded-xl bg-slate-100 flex-shrink-0 overflow-hidden border border-slate-100 hover:opacity-85 transition-all"
+        >
           <img
             src={getFullAvatarUrl(comment.avatarUrl, comment.fullName)}
             alt={comment.fullName}
             className="w-full h-full object-cover"
           />
-        </div>
+        </Link>
         <div className="flex-1 min-w-0">
           <div className="bg-slate-50/80 rounded-2xl px-4 py-2.5">
-            <p className="font-bold text-[13px] text-slate-900 truncate">{comment.fullName || 'Người dùng'}</p>
+            <Link 
+              to={`/profile/${comment.userId}`} 
+              onClick={onClose}
+              className="font-bold text-[13px] text-slate-900 truncate hover:text-indigo-600 transition-all inline-block"
+            >
+              {comment.fullName || 'Người dùng'}
+            </Link>
             <p className="text-[13px] text-slate-700 mt-1 leading-relaxed break-words">
               {isReply ? comment.replyContent : comment.commentContent}
             </p>
@@ -65,6 +76,7 @@ const CommentItem = ({ comment, user, getFullAvatarUrl, onDelete, onReply, depth
               onReply={onReply}
               depth={depth + 1}
               isReply={true}
+              onClose={onClose}
             />
           ))}
         </div>
@@ -215,6 +227,7 @@ const CommentSection = ({ postId, isOpen, onClose, getFullAvatarUrl }) => {
                   getFullAvatarUrl={getFullAvatarUrl} 
                   onDelete={handleDeleteComment}
                   onReply={handleReplyTo}
+                  onClose={onClose}
                 />
               ))
             )}

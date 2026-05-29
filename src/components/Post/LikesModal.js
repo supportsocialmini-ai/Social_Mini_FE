@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import postService from '../../services/postService';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
+import { Link } from 'react-router-dom';
 
 const LikesModal = ({ postId, isOpen, onClose }) => {
     const { getFullAvatarUrl } = useAuth();
@@ -72,7 +73,12 @@ const LikesModal = ({ postId, isOpen, onClose }) => {
                         <p className="text-center text-slate-400 py-8">Chưa có ai thích bài viết này</p>
                     ) : (
                         likes.map(user => (
-                            <div key={user.userId} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-2xl transition-all">
+                            <Link 
+                                key={user.userId} 
+                                to={`/profile/${user.userId}`}
+                                onClick={onClose}
+                                className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-2xl transition-all"
+                            >
                                 <div className="w-10 h-10 rounded-xl bg-slate-100 overflow-hidden border border-slate-100">
                                     {user.avatarUrl ? (
                                         <img
@@ -91,7 +97,7 @@ const LikesModal = ({ postId, isOpen, onClose }) => {
                                     <p className="font-bold text-slate-900 text-sm">{user.fullName || user.username}</p>
                                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">@{user.username}</p>
                                 </div>
-                            </div>
+                            </Link>
                         ))
                     )}
                 </div>

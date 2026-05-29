@@ -470,7 +470,7 @@
       "deleteCommentSuccess": "Đã xóa bình luận!",
       "deleteCommentError": "Không thể xóa bình luận này",
       "fetchCommentsError": "Không thể tải bình luận",
-      "sponsored": "Bài viết được quảng cáo"
+      "sponsored": "Bài viết được tài trợ"
     },
     "groups": {
       "public": "Nhóm công khai",

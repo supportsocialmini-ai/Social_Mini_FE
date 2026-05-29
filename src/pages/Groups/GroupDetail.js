@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../../components/Layout/Navbar';
 import PostCard from '../../components/Post/PostCard';
@@ -49,6 +49,30 @@ const GroupDetail = () => {
   const [invitedSet, setInvitedSet] = useState(new Set());
 
   const isGroupAdmin = (group && (group.createdBy || group.CreatedBy) === user?.userId) || isSystemAdmin;
+  const avatarInputRef = useRef(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Chỉ cho phép chọn file ảnh');
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+      await groupService.uploadGroupAvatar(groupId, file);
+      toast.success('Cập nhật ảnh đại diện nhóm thành công');
+      await fetchGroupData();
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || 'Không thể cập nhật ảnh đại diện');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   useEffect(() => {
     fetchGroupData();
@@ -222,11 +246,38 @@ const GroupDetail = () => {
           <div className="px-8 pb-8 pt-6 relative flex flex-col md:flex-row md:items-end justify-between gap-6">
             {/* Avatar block (Absolute positioning) */}
             <div className="absolute -top-16 left-8 w-32 h-32 rounded-[2rem] bg-white p-2 shadow-xl z-10">
-              <div className="w-full h-full rounded-[1.5rem] bg-indigo-50 flex items-center justify-center overflow-hidden">
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
+              <div 
+                onClick={isGroupAdmin && !uploadingAvatar ? () => avatarInputRef.current?.click() : undefined}
+                className={`w-full h-full rounded-[1.5rem] bg-indigo-50 flex items-center justify-center overflow-hidden relative ${isGroupAdmin ? 'cursor-pointer group' : ''}`}
+              >
                 {group.avatarUrl ? (
-                  <img src={group.avatarUrl} alt="" className="w-full h-full object-cover" />
+                  <img src={getFullAvatarUrl(group.avatarUrl, group.name)} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-4xl font-black text-indigo-400">{group.name[0].toUpperCase()}</span>
+                )}
+
+                {/* Upload overlay for group admin */}
+                {isGroupAdmin && (
+                  <div className={`absolute inset-0 bg-black/40 flex flex-col items-center justify-center transition-all ${uploadingAvatar ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                    {uploadingAvatar ? (
+                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="text-[10px] text-white font-bold uppercase tracking-wider">Thay ảnh</span>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

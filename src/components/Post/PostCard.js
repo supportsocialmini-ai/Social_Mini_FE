@@ -72,6 +72,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isCustomDuration, setIsCustomDuration] = useState(false);
   const [customDays, setCustomDays] = useState(3);
+  const [enlargedImage, setEnlargedImage] = useState(null);
 
   const getSelectedPackage = () => {
     return dbPackages.find(p => p.id === selectedPackageId) || dbPackages[0];
@@ -416,7 +417,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
                       <svg className="w-2.5 h-2.5 text-amber-500 fill-current animate-pulse" viewBox="0 0 24 24">
                         <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                       </svg>
-                      {t('posts.sponsored') || 'Bài viết được quảng cáo'}
+                      {t('posts.sponsored') || 'Bài viết được tài trợ'}
                     </span>
                   </>
                 )}
@@ -482,7 +483,8 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
                     <img 
                       src={getFullImageUrl(post.originalPost.imageUrl)} 
                       alt="Original Post Image" 
-                      className="w-full h-auto max-h-[300px] object-contain"
+                      className="w-full h-auto max-h-[300px] object-contain cursor-zoom-in hover:opacity-95 transition-opacity"
+                      onClick={() => setEnlargedImage(getFullImageUrl(post.originalPost.imageUrl))}
                     />
                   </div>
                 )}
@@ -496,7 +498,8 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
           <div className="w-full max-h-[560px] overflow-hidden flex items-center justify-center relative"
             style={{ borderTop: '1px solid rgba(255,255,255,0.5)', borderBottom: '1px solid rgba(255,255,255,0.5)' }}>
             <img src={getFullImageUrl(post.imageUrl)} alt="post"
-              className="w-full h-auto max-h-[560px] object-contain post-img"
+              className="w-full h-auto max-h-[560px] object-contain post-img cursor-zoom-in hover:opacity-95 transition-opacity"
+              onClick={() => setEnlargedImage(getFullImageUrl(post.imageUrl))}
             />
           </div>
         )}
@@ -776,6 +779,16 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
                     </div>
                  </div>
               </div>
+            </div>
+          )}
+          {enlargedImage && (
+            <div className="fixed inset-0 z-[20000] bg-black/95 flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-200" onClick={() => setEnlargedImage(null)}>
+              <img src={enlargedImage} alt="" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-200" />
+              <button onClick={() => setEnlargedImage(null)} className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           )}
         </>,
