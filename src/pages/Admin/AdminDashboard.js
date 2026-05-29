@@ -115,6 +115,59 @@ const AdminDashboard = () => {
   const [statsEndDate, setStatsEndDate] = useState(todayStr);
   const [statsSearchQuery, setStatsSearchQuery] = useState('');
 
+  const last7DaysData = React.useMemo(() => {
+    if (!detailedStats) return [];
+    const rawData = 
+      detailedStats.dailyData?.$values || detailedStats.dailyData ||
+      detailedStats.DailyData?.$values || detailedStats.DailyData ||
+      detailedStats.dailyStats?.$values || detailedStats.dailyStats ||
+      detailedStats.DailyStats?.$values || detailedStats.DailyStats || [];
+    return Array.isArray(rawData) ? rawData.slice(-7) : [];
+  }, [detailedStats]);
+
+  const processedChartData = React.useMemo(() => {
+    if (!last7DaysData.length) return [];
+    const maxVal = Math.max(
+      ...last7DaysData.map(d => Math.max(d.JoinedUsers || d.joinedUsers || 0, d.CreatedPosts || d.createdPosts || 0)), 
+      5
+    );
+    return last7DaysData.map(d => {
+      const rawDate = d.Date || d.date || '';
+      const dateParts = rawDate ? rawDate.split('-') : [];
+      const label = dateParts.length >= 3 ? `${dateParts[2]}/${dateParts[1]}` : rawDate;
+      const joined = d.JoinedUsers || d.joinedUsers || 0;
+      const posts = d.CreatedPosts || d.createdPosts || 0;
+      return {
+        label,
+        joinedUsers: joined,
+        createdPosts: posts,
+        pctUsers: Math.max(5, Math.round((joined / maxVal) * 100)),
+        pctPosts: Math.max(5, Math.round((posts / maxVal) * 100))
+      };
+    });
+  }, [last7DaysData]);
+
+  const activePercent = React.useMemo(() => {
+    if (!stats || !stats.totalUsers) return 0;
+    return Math.round((stats.activeUsers / stats.totalUsers) * 100);
+  }, [stats]);
+
+  const reportStats = React.useMemo(() => {
+    const total = reports.length;
+    const resolved = reports.filter(r => r.status === 'Resolved' || r.status === 'Approved' || r.status === 'Rejected' || r.status === 'Processed').length;
+    const percent = total > 0 ? Math.round((resolved / total) * 100) : 100;
+    return { total, resolved, percent };
+  }, [reports]);
+
+  const cleanPostsRate = React.useMemo(() => {
+    const totalPosts = stats?.totalPosts || 0;
+    if (totalPosts === 0) return { cleanCount: 0, percent: 100 };
+    const uniqueReportedPosts = new Set(reports.map(r => r.targetId || r.postId)).size;
+    const cleanCount = Math.max(0, totalPosts - uniqueReportedPosts);
+    const percent = Math.round((cleanCount / totalPosts) * 100);
+    return { cleanCount, percent };
+  }, [stats, reports]);
+
   useEffect(() => {
     if (isAdmin) {
       if (activeTab === 'reports') {
@@ -151,15 +204,21 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [statsRes, usersRes] = await Promise.all([
+      const [statsRes, usersRes, detailedStatsRes, reportsRes] = await Promise.all([
         adminService.getStats(),
-        adminService.getUsers(1, PAGE_SIZE)
+        adminService.getUsers(1, PAGE_SIZE),
+        adminService.getDetailedStats(thirtyDaysAgoStr, todayStr),
+        reportService.getAllReports()
       ]);
       setStats(statsRes);
       const usersData = usersRes?.users?.$values || usersRes?.users || (Array.isArray(usersRes) ? usersRes : []);
       setUsers(usersData);
       setUsersTotalCount(usersRes?.totalCount || 0);
       setUsersCurrentPage(1);
+      
+      const detailedData = detailedStatsRes?.result || detailedStatsRes;
+      setDetailedStats(detailedData);
+      setReports(reportsRes || []);
     } catch (error) {
       toast.error(t('admin.toasts.errorGetData'));
     } finally {
@@ -827,24 +886,38 @@ const AdminDashboard = () => {
                           <div className="flex items-center gap-6 mt-2">
                              <div className="flex items-center gap-2">
                                 <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
-                                <span className={`text-[10px] font-bold uppercase ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>{t('admin.dashboard.growth')}</span>
+                                <span className={`text-[10px] font-bold uppercase ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Thành viên mới</span>
                              </div>
                              <div className="flex items-center gap-2">
                                 <span className="w-2.5 h-2.5 rounded-full bg-indigo-300"></span>
-                                <span className={`text-[10px] font-bold uppercase ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>{t('admin.dashboard.retention')}</span>
+                                <span className={`text-[10px] font-bold uppercase ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Bài viết mới</span>
                              </div>
                           </div>
                         </div>
                      </div>
 
                      <div className="h-64 flex items-end justify-between gap-4 px-2">
-                        <BarChartGroup value1={40} value2={60} label="Jan" isDarkMode={isDarkMode} />
-                        <BarChartGroup value1={70} value2={50} label="Feb" isDarkMode={isDarkMode} />
-                        <BarChartGroup value1={55} value2={85} label="Mar" isDarkMode={isDarkMode} />
-                        <BarChartGroup value1={90} value2={40} label="Apr" isDarkMode={isDarkMode} />
-                        <BarChartGroup value1={75} value2={70} label="May" isDarkMode={isDarkMode} />
-                        <BarChartGroup value1={45} value2={65} label="Jun" isDarkMode={isDarkMode} />
-                        <BarChartGroup value1={60} value2={80} label="Jul" isDarkMode={isDarkMode} />
+                        {processedChartData.length > 0 ? (
+                           processedChartData.map((d, idx) => (
+                              <BarChartGroup 
+                                 key={idx} 
+                                 value1={d.pctUsers} 
+                                 value2={d.pctPosts} 
+                                 label={d.label} 
+                                 isDarkMode={isDarkMode} 
+                              />
+                           ))
+                        ) : (
+                           <>
+                              <BarChartGroup value1={40} value2={60} label="Jan" isDarkMode={isDarkMode} />
+                              <BarChartGroup value1={70} value2={50} label="Feb" isDarkMode={isDarkMode} />
+                              <BarChartGroup value1={55} value2={85} label="Mar" isDarkMode={isDarkMode} />
+                              <BarChartGroup value1={90} value2={40} label="Apr" isDarkMode={isDarkMode} />
+                              <BarChartGroup value1={75} value2={70} label="May" isDarkMode={isDarkMode} />
+                              <BarChartGroup value1={45} value2={65} label="Jun" isDarkMode={isDarkMode} />
+                              <BarChartGroup value1={60} value2={80} label="Jul" isDarkMode={isDarkMode} />
+                           </>
+                        )}
                      </div>
                   </div>
 
@@ -862,28 +935,24 @@ const AdminDashboard = () => {
                              <circle 
                               cx="96" cy="96" r="80" 
                               className="stroke-indigo-500" strokeWidth="16" fill="none" 
-                              strokeDasharray="502" strokeDashoffset="125"
+                              strokeDasharray="502" 
+                              strokeDashoffset={502 - (502 * activePercent) / 100}
                               strokeLinecap="round"
-                             />
-                             <circle 
-                              cx="96" cy="96" r="80" 
-                              className="stroke-indigo-300" strokeWidth="16" fill="none" 
-                              strokeDasharray="502" strokeDashoffset="420"
-                              strokeLinecap="round"
+                              style={{ transition: 'stroke-dashoffset 1s ease-out' }}
                              />
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center">
-                             <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>{t('admin.dashboard.engagement')}</p>
-                             <p className={`text-3xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>75%</p>
+                             <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Hoạt động</p>
+                             <p className={`text-3xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{activePercent}%</p>
                           </div>
                        </div>
                        
                        <div className="w-full space-y-4">
-                          <BudgetRow color="bg-indigo-500" label={t('admin.dashboard.activeUsersLabel')} value="75%" amount="5,950" isDarkMode={isDarkMode} />
-                          <BudgetRow color="bg-indigo-300" label={t('admin.dashboard.returning')} value="15%" amount="400" isDarkMode={isDarkMode} />
-                          <BudgetRow color={isDarkMode ? 'bg-slate-800' : 'bg-slate-100'} label={t('admin.dashboard.others')} value="10%" amount="120" isDarkMode={isDarkMode} />
-                       </div>
-                    </div>
+                          <BudgetRow color="bg-indigo-500" label="Người dùng hoạt động" value={`${activePercent}%`} amount={stats?.activeUsers?.toLocaleString() || '0'} isDarkMode={isDarkMode} />
+                          <BudgetRow color="bg-indigo-300" label="Tổng số bài viết" value="-" amount={stats?.totalPosts?.toLocaleString() || '0'} isDarkMode={isDarkMode} />
+                          <BudgetRow color={isDarkMode ? 'bg-indigo-900/45' : 'bg-indigo-50'} label="Tổng số bình luận" value="-" amount={stats?.totalComments?.toLocaleString() || '0'} isDarkMode={isDarkMode} />
+                        </div>
+                     </div>
                   </div>
                </div>
 
@@ -948,8 +1017,8 @@ const AdminDashboard = () => {
                               )}
                            </tbody>
                         </table>
-                     </div>
-                  </div>
+                      </div>
+                   </div>
 
                   <div className={`lg:col-span-4 p-8 rounded-[2.5rem] border shadow-sm shadow-indigo-500/5 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
                      <div className="flex items-center justify-between mb-8">
@@ -958,9 +1027,9 @@ const AdminDashboard = () => {
                      </div>
                      
                      <div className="space-y-8 mt-4">
-                        <GoalProgress label={t('admin.dashboard.communityModeration')} value="1,650" target="2,000" percent={82} color="bg-indigo-500" isDarkMode={isDarkMode} />
-                        <GoalProgress label={t('admin.dashboard.systemOptimization')} value="60,000" target="100,000" percent={60} color="bg-indigo-300" isDarkMode={isDarkMode} />
-                        <GoalProgress label={t('admin.dashboard.reportResolution')} value="150" target="5,000" percent={3} color="bg-indigo-200" isDarkMode={isDarkMode} />
+                        <GoalProgress label={t('admin.dashboard.communityModeration')} value={cleanPostsRate.cleanCount?.toLocaleString() || '0'} target={stats?.totalPosts?.toLocaleString() || '0'} percent={cleanPostsRate.percent} color="bg-indigo-500" isDarkMode={isDarkMode} />
+                        <GoalProgress label={t('admin.dashboard.systemOptimization')} value={stats?.activeUsers?.toLocaleString() || '0'} target={stats?.totalUsers?.toLocaleString() || '0'} percent={activePercent} color="bg-indigo-300" isDarkMode={isDarkMode} />
+                        <GoalProgress label={t('admin.dashboard.reportResolution')} value={reports.filter(r => r.status === 'Resolved').length.toLocaleString() || '0'} target={reports.length.toLocaleString() || '0'} percent={Math.round((reports.filter(r => r.status === 'Resolved').length / (reports.length || 1)) * 100)} color="bg-indigo-200" isDarkMode={isDarkMode} />
                      </div>
                   </div>
                </div>
@@ -1272,8 +1341,7 @@ const AdminDashboard = () => {
                </div>
             </div>
           ) : activeTab === 'analytics' ? (
-            /* --- ANALYTICS TAB --- */
-            (() => {
+            <>{(() => {
               const eventsArr = detailedStats?.events?.$values || detailedStats?.events || [];
               const dailyArr = detailedStats?.dailyStats?.$values || detailedStats?.dailyStats || [];
               const filteredEvents = eventsArr.filter(e => {
@@ -1451,7 +1519,7 @@ const AdminDashboard = () => {
                   )}
                 </div>
               );
-            })()
+            })()}</>
           ) : activeTab === 'settings' ? (
             /* --- SETTINGS TAB --- */
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -2082,7 +2150,7 @@ const BudgetRow = ({ color, label, value, amount, isDarkMode }) => (
      </div>
      <div className="flex items-center gap-2">
         <span className={`text-sm font-black ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>{value}</span>
-        <span className={`text-[10px] font-bold tracking-tighter ${isDarkMode ? 'text-slate-700' : 'text-slate-300'}`}>(${amount})</span>
+        <span className={`text-[10px] font-bold tracking-tighter ${isDarkMode ? 'text-slate-700' : 'text-slate-300'}`}>({amount})</span>
      </div>
   </div>
 );

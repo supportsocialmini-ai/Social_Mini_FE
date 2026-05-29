@@ -34,6 +34,13 @@ const RandomChat = () => {
   const [selectedPackageId, setSelectedPackageId] = useState(null);
   const scrollRef = useRef(null);
 
+  // Set default target gender to opposite gender if not premium
+  useEffect(() => {
+    if (user?.gender && !hasFeature('Filter Gender')) {
+      setTargetGender(user.gender === 'Male' ? 'Female' : 'Male');
+    }
+  }, [user, hasFeature]);
+
   // Auto-select first package when list loaded
   useEffect(() => {
     if (dbPackages.length > 0 && !selectedPackageId) {
@@ -217,7 +224,10 @@ const RandomChat = () => {
 
               <div className="w-full space-y-8">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 text-center">Tôi đang tìm kiếm</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 text-center flex items-center justify-center gap-2">
+                    Tôi đang tìm kiếm
+                    {!hasFeature('Filter Gender') && <Crown className="w-3 h-3 text-amber-500 fill-current" />}
+                  </p>
                   <div className="grid grid-cols-2 gap-4">
                     {[
                       { id: 'Male', label: 'Nam giới', icon: User, color: 'indigo' },
@@ -225,16 +235,26 @@ const RandomChat = () => {
                     ].map(opt => (
                       <button
                         key={opt.id}
-                        onClick={() => setTargetGender(opt.id)}
-                        className={`flex flex-col items-center gap-4 p-8 rounded-[2.5rem] border-2 transition-all ${targetGender === opt.id
-                            ? `border-${opt.color}-500 bg-white shadow-xl scale-[1.05]`
-                            : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'
-                          }`}
+                        onClick={() => {
+                          if (!hasFeature('Filter Gender')) {
+                            setShowPremiumModal(true);
+                            return;
+                          }
+                          setTargetGender(opt.id);
+                        }}
+                        className={`flex flex-col items-center gap-4 p-8 rounded-[2.5rem] border-2 transition-all relative ${
+                           hasFeature('Filter Gender') && targetGender === opt.id
+                             ? `border-${opt.color}-500 bg-white shadow-xl scale-[1.05]`
+                             : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'
+                           } ${!hasFeature('Filter Gender') ? 'opacity-50' : ''}`}
                       >
-                        <div className={`p-4 rounded-2xl ${targetGender === opt.id ? `bg-${opt.color}-50 text-${opt.color}-600` : 'bg-white text-slate-400'}`}>
+                        <div className={`p-4 rounded-2xl ${hasFeature('Filter Gender') && targetGender === opt.id ? `bg-${opt.color}-50 text-${opt.color}-600` : 'bg-white text-slate-400'}`}>
                           <opt.icon className="w-8 h-8" />
                         </div>
-                        <span className={`font-bold ${targetGender === opt.id ? 'text-slate-900' : 'text-slate-500'}`}>{opt.label}</span>
+                        <span className={`font-bold ${hasFeature('Filter Gender') && targetGender === opt.id ? 'text-slate-900' : 'text-slate-500'}`}>{opt.label}</span>
+                        {!hasFeature('Filter Gender') && (
+                          <Lock className="w-4 h-4 text-slate-400 absolute top-4 right-4" />
+                        )}
                       </button>
                     ))}
                   </div>
@@ -341,9 +361,15 @@ const RandomChat = () => {
           <div className="flex flex-col items-center justify-center text-center space-y-12">
             <div className="relative w-80 h-80 flex items-center justify-center">
               {/* Radar Waves */}
-              <div className="absolute inset-0 bg-indigo-500 rounded-full radar-wave"></div>
-              <div className="absolute inset-0 bg-indigo-400 rounded-full radar-wave [animation-delay:1.3s]"></div>
-              <div className="absolute inset-0 bg-indigo-300 rounded-full radar-wave [animation-delay:2.6s]"></div>
+              {hasFeature('Background Effect') ? (
+                <>
+                  <div className="absolute inset-0 bg-indigo-500 rounded-full radar-wave"></div>
+                  <div className="absolute inset-0 bg-indigo-400 rounded-full radar-wave [animation-delay:1.3s]"></div>
+                  <div className="absolute inset-0 bg-indigo-300 rounded-full radar-wave [animation-delay:2.6s]"></div>
+                </>
+              ) : (
+                <div className="absolute inset-0 bg-slate-100/50 rounded-full"></div>
+              )}
 
               <div className="relative w-44 h-44 bg-white p-2 rounded-full shadow-2xl z-20">
                 <div className="w-full h-full rounded-full overflow-hidden bg-slate-100 border-4 border-white">
@@ -533,26 +559,12 @@ const RandomChat = () => {
                       )}
                    </div>
 
-                  <div className="space-y-4 bg-slate-50 p-6 rounded-3xl min-h-[200px]">
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Đặc quyền của gói {selectedPkg?.name}:</p>
-                     {selectedPkg?.features?.split(',').map((item, i) => (
-                        <div key={i} className="flex items-center gap-3 text-sm font-bold text-slate-600 animate-in slide-in-from-left duration-300" style={{ animationDelay: `${i * 100}ms` }}>
-                           <Check className="w-4 h-4 text-green-500" />
-                           {item.trim()}
-                        </div>
-                     )) || [
-                        "Lọc đối tượng theo độ tuổi chính xác",
-                        "Lọc theo giới tính mọi lúc",
-                        "Hiệu ứng Radar Premium rực rỡ",
-                        "Xem trước danh tính (Unmask) bí mật",
-                        "Hỗ trợ ưu tiên 24/7"
-                     ].map((item, i) => (
-                        <div key={i} className="flex items-center gap-3 text-sm font-bold text-slate-600">
-                           <Check className="w-4 h-4 text-green-500" />
-                           {item}
-                        </div>
-                     ))}
-                  </div>
+                   <div className="space-y-3 bg-slate-50 p-8 rounded-3xl text-center">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Mô tả gói {selectedPkg?.name}:</p>
+                      <p className="text-base font-bold text-slate-700 leading-relaxed italic">
+                         "{selectedPkg?.description || 'Nâng cấp lên gói hội viên để trải nghiệm đầy đủ các tính năng đặc quyền.'}"
+                      </p>
+                   </div>
 
                   <div className="flex flex-col items-center gap-5 pt-4">
                      <button 
