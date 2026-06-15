@@ -413,8 +413,8 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
                 {localIsSponsored && (
                   <>
                     <span className="text-slate-200 text-[10px]">•</span>
-                    <span className="text-[10px] font-black text-amber-500 bg-amber-50 border border-amber-200/50 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm shadow-amber-500/5 uppercase tracking-widest">
-                      <svg className="w-2.5 h-2.5 text-amber-500 fill-current animate-pulse" viewBox="0 0 24 24">
+                    <span className="text-[8.5px] font-bold text-amber-500 bg-amber-50/60 border border-amber-200/40 px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm shadow-amber-500/5">
+                      <svg className="w-2.5 h-2.5 text-amber-500 fill-current" viewBox="0 0 24 24">
                         <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                       </svg>
                       {t('posts.sponsored') || 'Bài viết được tài trợ'}
@@ -439,6 +439,41 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
 
         {/* ── Content ────────────────────────────────── */}
         <div className="px-5 pb-3">
+          {post.isViolated && (
+            <div className="mb-4 p-4 rounded-2xl bg-rose-50 border border-rose-200/50 flex flex-col gap-3 text-left">
+              <div className="flex items-start gap-2.5">
+                <div className="p-2 rounded-xl bg-rose-100 text-rose-600 flex-shrink-0">
+                  <Shield size={18} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-rose-800">Bài viết của bạn đã bị ẩn/xóa vì vi phạm chính sách cộng đồng</h4>
+                  <p className="text-xs text-rose-600 font-semibold mt-1">Lý do: {post.violationReason || "Nội dung không phù hợp"}</p>
+                </div>
+              </div>
+              
+              {isPostOwner && (
+                <div className="flex items-center justify-between border-t border-rose-200/40 pt-3 mt-1">
+                  {localIsAppealed ? (
+                    <span className="text-[11px] font-bold text-slate-500 italic flex items-center gap-1.5">
+                      <Clock size={12} className="animate-spin text-indigo-500" />
+                      Đã gửi kháng nghị, đang chờ ban quản trị duyệt...
+                    </span>
+                  ) : (
+                    <>
+                      <span className="text-[11px] font-medium text-rose-700 leading-snug">Bạn tin rằng có sự nhầm lẫn? Giải trình kháng nghị ngay.</span>
+                      <button
+                        onClick={() => setIsAppealModalOpen(true)}
+                        className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-md shadow-rose-600/10"
+                      >
+                        Kháng nghị
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <p className="text-slate-800 text-[15px] leading-relaxed break-words">
             {post.postContent?.length > 250 && !isExpanded
               ? `${post.postContent.substring(0, 250)}...`
@@ -605,6 +640,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
             targetId={post.postId || post.id} 
             targetType="Post" 
           />}
+
           {isShareModalOpen && <ShareModal 
             isOpen={isShareModalOpen} 
             onClose={() => setIsShareModalOpen(false)} 

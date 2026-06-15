@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import Navbar from '../../components/Layout/Navbar';
 import PostCard from '../../components/Post/PostCard';
 import { useAuth } from '../../context/AuthContext';
@@ -14,6 +14,7 @@ import { Crown } from 'lucide-react';
 
 const Profile = () => {
   const { userId: routeUserId } = useParams();
+  const location = useLocation();
   const { user: currentUser, updateUserData, getFullAvatarUrl } = useAuth();
   const { t } = useTranslation();
   const [profileUser, setProfileUser] = useState(null);

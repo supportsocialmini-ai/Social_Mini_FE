@@ -157,7 +157,11 @@ const Navbar = () => {
   const handleNotifClick = (notif) => {
     setIsNotifOpen(false);
     const type = notif.notificationType;
-    if (type === 'Like' || type === 'Comment') {
+    if (type === 'Violation' || type === 'AppealReject') {
+      navigate(`/post-violation/${notif.postId || notif.PostId}`);
+    } else if (type === 'AppealSubmit') {
+      navigate('/admin');
+    } else if (type === 'Like' || type === 'Comment' || type === 'AppealAccept') {
       navigate('/profile');
     } else if (type === 'FriendRequest' || type === 'FriendAccept') {
       if (notif.senderId) {
@@ -342,7 +346,20 @@ const Navbar = () => {
                     <div className="space-y-0.5">
                       {notifications.slice(0, 10).map((notif) => {
                         const senderName = notif.sender?.fullName || notif.sender?.username || t('navbar.user');
-                        const translatedMsg = t(`api.${notif.message}`, { name: senderName });
+                        let messageKey = notif.message;
+                        let extraParams = { name: senderName };
+                        if (notif.message && notif.message.includes('|')) {
+                          const parts = notif.message.split('|');
+                          messageKey = parts[0];
+                          extraParams.reason = parts[1] || '';
+                        }
+                        let translationKey = `api.${messageKey}`;
+                        if (messageKey === 'AppealAccept') {
+                          translationKey = 'api.Notification.Action.AppealAccept';
+                        } else if (messageKey === 'AppealReject') {
+                          translationKey = 'api.Notification.Action.AppealReject';
+                        }
+                        const translatedMsg = t(translationKey, extraParams);
                         return (
                           <div 
                             key={notif.notificationId} 
@@ -359,9 +376,15 @@ const Navbar = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm text-slate-800 leading-snug">
-                                <span className="font-bold text-slate-900">{senderName}</span>
-                                {" "}
-                                {translatedMsg.replace(senderName, "").trim()}
+                                {['Violation', 'AppealAccept', 'AppealReject', 'AppealSubmit'].includes(notif.notificationType) ? (
+                                   <span className="font-semibold text-slate-800">{translatedMsg}</span>
+                                 ) : (
+                                   <>
+                                     <span className="font-bold text-slate-900">{senderName}</span>
+                                     {" "}
+                                     {translatedMsg.replace(senderName, "").trim()}
+                                   </>
+                                 )}
                               </p>
                               <p className="text-[10px] text-slate-400 mt-1 font-bold uppercase tracking-wider">
                                 {formatTimeAgo(notif.createdAt || notif.CreatedAt)}

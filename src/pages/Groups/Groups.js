@@ -21,7 +21,9 @@ const Groups = () => {
   const { t } = useTranslation();
   const [myGroups, setMyGroups] = useState([]);
   const [discoverGroups, setDiscoverGroups] = useState([]);
+  const [pendingInvites, setPendingInvites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [inviteActionLoading, setInviteActionLoading] = useState({}); // { [groupId]: 'accept'|'decline' }
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: '', description: '', privacy: 'Public', category: '' });
   const [showCustomCategory, setShowCustomCategory] = useState(false);
@@ -42,6 +44,9 @@ const Groups = () => {
       
       const discoverRes = await groupService.searchGroups('');
       setDiscoverGroups(Array.isArray(discoverRes) ? discoverRes : (discoverRes?.$values || []));
+
+      const inviteRes = await groupService.getPendingInvites();
+      setPendingInvites(Array.isArray(inviteRes) ? inviteRes : (inviteRes?.$values || []));
     } catch (error) {
       toast.error("Không thể tải danh sách nhóm");
     } finally {
@@ -83,6 +88,33 @@ const Groups = () => {
     }
   };
 
+  const handleAcceptInvite = async (groupId) => {
+    setInviteActionLoading(prev => ({ ...prev, [groupId]: 'accept' }));
+    try {
+      await groupService.acceptInvite(groupId);
+      toast.success('Đã chấp nhận lời mời! Chào mừng bạn đến với nhóm 🎉');
+      setPendingInvites(prev => prev.filter(inv => inv.groupId !== groupId));
+      fetchGroups();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Không thể chấp nhận lời mời');
+    } finally {
+      setInviteActionLoading(prev => { const n = {...prev}; delete n[groupId]; return n; });
+    }
+  };
+
+  const handleDeclineInvite = async (groupId) => {
+    setInviteActionLoading(prev => ({ ...prev, [groupId]: 'decline' }));
+    try {
+      await groupService.declineInvite(groupId);
+      toast.info('Đã từ chối lời mời');
+      setPendingInvites(prev => prev.filter(inv => inv.groupId !== groupId));
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Không thể từ chối lời mời');
+    } finally {
+      setInviteActionLoading(prev => { const n = {...prev}; delete n[groupId]; return n; });
+    }
+  };
+
   return (
     <div className="min-h-screen" style={{
       fontFamily: "'Plus Jakarta Sans', sans-serif",
@@ -108,6 +140,88 @@ const Groups = () => {
             + Tạo nhóm mới
           </button>
         </div>
+
+        {/* Pending Invites Section */}
+        {pendingInvites.length > 0 && (
+          <section className="mb-10">
+            <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <span className="w-2 h-8 bg-amber-500 rounded-full"></span>
+              Lời mời tham gia nhóm
+              <span className="ml-1 px-2.5 py-0.5 bg-amber-500 text-white text-xs font-black rounded-full">{pendingInvites.length}</span>
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {pendingInvites.map(invite => {
+                const gId = invite.groupId;
+                const isActioning = !!inviteActionLoading[gId];
+                const actionType = inviteActionLoading[gId];
+                return (
+                  <div key={gId} className="rounded-3xl p-5 flex flex-col gap-4 border-2 border-amber-100"
+                    style={{ background: 'rgba(255,251,235,0.85)', backdropFilter: 'blur(20px)' }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-amber-600 overflow-hidden shadow-inner flex-shrink-0">
+                        {invite.groupAvatarUrl ? (
+                          <img src={invite.groupAvatarUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-2xl font-black">{(invite.groupName || 'G')[0].toUpperCase()}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-bold text-slate-800 truncate">{invite.groupName}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          {invite.groupCategory && (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 uppercase tracking-wider">
+                              {invite.groupCategory}
+                            </span>
+                          )}
+                          <span className="text-[10px] text-slate-400">
+                            {invite.groupPrivacy === 'Public' ? '🌐 Công khai' : '🔒 Riêng tư'}
+                          </span>
+                        </div>
+                      </div>
+                      {/* Bell badge */}
+                      <div className="flex-shrink-0 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center shadow-md shadow-amber-200">
+                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                      </div>
+                    </div>
+                    <p className="text-xs text-amber-700 font-semibold">Bạn được mời vào nhóm này</p>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => handleDeclineInvite(gId)}
+                        disabled={isActioning}
+                        className="flex-1 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all active:scale-[0.97] disabled:opacity-60 flex items-center justify-center gap-1.5"
+                      >
+                        {actionType === 'decline' ? (
+                          <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )}
+                        Từ chối
+                      </button>
+                      <button
+                        onClick={() => handleAcceptInvite(gId)}
+                        disabled={isActioning}
+                        className="flex-1 py-2.5 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold text-sm hover:from-green-600 hover:to-emerald-600 transition-all active:scale-[0.97] shadow-md shadow-green-200 disabled:opacity-60 flex items-center justify-center gap-1.5"
+                      >
+                        {actionType === 'accept' ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                        Chấp nhận
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* My Groups Section */}
         <section className="mb-12">

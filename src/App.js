@@ -27,6 +27,7 @@ import { useState, useEffect } from 'react';
 
 import Maintenance from './pages/Maintenance/Maintenance';
 import adminService from './services/adminService';
+import PostViolation from './pages/PostViolation/PostViolation';
 
 const PrivateRoute = ({ children, isMaintenance }) => {
   const { user, isAdmin } = useAuth();
@@ -84,6 +85,7 @@ function App() {
             <Route path="/" element={<PrivateRoute isMaintenance={isMaintenance}><Home /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute isMaintenance={isMaintenance}><Profile /></PrivateRoute>} />
             <Route path="/profile/:userId" element={<PrivateRoute isMaintenance={isMaintenance}><Profile /></PrivateRoute>} />
+            <Route path="/post-violation/:postId" element={<PrivateRoute isMaintenance={isMaintenance}><PostViolation /></PrivateRoute>} />
             <Route path="/messaging" element={<PrivateRoute isMaintenance={isMaintenance}><Messaging /></PrivateRoute>} />
             <Route path="/friends" element={<PrivateRoute isMaintenance={isMaintenance}><Friends /></PrivateRoute>} />
             <Route path="/search" element={<PrivateRoute isMaintenance={isMaintenance}><Search /></PrivateRoute>} />

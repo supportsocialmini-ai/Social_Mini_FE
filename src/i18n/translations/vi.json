@@ -291,7 +291,11 @@
           "Comment": "{{name}} đã bình luận vào bài viết của bạn.",
           "FriendRequest": "{{name}} đã gửi lời mời kết bạn cho bạn.",
           "FriendAccept": "{{name}} đã chấp nhận lời mời kết bạn.",
-          "GroupInvite": "{{name}} đã mời bạn tham gia nhóm."
+          "GroupInvite": "{{name}} đã mời bạn tham gia nhóm.",
+          "Violation": "Bài viết của bạn đã bị ẩn do vi phạm chính sách cộng đồng. Lý do: {{reason}}",
+          "AppealAccept": "Cảm ơn bạn đã gửi thông tin kháng nghị để bảo vệ bài viết của mình. Bài viết của bạn đã được hiển thị lại.",
+          "AppealReject": "Cảm ơn bạn đã phản hồi, tuy nhiên chúng tôi không thể phục hồi bài viết này do chưa đủ thông tin xác thực bài viết không vi phạm tiêu chuẩn cộng đồng.",
+          "AppealSubmit": "{{name}} đã gửi yêu cầu kháng nghị cho bài viết của họ."
         }
       },
       "Search": {

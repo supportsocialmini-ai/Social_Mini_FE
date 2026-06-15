@@ -126,6 +126,10 @@ const AdminDashboard = () => {
     const [revenueStartDate, setRevenueStartDate] = useState(thirtyDaysAgoStr);
     const [revenueEndDate, setRevenueEndDate] = useState(todayStr);
 
+    // Appeals state
+    const [appeals, setAppeals] = useState([]);
+
+
     const last7DaysData = React.useMemo(() => {
         if (!detailedStats) return [];
         const rawData =
@@ -193,6 +197,8 @@ const AdminDashboard = () => {
                 fetchDetailedStats();
             } else if (activeTab === 'revenue') {
                 fetchRevenue();
+            } else if (activeTab === 'appeals') {
+                fetchAppeals();
             } else {
                 fetchData();
             }
@@ -304,6 +310,31 @@ const AdminDashboard = () => {
             setIsRevenueLoading(false);
         }
     };
+
+    const fetchAppeals = async () => {
+        setIsLoading(true);
+        try {
+            const res = await adminService.getAppeals();
+            const data = res?.result?.$values || res?.result || res?.$values || res || [];
+            setAppeals(data);
+        } catch (error) {
+            toast.error('Lỗi lấy danh sách kháng nghị');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResolveAppeal = async (postId, action) => {
+        try {
+            await adminService.resolveAppeal(postId, action);
+            toast.success(action === 'Approve' ? 'Đã phê duyệt kháng nghị và mở khóa bài viết' : 'Đã từ chối kháng nghị');
+            setAppeals(prev => prev.filter(a => a.postId !== postId));
+            fetchReports();
+        } catch (error) {
+            toast.error('Lỗi xử lý kháng nghị');
+        }
+    };
+
 
     const handleExportPDF = async () => {
         if (!detailedStats) return;
@@ -2061,6 +2092,30 @@ const AdminDashboard = () => {
                                 <p className="text-base font-black text-rose-600 mb-1">{selectedReport.reason}</p>
                                 <p className={`text-xs font-medium leading-relaxed ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>{selectedReport.description || t('admin.modals.reportDetails.noDescription')}</p>
                             </div>
+
+                            {(selectedReport.isPostAppealed || selectedReport.IsPostAppealed) && (
+                                <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-indigo-950/20 border-indigo-900/30' : 'bg-indigo-50 border-indigo-100'}`}>
+                                    <p className={`text-[9px] font-black uppercase tracking-widest mb-2 ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>Nội dung kháng nghị của người dùng</p>
+                                    <p className={`text-sm font-bold leading-relaxed ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>"{selectedReport.postAppealReason || selectedReport.PostAppealReason}"</p>
+                                    
+                                    {(selectedReport.isPostViolated || selectedReport.IsPostViolated) && (
+                                        <div className="flex gap-4 mt-4">
+                                            <button
+                                                onClick={() => { handleResolveAppeal(selectedReport.targetId, 'Approve'); setSelectedReport(null); }}
+                                                className="flex-1 py-3 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-emerald-700 transition-all active:scale-95"
+                                            >
+                                                Chấp nhận kháng nghị
+                                            </button>
+                                            <button
+                                                onClick={() => { handleResolveAppeal(selectedReport.targetId, 'Reject'); setSelectedReport(null); }}
+                                                className="flex-1 py-3 rounded-xl bg-rose-600 text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-rose-700 transition-all active:scale-95"
+                                            >
+                                                Từ chối kháng nghị
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="flex gap-4 pt-4">
                                 {selectedReport.status === 'Pending' ? (

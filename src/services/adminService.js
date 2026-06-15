@@ -45,6 +45,12 @@ const adminService = {
   },
   getRevenue: (startDate = '', endDate = '') => {
     return axiosClient.get(`api/admin/revenue?startDate=${startDate}&endDate=${endDate}`);
+  },
+  getAppeals: () => {
+    return axiosClient.get('api/admin/posts/appeals');
+  },
+  resolveAppeal: (postId, action) => {
+    return axiosClient.post(`api/admin/posts/${postId}/appeal-resolve?action=${action}`);
   }
 };
 

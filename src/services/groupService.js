@@ -61,6 +61,22 @@ const groupService = {
         'Content-Type': 'multipart/form-data'
       }
     });
+  },
+
+  deleteGroup: (groupId) => {
+    return axiosClient.delete(`/api/admin/groups/${groupId}`);
+  },
+
+  getPendingInvites: () => {
+    return axiosClient.get('/api/group/my-invites');
+  },
+
+  acceptInvite: (groupId) => {
+    return axiosClient.post(`/api/group/${groupId}/invite/accept`);
+  },
+
+  declineInvite: (groupId) => {
+    return axiosClient.post(`/api/group/${groupId}/invite/decline`);
   }
 };
 

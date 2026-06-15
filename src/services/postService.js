@@ -7,6 +7,9 @@ const postService = {
   getMyPosts: () => {
     return axiosClient.get('api/post/mypost');
   },
+  getPostById: (postId) => {
+    return axiosClient.get(`api/post/${postId}`);
+  },
   createPost: (postData) => {
     // postData bao gồm { content, privacy, groupId }
     return axiosClient.post('api/post', postData);
@@ -40,6 +43,9 @@ const postService = {
   },
   toggleSponsor: (postId) => {
     return axiosClient.put(`api/post/${postId}/toggle-sponsor`);
+  },
+  appealPost: (postId, reason) => {
+    return axiosClient.post(`api/post/${postId}/appeal`, { reason });
   }
 };
 

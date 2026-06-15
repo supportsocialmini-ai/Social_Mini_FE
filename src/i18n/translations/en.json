@@ -359,7 +359,11 @@
           "Comment": "{{name}} commented on your post.",
           "FriendRequest": "{{name}} sent you a friend request.",
           "FriendAccept": "{{name}} accepted your friend request.",
-          "GroupInvite": "{{name}} invited you to join a group."
+          "GroupInvite": "{{name}} invited you to join a group.",
+          "Violation": "Your post has been hidden due to community guidelines violation. Reason: {{reason}}",
+          "AppealAccept": "Thank you for submitting an appeal. Your post has been restored.",
+          "AppealReject": "Thank you for your response, however we cannot restore this post due to insufficient evidence that it complies with community guidelines.",
+          "AppealSubmit": "{{name}} has submitted an appeal request for their post."
         }
       },
       "Search": {
