@@ -107,12 +107,13 @@ export const ChatProvider = ({ children }) => {
               toast.info(`Tin nhắn mới: ${content?.substring(0, 30)}${content?.length > 30 ? '...' : ''}`);
             }
 
-            if (content?.startsWith('[RTC_SIGNAL]')) {
-              try {
-                const signalData = JSON.parse(content.replace('[RTC_SIGNAL]', ''));
-                handleIncomingSignal(senderId, signalData);
-              } catch (e) { console.error("Lỗi parse signal:", e); }
-            }
+          });
+
+          newConnection.on("ReceiveWebRTCSignal", (senderId, signalString) => {
+            try {
+              const signalData = JSON.parse(signalString);
+              handleIncomingSignal(senderId, signalData);
+            } catch (e) { console.error("Lỗi parse signal:", e); }
           });
 
           newConnection.on("ReceiveGroupMessage", (messageId, groupId, senderId, senderName, senderAvatar, content, imageUrl, createdAt) => {
@@ -299,7 +300,7 @@ export const ChatProvider = ({ children }) => {
 
   const sendSignal = (targetUserId, signal) => {
     if (connection && connection.state === 'Connected') {
-      connection.invoke("SendPrivateMessage", targetUserId, `[RTC_SIGNAL]${JSON.stringify(signal)}`, null)
+      connection.invoke("SendWebRTCSignal", targetUserId, JSON.stringify(signal))
         .catch(err => console.error("Signal error:", err));
     }
   };

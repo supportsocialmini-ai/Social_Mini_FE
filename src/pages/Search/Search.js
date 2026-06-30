@@ -220,16 +220,20 @@ const Search = () => {
                     <p className="font-bold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">{u.fullName}</p>
                     <p className="text-xs text-gray-500 truncate">@{u.username}</p>
                   </Link>
-                  <button
-                    onClick={() => handleAddFriend(u.userId, u.fullName)}
-                    disabled={sentIds.has(u.userId)}
-                    className="flex-shrink-0 text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all transform hover:scale-105"
-                    style={sentIds.has(u.userId)
-                      ? { background: 'rgba(99,102,241,0.06)', color: '#94a3b8', cursor: 'default' }
-                      : { background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff' }}
-                  >
-                    {sentIds.has(u.userId) ? t('profile.friendRequestSent') || 'Đã gửi' : t('search.addFriend')}
-                  </button>
+                  {u.isMe ? (
+                    <span className="flex-shrink-0 text-[10px] font-bold text-indigo-600 px-3 py-1 rounded-xl bg-indigo-50 border border-indigo-100">{t('search.you') || 'Bạn'}</span>
+                  ) : u.isFriend ? null : (
+                    <button
+                      onClick={() => handleAddFriend(u.userId, u.fullName)}
+                      disabled={sentIds.has(u.userId)}
+                      className="flex-shrink-0 text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all transform hover:scale-105"
+                      style={sentIds.has(u.userId)
+                        ? { background: 'rgba(99,102,241,0.06)', color: '#94a3b8', cursor: 'default' }
+                        : { background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff' }}
+                    >
+                      {sentIds.has(u.userId) ? t('profile.friendRequestSent') || 'Đã gửi' : t('search.addFriend')}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

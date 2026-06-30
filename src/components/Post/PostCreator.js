@@ -51,6 +51,21 @@ const PostCreator = ({ user, getFullAvatarUrl, onPostSuccess, groupId }) => {
     if (!postContent.trim()) return;
     setIsPosting(true);
     try {
+      // Tạo một bài viết tạm (Optimistic UI) để hiển thị ngay lập tức
+      const tempPost = {
+        postId: `temp-${Date.now()}`,
+        author: user.fullName || user.username,
+        authorAvatar: getFullAvatarUrl(user.avatarUrl, user.fullName || user.username),
+        postContent: postContent,
+        imageUrl: imagePreview, // Dùng luôn base64 để hiển thị tạm
+        privacy: privacy,
+        createdAt: new Date().toISOString(),
+        likeCount: 0,
+        commentCount: 0,
+        isLiked: false,
+        userId: user.userId,
+      };
+
       if (imageFile) {
         await postService.createPostWithImage(postContent, privacy, imageFile, groupId);
       } else {
@@ -59,8 +74,9 @@ const PostCreator = ({ user, getFullAvatarUrl, onPostSuccess, groupId }) => {
       setPostContent('');
       setImagePreview(null);
       setImageFile(null);
-      // Silencing success toast per user request
-      if (onPostSuccess) onPostSuccess();
+      
+      // Truyền bài viết tạm lên cho Component cha để nhét vào đầu danh sách
+      if (onPostSuccess) onPostSuccess(tempPost);
     } catch (error) {
       toast.error(error.errorMessage || t('home.postError'));
     } finally {

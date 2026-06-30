@@ -158,6 +158,7 @@ const Home = () => {
 
   const fetchPosts = useCallback(async (pageNumber = 1) => {
     try {
+      if (pageNumber === 1) setIsFeedLoading(true);
       const response = await postService.getPosts(pageNumber, 10);
       const rawPosts = Array.isArray(response) ? response : (response?.$values || []);
       const normalized = rawPosts.filter(p => p).map(post => ({
@@ -356,7 +357,14 @@ const Home = () => {
           <PostCreator
             user={user}
             getFullAvatarUrl={getFullAvatarUrl}
-            onPostSuccess={() => fetchPosts(1)}
+            onPostSuccess={(tempPost) => {
+              if (tempPost) {
+                // Optimistic UI: Nhét bài viết tạm lên đầu bảng tin ngay lập tức
+                setPosts(prev => [tempPost, ...prev]);
+              } else {
+                fetchPosts(1);
+              }
+            }}
           />
 
           {isFeedLoading ? (

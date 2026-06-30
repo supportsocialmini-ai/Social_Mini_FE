@@ -23,6 +23,7 @@ import PeopleSuggestions from './pages/People/PeopleSuggestions';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import MentalLetterModal from './components/Common/MentalLetterModal';
+import ChatBotWidget from './components/ChatBot/ChatBotWidget';
 import { useState, useEffect } from 'react';
 
 import Maintenance from './pages/Maintenance/Maintenance';
@@ -107,6 +108,7 @@ function App() {
             isOpen={showMentalLetter} 
             onClose={handleCloseLetter} 
           />
+          <ChatBotWidget />
         </Router>
       </ChatProvider>
     </AuthProvider>

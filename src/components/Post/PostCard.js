@@ -382,7 +382,7 @@ const PostCard = ({ post, getFullAvatarUrl, onLikeChange, onPostDelete, user: pa
                 {isPostOwner ? (
                   <span className="text-[10px] font-bold text-indigo-600 px-2 py-0.5 rounded-full"
                     style={{ background: 'rgba(99,102,241,0.1)' }}>{t('posts.you')}</span>
-                ) : (
+                ) : post.isFriend ? null : (
                   <button
                     onClick={async () => {
                       setIsSentRequest(true); // Optimistic update
